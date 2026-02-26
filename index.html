@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="light">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
@@ -10,12 +10,65 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon.png">
 
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #f2f2f7; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; overflow: hidden; }
+        /* ==========================================
+           SISTEMA DE TEMAS (Claro / Oscuro / Gladiador)
+           ========================================== */
+        :root {
+            --bg-app: #f2f2f7;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --accent: #2563eb;
+            --accent-text: #ffffff;
+            --dock-bg: rgba(255, 255, 255, 0.85);
+            --font-head: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        [data-theme="dark"] {
+            --bg-app: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --accent: #3b82f6;
+            --accent-text: #ffffff;
+            --dock-bg: rgba(30, 41, 59, 0.85);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        [data-theme="gladiator"] {
+            --bg-app: #120a0a; /* Oscuro profundo romano */
+            --bg-card: #241414; /* Rojo mármol muy oscuro */
+            --text-main: #fcd34d; /* Dorado Oro */
+            --text-muted: #d6d3d1; /* Piedra */
+            --border-color: #78350f; /* Bronce/Ámbar oscuro */
+            --accent: #7f1d1d; /* Rojo Sangre Carmesí */
+            --accent-text: #fef3c7; /* Letra clara sobre rojo */
+            --dock-bg: rgba(26, 11, 11, 0.9);
+            --font-head: 'Cinzel', serif;
+            --shadow: 0 8px 15px -3px rgba(180, 83, 9, 0.2);
+        }
+
+        /* Aplicación de Variables */
+        body { background-color: var(--bg-app); color: var(--text-main); font-family: -apple-system, sans-serif; transition: background-color 0.4s, color 0.4s; overflow: hidden; -webkit-tap-highlight-color: transparent;}
+        h1, h2, h3, .font-epic { font-family: var(--font-head); transition: font-family 0.4s; }
+        .card-bg { background-color: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow); transition: all 0.4s; }
+        .input-bg { background-color: var(--bg-app); color: var(--text-main); border: 1px solid var(--border-color); transition: all 0.4s; }
+        .input-bg:focus { border-color: var(--accent); outline: none; }
+        .text-muted { color: var(--text-muted); }
+        .btn-accent { background-color: var(--accent); color: var(--accent-text); border: 2px solid var(--border-color); box-shadow: var(--shadow); transition: all 0.2s; }
+        .btn-accent:active { transform: scale(0.95); opacity: 0.9; }
+        .dock-blur { background: var(--dock-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--border-color); }
+
+        /* iPhone Safe Areas */
         .pt-safe { padding-top: env(safe-area-inset-top, 47px); }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom, 34px); }
-        .glass-dock { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 0.5px solid rgba(0,0,0,0.1); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .snap-x-mandatory { scroll-snap-type: x mandatory; }
@@ -23,119 +76,162 @@
         .preview-wrapper iframe { width: 100%; height: 50vh; border: none; border-radius: 12px; background: #fff; }
     </style>
 </head>
-<body class="text-slate-900 flex flex-col h-screen overflow-hidden pb-safe">
+<body class="flex flex-col h-screen pb-safe">
 
-    <header class="pt-safe bg-white px-5 pb-3 shadow-sm z-20 shrink-0 flex justify-between items-end">
+    <header class="pt-safe card-bg px-5 pb-3 z-20 shrink-0 flex justify-between items-end border-b-0 rounded-b-3xl">
         <div>
-            <h1 class="text-2xl font-black tracking-tight text-slate-900">Mercado Limpio</h1>
-            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Módulo de Calle</p>
+            <h1 class="text-2xl font-black tracking-tight" id="mainTitle">Mercado Limpio</h1>
+            <p class="text-[10px] text-muted font-bold uppercase tracking-widest mt-1">Facturación Express</p>
         </div>
-        <div id="statusBadge" class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide">Online</div>
+        <div class="bg-emerald-500/20 text-emerald-500 border border-emerald-500/50 text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-wide animate-pulse">Online</div>
     </header>
 
-    <main class="flex-1 overflow-y-auto no-scrollbar pb-32 pt-2">
+    <main class="flex-1 overflow-y-auto no-scrollbar pb-32 pt-4 px-4 space-y-4">
         
-        <section id="tab-capture" class="p-5 space-y-6">
+        <section id="tab-fast" class="space-y-4">
             
-            <input type="file" id="inputPdf" accept="application/pdf" multiple class="hidden" />
+            <div class="card-bg rounded-3xl p-5">
+                <h2 class="text-xs font-black text-muted uppercase tracking-widest mb-4">Datos Principales</h2>
+                
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-muted uppercase ml-1 mb-1">CUIT Cliente</label>
+                        <input type="tel" id="fastCuit" inputmode="numeric" class="w-full input-bg rounded-xl p-3 text-lg font-bold text-center" placeholder="Sin guiones">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-muted uppercase ml-1 mb-1">Total (Con IVA)</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-3.5 font-black text-muted">$</span>
+                            <input type="tel" id="fastMonto" inputmode="decimal" class="w-full input-bg rounded-xl p-3 pl-7 text-lg font-black text-right" placeholder="0.00">
+                        </div>
+                    </div>
+                </div>
 
-            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-                <h3 class="font-bold text-slate-800 text-base mb-3">Flujo desde WhatsApp</h3>
-                <ol class="list-decimal list-inside text-sm text-slate-600 space-y-2">
-                    <li>Abrí el PDF en WhatsApp.</li>
-                    <li>Tocá <span class="bg-slate-100 px-1.5 py-0.5 rounded font-bold text-slate-900">Compartir</span> -> <span class="bg-slate-100 px-1.5 py-0.5 rounded font-bold text-slate-900">Guardar en Archivos</span>.</li>
-                    <li>Volvé acá y tocá el botón central azul.</li>
-                </ol>
-            </div>
+                <div class="mb-4">
+                    <label class="block text-[10px] font-bold text-muted uppercase ml-1 mb-1">Método de Pago</label>
+                    <select id="fastCondicion" class="w-full input-bg rounded-xl p-3 text-sm font-bold appearance-none">
+                        <option value="Cuenta Corriente">Cuenta Corriente</option>
+                        <option value="Otros: Para formas de pago no especificadas">Otros: No especificado</option>
+                        <option value="Otros medios de pago electrónicos">Otros medios electrónicos</option>
+                        <option value="Transferencia Bancaria">Transferencia Bancaria</option>
+                        <option value="Efectivo">Efectivo</option>
+                    </select>
+                </div>
 
-            <div id="loaderUI" class="hidden bg-slate-900 text-white rounded-2xl p-5 shadow-lg flex items-center gap-4">
-                <svg class="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                 <div>
-                    <span class="block font-bold">Procesando con IA...</span>
-                    <span class="block text-xs opacity-80" id="loaderText">Extrayendo datos y calculando.</span>
+                    <label class="block text-[10px] font-bold text-muted uppercase ml-1 mb-1">Descripción del Artículo</label>
+                    <input type="text" id="fastDesc" class="w-full input-bg rounded-xl p-3 text-sm font-bold mb-2" placeholder="Escriba el detalle...">
+                    
+                    <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+                        <button onclick="setDesc('ARTICULOS VARIOS MARCA MAKE DE LIMPIEZA Y BAZAR')" class="shrink-0 bg-transparent border border-current text-current opacity-70 hover:opacity-100 rounded-lg px-3 py-1.5 text-xs font-bold whitespace-nowrap active:scale-95 transition">
+                            📦 Marca MAKE
+                        </button>
+                        <button onclick="pedirMarcaManual()" class="shrink-0 bg-transparent border border-current text-current opacity-70 hover:opacity-100 rounded-lg px-3 py-1.5 text-xs font-bold whitespace-nowrap active:scale-95 transition">
+                            ✏️ Otra Marca...
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div id="statusAlert" class="hidden rounded-2xl p-4 text-sm font-bold shadow-sm"></div>
+            <div class="card-bg rounded-3xl p-4">
+                <label class="block text-[10px] font-bold text-muted uppercase ml-1 mb-1">Email destino (Opcional)</label>
+                <input type="email" id="fastEmail" class="w-full input-bg rounded-xl p-3 text-sm font-semibold" placeholder="distribuidoramercadolimpio@gmail.com">
+            </div>
+
         </section>
 
-        <section id="tab-items" class="p-5 hidden space-y-5">
-            <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100">
-                <h3 class="text-sm font-bold text-slate-400 uppercase mb-3 tracking-wide">Cliente</h3>
-                <input type="number" id="cuit" class="w-full bg-slate-50 border-none rounded-xl p-4 font-bold text-lg text-slate-900 focus:ring-2 focus:ring-blue-500 mb-3" placeholder="CUIT (11 números)">
-                <select id="condicionVenta" class="w-full bg-slate-50 border-none rounded-xl p-4 font-bold text-slate-900 focus:ring-2 focus:ring-blue-500">
-                    <option value="Transferencia Bancaria">Transferencia</option>
-                    <option value="Efectivo">Efectivo</option>
-                </select>
-            </div>
+        <section id="tab-capture" class="hidden space-y-4">
+            <input type="file" id="inputPdf" accept="application/pdf" multiple class="hidden" />
 
-            <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wide">Artículos (<span id="itemCount">0</span>)</h3>
-                </div>
-                <div id="itemsList" class="space-y-2 max-h-60 overflow-y-auto no-scrollbar">
-                    <div class="text-sm text-slate-400 italic text-center py-4">Procesá un remito primero.</div>
-                </div>
+            <div class="card-bg rounded-3xl p-6 text-center">
+                <div class="text-4xl mb-4 opacity-80">📄</div>
+                <h3 class="font-epic text-lg font-bold mb-2">Procesar PDF</h3>
+                <p class="text-xs text-muted mb-6">Si te enviaron el remito por WhatsApp, guardalo en Archivos y seleccionalo acá para procesarlo con IA.</p>
+                <button onclick="document.getElementById('inputPdf').click()" class="btn-accent w-full py-4 rounded-xl font-black tracking-widest uppercase text-sm">
+                    Seleccionar Archivo
+                </button>
+            </div>
+            
+            <div id="loaderUI" class="hidden card-bg rounded-2xl p-5 flex items-center justify-center gap-4 border-2 border-[var(--accent)] animate-pulse">
+                <div class="font-epic font-bold text-sm">Analizando documento...</div>
             </div>
         </section>
 
         <section id="tab-preview" class="hidden flex flex-col h-full space-y-3">
-            <div class="bg-slate-950 text-white p-5 rounded-2xl mx-5 shadow-lg shrink-0">
+            <div class="card-bg p-5 rounded-2xl shrink-0 border-2 border-[var(--accent)]">
                 <div class="flex justify-between items-center mb-1">
-                    <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Resumen Final</span>
-                    <span id="txtDescPct" class="bg-emerald-500/20 text-emerald-400 text-[10px] font-black px-2 py-0.5 rounded uppercase hidden">Desc 0%</span>
+                    <span class="text-[10px] font-black text-muted uppercase tracking-widest">A Facturar</span>
                 </div>
                 <div class="flex items-baseline gap-2">
-                    <span class="text-3xl font-black tracking-tighter" id="txtTotal">$0.00</span>
-                    <span class="text-sm font-medium text-slate-500 line-through hidden" id="txtSubtotal">$0.00</span>
+                    <span class="text-4xl font-epic font-black tracking-tighter" id="txtTotal">$0.00</span>
                 </div>
             </div>
+            
+            <div class="w-full overflow-x-auto snap-x-mandatory no-scrollbar flex gap-3 pb-2 shrink-0" id="railPartes"></div>
 
-            <div class="w-full overflow-x-auto snap-x-mandatory no-scrollbar flex gap-3 px-5 shrink-0" id="railPartes"></div>
-
-            <div class="px-5 pb-5 flex-1 preview-wrapper" id="previewContainer">
-                <iframe id="previewFrame"></iframe>
+            <div class="pb-5 flex-1 preview-wrapper" id="previewContainer">
+                <iframe id="previewFrame" class="border-2 border-[var(--border-color)]"></iframe>
             </div>
         </section>
+
+        <section id="tab-settings" class="hidden space-y-4">
+            <div class="card-bg rounded-3xl p-6">
+                <h2 class="text-sm font-epic font-black uppercase tracking-widest mb-6 border-b border-[var(--border-color)] pb-2">Apariencia de la App</h2>
+                
+                <div class="space-y-3">
+                    <button onclick="setTheme('light')" class="w-full flex items-center justify-between p-4 rounded-xl border border-[var(--border-color)] active:scale-95 transition bg-gray-100 text-slate-800">
+                        <span class="font-bold">☀️ Modo Claro</span>
+                    </button>
+                    
+                    <button onclick="setTheme('dark')" class="w-full flex items-center justify-between p-4 rounded-xl border border-[var(--border-color)] active:scale-95 transition bg-slate-800 text-white">
+                        <span class="font-bold">🌙 Modo Oscuro</span>
+                    </button>
+                    
+                    <button onclick="setTheme('gladiator')" class="w-full flex items-center justify-between p-4 rounded-xl border border-[#78350f] active:scale-95 transition bg-[#1a0a0a] text-[#fcd34d]">
+                        <span class="font-epic font-black tracking-widest">⚔️ TEMA GLADIADOR</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
     </main>
 
-    <nav class="glass-dock fixed bottom-0 w-full pb-safe pt-2 px-6 flex justify-between items-center z-50">
-        <button onclick="switchTab('capture')" id="nav-capture" class="flex flex-col items-center gap-1 w-14 text-blue-600 transition-colors">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-            <span class="text-[9px] font-extrabold uppercase tracking-wide">Inicio</span>
+    <div id="statusAlert" class="hidden fixed top-16 left-1/2 transform -translate-x-1/2 z-[100] rounded-full px-5 py-3 text-xs font-black shadow-2xl min-w-[80%] text-center transition-all duration-300"></div>
+
+    <nav class="dock-blur fixed bottom-0 w-full pb-safe pt-2 px-6 flex justify-between items-center z-50 rounded-t-3xl">
+        <button onclick="switchTab('fast')" id="nav-fast" class="flex flex-col items-center gap-1 w-12 text-[var(--accent)] transition-colors opacity-100">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            <span class="text-[8px] font-black uppercase tracking-widest">Rápida</span>
         </button>
         
-        <button onclick="switchTab('items')" id="nav-items" class="flex flex-col items-center gap-1 w-14 text-slate-400 transition-colors">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
-            <span class="text-[9px] font-extrabold uppercase tracking-wide">Datos</span>
+        <button onclick="switchTab('capture')" id="nav-capture" class="flex flex-col items-center gap-1 w-12 text-muted transition-colors opacity-60">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <span class="text-[8px] font-black uppercase tracking-widest">PDFs</span>
         </button>
 
-        <div class="relative -top-5">
-            <button id="btnMainAction" onclick="document.getElementById('inputPdf').click()" class="bg-blue-600 text-white w-18 h-18 rounded-full shadow-[0_10px_25px_rgba(59,130,246,0.3)] flex flex-col items-center justify-center transform active:scale-90 transition border-4 border-white">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                <span class="text-[8px] font-black mt-1 uppercase">Procesar</span>
+        <div class="relative -top-6">
+            <button id="btnMainAction" onclick="procesarFastYVer()" class="btn-accent w-16 h-16 rounded-full flex flex-col items-center justify-center transform transition border-4 border-[var(--bg-app)]">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                <span class="text-[7px] font-black mt-1 uppercase tracking-widest" id="lblMainBtn">Generar</span>
             </button>
         </div>
 
-        <button onclick="switchTab('preview')" id="nav-preview" class="flex flex-col items-center gap-1 w-14 text-slate-400 transition-colors">
+        <button onclick="switchTab('preview')" id="nav-preview" class="flex flex-col items-center gap-1 w-12 text-muted transition-colors opacity-60">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-            <span class="text-[9px] font-extrabold uppercase tracking-wide">Borrador</span>
+            <span class="text-[8px] font-black uppercase tracking-widest">Preview</span>
         </button>
 
-        <button id="btnShareNative" onclick="shareNative()" class="flex flex-col items-center gap-1 w-14 text-slate-400 transition-colors">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
-            <span class="text-[9px] font-extrabold uppercase tracking-wide">Enviar</span>
+        <button onclick="switchTab('settings')" id="nav-settings" class="flex flex-col items-center gap-1 w-12 text-muted transition-colors opacity-60">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            <span class="text-[8px] font-black uppercase tracking-widest">Tema</span>
         </button>
     </nav>
 
     <script>
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
-        });
+        window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
       }
     </script>
-    
     <script src="app.js" defer></script>
 </body>
 </html>
