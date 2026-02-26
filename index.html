@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <meta name="theme-color" content="#1e293b" />
+    <title>Mercado Limpio APP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Escalar el PDF para que entre en la pantalla del celular */
+        .preview-wrapper { width: 100%; height: 400px; overflow: hidden; border-radius: 0.75rem; border: 1px solid #e2e8f0; background: #f8fafc; position: relative; }
+        .preview-wrapper iframe { width: 200%; height: 200%; transform: scale(0.5); transform-origin: 0 0; border: none; }
+        
+        /* Spinner CSS */
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased pb-28">
+
+    <header class="bg-slate-900 text-white p-4 shadow-md sticky top-0 z-20 flex justify-between items-center">
+        <div>
+            <h1 class="text-xl font-black tracking-tight">MERCADO LIMPIO</h1>
+            <p class="text-xs text-slate-400 font-semibold">Facturación ARCA Móvil</p>
+        </div>
+        <div id="statusBadge" class="bg-green-500 text-xs font-bold px-2 py-1 rounded-full animate-pulse">Online</div>
+    </header>
+
+    <main class="p-4 max-w-lg mx-auto space-y-4">
+        
+        <div class="bg-white rounded-2xl shadow-sm p-5 border border-slate-200">
+            <h2 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">Paso 1: Remitos</h2>
+            
+            <input type="file" id="fileRemito" accept="application/pdf,image/*" multiple class="hidden" />
+            
+            <div id="drop-zone" onclick="document.getElementById('fileRemito').click()" class="bg-blue-50 border-2 border-dashed border-blue-300 rounded-xl p-6 text-center cursor-pointer active:bg-blue-100 transition">
+                <div class="text-3xl mb-2">📸</div>
+                <h3 class="font-bold text-blue-700 text-lg">Escanear o Subir PDF</h3>
+                <p class="text-xs text-blue-500 mt-1">Soporta múltiples archivos</p>
+                <div id="file-list" class="mt-3 text-sm font-bold text-slate-700 hidden"></div>
+            </div>
+
+            <div id="spinner-box" class="hidden text-center py-6">
+                <div class="loader mb-3"></div>
+                <p id="spinner-text" class="text-sm font-bold text-blue-600 animate-pulse">Analizando documento con IA...</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm p-5 border border-slate-200">
+            <h2 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">Paso 2: Datos del Cliente</h2>
+            
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs font-bold text-slate-600">CUIT Cliente</label>
+                    <input type="number" id="cuit" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 font-bold text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" placeholder="Ej: 20123456789">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-bold text-slate-600">Total a Facturar ($)</label>
+                        <input type="text" id="monto" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 font-bold text-slate-800 focus:outline-none focus:border-blue-500 transition" placeholder="0,00">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-600">Condición Venta</label>
+                        <select id="condicionVenta" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 font-bold text-slate-800 focus:outline-none focus:border-blue-500 transition">
+                            <option value="Transferencia Bancaria">Transferencia</option>
+                            <option value="Efectivo">Efectivo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="infoDescuento" class="hidden bg-emerald-50 text-emerald-800 text-xs font-bold p-3 rounded-lg border border-emerald-200 flex justify-between">
+                    <span id="txtDescPct">Desc: 0%</span>
+                    <span id="txtDescImporte">Ahorro: $0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm p-5 border border-slate-200">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="text-sm font-bold text-slate-500 uppercase tracking-wider">Paso 3: Vista Previa</h2>
+                <button onclick="triggerPreviewNow()" class="text-xs bg-slate-100 text-slate-600 font-bold px-3 py-1 rounded-full active:bg-slate-200">↻ Refrescar</button>
+            </div>
+            
+            <div id="previewPlaceholder" class="text-center p-6 text-sm text-slate-400 font-semibold border-2 border-dashed border-slate-100 rounded-xl">
+                Cargá un remito para ver cómo quedará la factura final.
+            </div>
+
+            <div id="previewSpinner" class="hidden text-center py-10">
+                <div class="loader mb-3 border-slate-300 border-top-slate-800"></div>
+                <p class="text-xs font-bold text-slate-500">Generando PDF...</p>
+            </div>
+
+            <div class="preview-wrapper hidden" id="previewContainer">
+                <iframe id="previewFrame"></iframe>
+            </div>
+        </div>
+
+    </main>
+
+    <div class="fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 p-4 pb-safe shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)] z-50">
+        <div id="mensaje" class="hidden text-center text-xs font-bold p-2 mb-2 rounded-lg"></div>
+        
+        <button id="btn" onclick="emitir()" class="w-full bg-blue-600 text-white font-black text-lg py-4 rounded-xl shadow-lg shadow-blue-200 active:scale-95 active:bg-blue-700 transition transform">
+            🚀 EMITIR FACTURA
+        </button>
+
+        <button id="btnShare" class="hidden w-full bg-green-500 text-white font-black text-lg py-4 rounded-xl shadow-lg shadow-green-200 active:scale-95 active:bg-green-600 transition transform mt-2 flex items-center justify-center gap-2">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564c.173.087.289.129.332.202.043.073.043.423-.101.827z"/></svg>
+            COMPARTIR CLIENTE
+        </button>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
