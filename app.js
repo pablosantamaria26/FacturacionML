@@ -1,34 +1,37 @@
 // 🔥 URL DE TU MOTOR EN LA NUBE
 const BASE = "https://api-mercadolimpio.onrender.com";
 
-// Variables globales estrictas
 let itemsGlobal = [];
 let domicilioRemitoGlobal = "";
 let subtotalBrutoGlobal = 0, descuentoPctGlobal = 0, descuentoImporteGlobal = 0, totalFinalGlobal = 0;
 let facturasEmitidas = [];
 let currentWaText = "";
 
-// Elementos UI
-const inputPdf = document.getElementById("inputPdf");
-const loaderUI = document.getElementById("loaderUI");
-const statusAlert = document.getElementById("statusAlert");
-const btnMainAction = document.getElementById("btnMainAction");
-const btnShareNative = document.getElementById("btnShareNative");
+// Elementos UI (Los capturamos cuando cargue la página para evitar nulls)
+let inputPdf, loaderUI, statusAlert, btnMainAction, btnShareNative;
 
-// ==========================================
-// CONTROL DE NAVEGACIÓN (TABS)
-// ==========================================
-function switchTab(tabId) {
-    // Ocultar todas las secciones
-    ['tab-capture', 'tab-items', 'tab-preview'].forEach(id => document.getElementById(id).classList.add('hidden'));
+document.addEventListener("DOMContentLoaded", () => {
+    inputPdf = document.getElementById("inputPdf");
+    loaderUI = document.getElementById("loaderUI");
+    statusAlert = document.getElementById("statusAlert");
+    btnMainAction = document.getElementById("btnMainAction");
+    btnShareNative = document.getElementById("btnShareNative");
+
+    // Conectamos el evento al botón invisible de archivos
+    inputPdf.addEventListener("change", procesarArchivo);
     
-    // Reset colores del dock
+    // Mostramos la pestaña inicial
+    switchTab('capture');
+});
+
+// NAVEGACIÓN TABS
+function switchTab(tabId) {
+    ['tab-capture', 'tab-items', 'tab-preview'].forEach(id => document.getElementById(id).classList.add('hidden'));
     ['nav-capture', 'nav-items', 'nav-preview'].forEach(id => {
         document.getElementById(id).classList.remove('text-blue-600');
         document.getElementById(id).classList.add('text-slate-400');
     });
 
-    // Activar seleccionada
     document.getElementById(`tab-${tabId}`).classList.remove('hidden');
     document.getElementById(`nav-${tabId}`).classList.remove('text-slate-400');
     document.getElementById(`nav-${tabId}`).classList.add('text-blue-600');
@@ -36,19 +39,16 @@ function switchTab(tabId) {
     if (tabId === 'preview') buildPreviewRail();
 }
 
-// ==========================================
 // 1. PROCESAR PDF
-// ==========================================
 async function procesarArchivo(e) {
-    if (!e.target.files.length) return;
+    if (!e.target.files || !e.target.files.length) return;
     
-    // UI Loading iOS Style
     loaderUI.classList.remove("hidden");
     statusAlert.classList.add("hidden");
     
-    // Cambiar botón principal a modo "Cargando"
+    // Animación de carga en botón principal
+    btnMainAction.disabled = true;
     btnMainAction.classList.add("animate-spin", "opacity-50");
-    btnMainAction.onclick = null; // Desactivar click
 
     const formData = new FormData();
     for (let i = 0; i < e.target.files.length; i++) formData.append("remito", e.target.files[i]);
@@ -59,7 +59,6 @@ async function procesarArchivo(e) {
 
         if (!r.ok) throw new Error(res.detail || "Error al procesar");
 
-        // Alimentar variables globales exactas del Backend
         document.getElementById("cuit").value = res.cuit || "";
         domicilioRemitoGlobal = res.domicilioRemito || "";
         itemsGlobal = Array.isArray(res.items) ? res.items : [];
@@ -68,9 +67,7 @@ async function procesarArchivo(e) {
         descuentoImporteGlobal = Number(res.descuentoImporte || 0);
         totalFinalGlobal = Number(res.total || 0);
 
-        // Actualizar UI simplificada de ítems
         updateItemsListUI();
-
         loaderUI.classList.add("hidden");
         mostrarAlerta(`✅ ¡Listo! ${itemsGlobal.length} ítems extraídos del PDF.`, "success");
         
@@ -81,19 +78,16 @@ async function procesarArchivo(e) {
         loaderUI.classList.add("hidden");
         mostrarAlerta(`❌ Error: ${err.message}`, "error");
     } finally {
-        // Restaurar botón principal
+        btnMainAction.disabled = false;
         btnMainAction.classList.remove("animate-spin", "opacity-50");
-        btnMainAction.onclick = () => document.getElementById('inputPdf').click();
+        inputPdf.value = ""; // Resetear para permitir subir el mismo archivo
     }
 }
 
-inputPdf.addEventListener("change", procesarArchivo);
-
-// UI simplificada de ítems para mobile
+// UI simplificada de ítems
 function updateItemsListUI() {
     const list = document.getElementById("itemsList");
-    const count = document.getElementById("itemCount");
-    count.textContent = itemsGlobal.length;
+    document.getElementById("itemCount").textContent = itemsGlobal.length;
     
     if (itemsGlobal.length === 0) {
         list.innerHTML = `<div class="text-sm text-slate-400 italic text-center py-4">No hay artículos.</div>`;
@@ -111,63 +105,11 @@ function updateItemsListUI() {
     `).join("");
 }
 
-// ==========================================
-// 2. DICTADO POR VOZ (MODAL iOS)
-// ==========================================
-let recognition;
-function toggleDictation() {
-    const modal = document.getElementById("voiceModal");
-    const transcriptArea = document.getElementById("voiceTranscript");
-
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        mostrarAlerta("❌ iOS/Safari no soporta dictado de voz en la web aún.", "error");
-        return;
-    }
-
-    if (modal.classList.contains("hidden")) {
-        // EMPEZAR A ESCUCHAR
-        modal.classList.remove("hidden");
-        
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        recognition = new SpeechRecognition();
-        recognition.lang = 'es-AR';
-        recognition.interimResults = true;
-        recognition.continuous = true;
-
-        recognition.onresult = (event) => {
-            let interimTranscript = '';
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) {
-                    transcriptArea.innerHTML = `<b>${event.results[i][0].transcript}</b>`;
-                } else {
-                    interimTranscript += event.results[i][0].transcript;
-                    transcriptArea.innerText = interimTranscript;
-                }
-            }
-        };
-
-        recognition.onerror = (e) => console.error(e);
-        recognition.onend = () => { console.log("Dictado finalizado"); };
-        
-        recognition.start();
-
-    } else {
-        // PARAR
-        modal.classList.add("hidden");
-        if (recognition) recognition.stop();
-        statusAlert.classList.add("hidden");
-        mostrarAlerta("🎙️ Dictado finalizado. (Parser IA en desarrollo)", "success");
-    }
-}
-
-// ==========================================
-// 3. PREVIEW RAIL (VISTA POR PARTES)
-// ==========================================
+// 2. PREVIEW RAIL
 async function buildPreviewRail() {
     const cuit = document.getElementById("cuit").value.trim();
     if (itemsGlobal.length === 0 && (!cuit || cuit.length < 11)) return;
 
-    // Actualizar Resumen Header
     document.getElementById("txtTotal").textContent = `$${(totalFinalGlobal || 0).toLocaleString('es-AR', {minimumFractionDigits:2})}`;
     
     const bSub = document.getElementById("txtSubtotal");
@@ -176,7 +118,6 @@ async function buildPreviewRail() {
     if (descuentoPctGlobal > 0 || descuentoImporteGlobal > 0) {
         bSub.textContent = `$${(subtotalBrutoGlobal || 0).toLocaleString('es-AR')}`;
         bSub.classList.remove("hidden");
-        
         bPct.textContent = `DESC ${descuentoPctGlobal}%`;
         bPct.classList.remove("hidden");
     } else {
@@ -184,13 +125,9 @@ async function buildPreviewRail() {
         bPct.classList.add("hidden");
     }
 
-    // Dividir items para armar el "Rail" (coincidir con ITEMS_POR_FACTURA del backend)
     const partes = Math.ceil(itemsGlobal.length / 25);
     const rail = document.getElementById("railPartes");
-    rail.innerHTML = "";
-
-    // Tarjeta "Ver Todas"
-    rail.innerHTML += `
+    rail.innerHTML = `
         <div onclick="loadIframe('ALL', this)" class="snap-center shrink-0 w-[40%] bg-slate-950 text-white rounded-2xl p-4 shadow-sm active:scale-95 transition flex flex-col justify-center items-center cursor-pointer border-2 border-slate-950 rail-card-active">
             <span class="block font-black text-lg">VER TODO</span>
             <span class="block text-[10px] text-slate-500 font-bold uppercase">${partes} Partes</span>
@@ -209,22 +146,18 @@ async function buildPreviewRail() {
         `;
     }
 
-    // Cargar la vista "ALL" por defecto
     loadIframe('ALL', rail.querySelector('.rail-card-active'));
 }
 
 async function loadIframe(parteNum, element) {
-    // UI: Marcar tarjeta activa
     const rail = document.getElementById("railPartes");
     rail.querySelectorAll('.snap-center').forEach(el => {
         el.classList.remove('border-blue-500', 'border-2', 'rail-card-active', 'bg-slate-950', 'text-white');
         el.classList.add('bg-white', 'text-slate-900', 'border-slate-200');
-        // Reset dots
         const dot = el.querySelector('.status-dot');
         if(dot) dot.classList.replace('bg-blue-500', 'bg-slate-200');
     });
 
-    // Estilo para la activa
     if (parteNum === 'ALL') {
         element.classList.add('bg-slate-950', 'text-white', 'border-slate-950', 'rail-card-active');
     } else {
@@ -233,7 +166,6 @@ async function loadIframe(parteNum, element) {
         if(dot) dot.classList.replace('bg-slate-200', 'bg-blue-500');
     }
 
-    // Mostrar loader interno en el contenedor del iframe
     const container = document.getElementById("previewContainer");
     container.classList.add("animate-pulse");
 
@@ -264,41 +196,24 @@ async function loadIframe(parteNum, element) {
     finally { container.classList.remove("animate-pulse"); }
 }
 
-// ==========================================
-// 4. EMITIR Y COMPARTIR NATIVO iOS
-// ==========================================
-async function emitirFactura() {
-    // En mobile, el botón de emitir se habilita solo tras previsualizar.
-    // Para simplificar esta demo UX, re-uso la lógica de PC pero adaptada.
-}
-
+// 3. ENVIAR NATIVO
 async function shareNative() {
-    // Fallback si no se emitió
-    if (!facturasEmitidas.length && itemsGlobal.length > 0) {
-        mostrarAlerta("🎙️ Activando Dictado Contable...", "info");
-        toggleDictation(); // En esta UX Pro, el botón WhatsApp sin factura activa dictado
-        return;
-    }
+    // Si acá se necesita emitir primero, se conecta la lógica de facturar, por ahora manda el texto base
+    if (itemsGlobal.length === 0) return mostrarAlerta("No hay factura procesada", "info");
 
-    if (!currentWaText) return;
+    currentWaText = `*Factura - Mercado Limpio*\n\nTotal: $${totalFinalGlobal.toLocaleString('es-AR')}`;
 
-    // Web Share API Nativo (iOS Share Sheet)
     if (navigator.share) {
-        try {
-            await navigator.share({
-                title: 'Factura Mercado Limpio',
-                text: currentWaText
-            });
-        } catch (err) { console.log('Cancelado'); }
+        try { await navigator.share({ title: 'Factura', text: currentWaText }); } 
+        catch (err) { console.log('Cancelado'); }
     } else {
         window.open(`https://wa.me/?text=${encodeURIComponent(currentWaText)}`, '_blank');
     }
 }
 
-// Notificaciones flotantes iOS Style
+// ALERTAS IOS STYLE
 function mostrarAlerta(msg, tipo) {
     statusAlert.innerHTML = msg;
-    // Centrado arriba, redondeado, sombra fuerte (iOS style)
     statusAlert.className = `fixed top-16 left-1/2 transform -translate-x-1/2 z-[100] rounded-full px-5 py-3 text-xs font-black shadow-2xl min-w-[80%] text-center transition-all duration-300 ${
         tipo === 'success' ? 'bg-emerald-600 text-white' : 
         tipo === 'error' ? 'bg-red-600 text-white' : 'bg-slate-900 text-white'
@@ -306,8 +221,3 @@ function mostrarAlerta(msg, tipo) {
     statusAlert.classList.remove("hidden");
     if(tipo !== 'info') setTimeout(() => statusAlert.classList.add("hidden"), 3500);
 }
-
-// Setup inicial safe areas
-window.addEventListener('load', () => {
-    switchTab('capture');
-});
