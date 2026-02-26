@@ -1,237 +1,732 @@
-<!DOCTYPE html>
-<html lang="es" data-theme="light">
+<!doctype html>
+<html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>Mercado Limpio PRO</title>
-    
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icon.png">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>Mercado Limpio — Facturación Móvil</title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0b1220;
+      --panel:#0f172a;
+      --card:#0b162a;
+      --card2:#0f1f3a;
+      --txt:#e5e7eb;
+      --muted:#94a3b8;
+      --line:#1f2a44;
+      --accent:#3b82f6;
+      --ok:#10b981;
+      --warn:#f59e0b;
+      --bad:#ef4444;
+      --white:#ffffff;
+      --shadow: 0 16px 30px rgba(0,0,0,.35);
+      --radius:16px;
+    }
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* ==========================================
-           SISTEMA DE TEMAS (Claro / Oscuro / Gladiador)
-           ========================================== */
-        :root {
-            --bg-app: #f2f2f7;
-            --bg-card: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --border-color: #e2e8f0;
-            --accent: #2563eb;
-            --accent-text: #ffffff;
-            --dock-bg: rgba(255, 255, 255, 0.85);
-            --font-head: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1200px 900px at 20% 0%, #14244a 0%, #0b1220 55%, #070c16 100%);
+      color:var(--txt);
+      -webkit-font-smoothing:antialiased;
+      padding-bottom: 78px; /* bottom nav */
+    }
 
-        [data-theme="dark"] {
-            --bg-app: #0f172a;
-            --bg-card: #1e293b;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --border-color: #334155;
-            --accent: #3b82f6;
-            --accent-text: #ffffff;
-            --dock-bg: rgba(30, 41, 59, 0.85);
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-        }
+    a{color:inherit}
+    .app{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 18px 14px 0 14px;
+    }
 
-        [data-theme="gladiator"] {
-            --bg-app: #120a0a; /* Oscuro profundo romano */
-            --bg-card: #241414; /* Rojo mármol muy oscuro */
-            --text-main: #fcd34d; /* Dorado Oro */
-            --text-muted: #d6d3d1; /* Piedra */
-            --border-color: #78350f; /* Bronce/Ámbar oscuro */
-            --accent: #7f1d1d; /* Rojo Sangre Carmesí */
-            --accent-text: #fef3c7; /* Letra clara sobre rojo */
-            --dock-bg: rgba(26, 11, 11, 0.9);
-            --font-head: 'Cinzel', serif;
-            --shadow: 0 8px 15px -3px rgba(180, 83, 9, 0.2);
-        }
+    /* Top bar */
+    .topbar{
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(11,18,32,.75);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(148,163,184,.12);
+      padding: 14px 14px;
+      margin: -18px -14px 14px -14px;
+    }
+    .topbar-row{
+      display:flex; gap:12px; align-items:center; justify-content:space-between;
+    }
+    .brand{
+      display:flex; gap:10px; align-items:center;
+      font-weight:900; letter-spacing:.4px;
+    }
+    .badge{
+      font-size:12px;
+      padding:6px 10px;
+      border:1px solid rgba(148,163,184,.25);
+      border-radius:999px;
+      color:var(--muted);
+      background: rgba(15,23,42,.5);
+    }
 
-        /* Aplicación de Variables */
-        body { background-color: var(--bg-app); color: var(--text-main); font-family: -apple-system, sans-serif; transition: background-color 0.4s, color 0.4s; overflow: hidden; -webkit-tap-highlight-color: transparent;}
-        h1, h2, h3, .font-epic { font-family: var(--font-head); transition: font-family 0.4s; }
-        .card-bg { background-color: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow); transition: all 0.4s; }
-        .input-bg { background-color: var(--bg-app); color: var(--text-main); border: 1px solid var(--border-color); transition: all 0.4s; }
-        .input-bg:focus { border-color: var(--accent); outline: none; }
-        .text-muted { color: var(--text-muted); }
-        .btn-accent { background-color: var(--accent); color: var(--accent-text); border: 2px solid var(--border-color); box-shadow: var(--shadow); transition: all 0.2s; }
-        .btn-accent:active { transform: scale(0.95); opacity: 0.9; }
-        .dock-blur { background: var(--dock-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--border-color); }
+    /* Cards */
+    .card{
+      background: linear-gradient(180deg, rgba(15,23,42,.92) 0%, rgba(11,22,42,.92) 100%);
+      border: 1px solid rgba(148,163,184,.14);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card-h{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 14px;
+      border-bottom:1px solid rgba(148,163,184,.14);
+      background: rgba(15,23,42,.55);
+    }
+    .card-h h2{
+      margin:0;
+      font-size: 14px;
+      letter-spacing:.35px;
+      text-transform: uppercase;
+      color: #cbd5e1;
+    }
+    .card-b{padding:14px}
+    .row{display:flex; gap:10px; flex-wrap:wrap}
+    .col{flex:1 1 260px}
+    .muted{color:var(--muted)}
+    .small{font-size:12px}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
 
-        /* iPhone Safe Areas */
-        .pt-safe { padding-top: env(safe-area-inset-top, 47px); }
-        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 34px); }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .snap-x-mandatory { scroll-snap-type: x mandatory; }
-        .snap-center { scroll-snap-align: center; }
-        .preview-wrapper iframe { width: 100%; height: 50vh; border: none; border-radius: 12px; background: #fff; }
-    </style>
+    /* Inputs */
+    .input, select, textarea{
+      width:100%;
+      padding: 14px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(148,163,184,.18);
+      background: rgba(2,6,23,.35);
+      color: var(--txt);
+      outline: none;
+      font-size: 14px;
+    }
+    textarea{min-height:88px; resize:vertical}
+    .input:focus, select:focus, textarea:focus{
+      border-color: rgba(59,130,246,.7);
+      box-shadow: 0 0 0 4px rgba(59,130,246,.15);
+    }
+    .label{
+      font-size: 12px;
+      color: var(--muted);
+      margin: 10px 0 6px 2px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    /* Buttons */
+    .btn{
+      border: 1px solid rgba(148,163,184,.18);
+      background: rgba(15,23,42,.55);
+      color: var(--txt);
+      border-radius: 14px;
+      padding: 12px 12px;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      transition: .15s ease;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      user-select:none;
+    }
+    .btn:hover{transform: translateY(-1px); border-color: rgba(59,130,246,.45)}
+    .btn:active{transform: translateY(0px)}
+    .btn.primary{background: linear-gradient(180deg, rgba(59,130,246,.95), rgba(37,99,235,.95)); border-color: rgba(59,130,246,.65)}
+    .btn.ok{background: linear-gradient(180deg, rgba(16,185,129,.95), rgba(5,150,105,.95)); border-color: rgba(16,185,129,.65)}
+    .btn.bad{background: linear-gradient(180deg, rgba(239,68,68,.95), rgba(220,38,38,.95)); border-color: rgba(239,68,68,.65)}
+    .btn.ghost{background: transparent}
+    .btn:disabled{opacity:.5; cursor:not-allowed; transform:none}
+    .btn.w100{width:100%}
+
+    /* Chips / tabs */
+    .chips{display:flex; gap:8px; flex-wrap:wrap}
+    .chip{
+      border: 1px solid rgba(148,163,184,.18);
+      background: rgba(2,6,23,.25);
+      padding: 10px 12px;
+      border-radius: 999px;
+      font-weight: 900;
+      font-size: 12px;
+      cursor:pointer;
+      user-select:none;
+      color:#cbd5e1;
+    }
+    .chip.active{
+      background: rgba(59,130,246,.22);
+      border-color: rgba(59,130,246,.65);
+      color: #e0f2fe;
+    }
+
+    /* Inbox list */
+    .list{display:flex; flex-direction:column; gap:10px}
+    .item{
+      border: 1px solid rgba(148,163,184,.14);
+      background: rgba(2,6,23,.20);
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .item-top{display:flex; align-items:flex-start; justify-content:space-between; gap:10px}
+    .item-title{font-weight:900}
+    .item-sub{color:var(--muted); font-size:12px; margin-top:4px}
+    .pill{
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border: 1px solid rgba(148,163,184,.18);
+      color:#cbd5e1;
+      background: rgba(15,23,42,.45);
+      white-space:nowrap;
+    }
+    .pill.ok{border-color: rgba(16,185,129,.55); background: rgba(16,185,129,.12); color:#a7f3d0}
+    .pill.warn{border-color: rgba(245,158,11,.55); background: rgba(245,158,11,.12); color:#fde68a}
+    .pill.bad{border-color: rgba(239,68,68,.55); background: rgba(239,68,68,.12); color:#fecaca}
+    .hr{height:1px; background: rgba(148,163,184,.14); margin: 10px 0}
+
+    /* Audit */
+    .audit{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .audit-row{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      padding:10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(148,163,184,.12);
+      background: rgba(2,6,23,.18);
+      font-size: 13px;
+    }
+    .audit-row strong{font-weight:900}
+    .audit-tag{
+      font-size:12px;
+      font-weight:900;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,.18);
+      color:#cbd5e1;
+    }
+    .audit-tag.ok{border-color: rgba(16,185,129,.65); background: rgba(16,185,129,.14); color:#a7f3d0}
+    .audit-tag.warn{border-color: rgba(245,158,11,.65); background: rgba(245,158,11,.14); color:#fde68a}
+    .audit-tag.bad{border-color: rgba(239,68,68,.65); background: rgba(239,68,68,.14); color:#fecaca}
+
+    /* Items editor */
+    .items{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .it{
+      border: 1px solid rgba(148,163,184,.14);
+      background: rgba(2,6,23,.18);
+      border-radius: 14px;
+      padding: 10px;
+    }
+    .it-grid{
+      display:grid;
+      grid-template-columns: 1fr 86px 110px;
+      gap:8px;
+    }
+    .it-grid .input{padding:12px 10px; border-radius:12px}
+    .it-actions{
+      display:flex; gap:8px; margin-top:10px;
+    }
+
+    /* Preview */
+    .preview{
+      border: 1px solid rgba(148,163,184,.14);
+      border-radius: 16px;
+      overflow:hidden;
+      background: rgba(2,6,23,.18);
+    }
+    .iframe{
+      width:100%;
+      height: 900px;
+      border:0;
+      background: transparent;
+    }
+    @media (max-width: 520px){
+      .iframe{height: 820px;}
+      .it-grid{grid-template-columns: 1fr 78px 106px}
+    }
+
+    /* Bottom nav */
+    .nav{
+      position: fixed;
+      left:0; right:0; bottom:0;
+      z-index: 50;
+      background: rgba(11,18,32,.9);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(148,163,184,.14);
+      padding: 10px 10px calc(10px + env(safe-area-inset-bottom)) 10px;
+      display:flex;
+      justify-content:center;
+    }
+    .nav-inner{
+      max-width:980px;
+      width:100%;
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap:8px;
+    }
+    .navbtn{
+      border: 1px solid rgba(148,163,184,.14);
+      background: rgba(15,23,42,.55);
+      color:#cbd5e1;
+      border-radius: 14px;
+      padding: 10px 8px;
+      text-align:center;
+      font-weight: 900;
+      font-size: 12px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .navbtn.active{
+      border-color: rgba(59,130,246,.65);
+      background: rgba(59,130,246,.18);
+      color:#e0f2fe;
+    }
+
+    /* Toast */
+    .toast{
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 90px;
+      z-index: 80;
+      min-width: 260px;
+      max-width: 92vw;
+      background: rgba(2,6,23,.88);
+      border: 1px solid rgba(148,163,184,.16);
+      border-radius: 14px;
+      padding: 12px 14px;
+      box-shadow: 0 16px 30px rgba(0,0,0,.35);
+      display:none;
+    }
+    .toast.show{display:block}
+    .toast .t{font-weight:900}
+    .toast .d{color:var(--muted); font-size:12px; margin-top:3px; white-space: pre-line}
+
+    /* Modal */
+    .modal{
+      position: fixed;
+      inset:0;
+      z-index: 90;
+      display:none;
+      background: rgba(0,0,0,.55);
+      padding: 18px;
+    }
+    .modal.show{display:flex; align-items:flex-end; justify-content:center;}
+    .modal-card{
+      max-width: 980px;
+      width: 100%;
+      border-radius: 18px;
+      background: rgba(15,23,42,.95);
+      border: 1px solid rgba(148,163,184,.16);
+      box-shadow: 0 24px 48px rgba(0,0,0,.55);
+      overflow:hidden;
+    }
+    .modal-h{
+      padding: 14px 14px;
+      border-bottom: 1px solid rgba(148,163,184,.14);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+    }
+    .modal-b{padding: 14px}
+    .modal-h strong{font-weight:900}
+  </style>
 </head>
-<body class="flex flex-col h-screen pb-safe">
 
-    <header class="pt-safe card-bg px-5 pb-3 z-20 shrink-0 flex justify-between items-end border-b-0 rounded-b-3xl">
+<body>
+  <div class="topbar">
+    <div class="topbar-row">
+      <div class="brand">
+        <div style="width:38px;height:38px;border-radius:14px;background:rgba(59,130,246,.18);border:1px solid rgba(59,130,246,.35);display:flex;align-items:center;justify-content:center;font-weight:900;">ML</div>
         <div>
-            <h1 class="text-2xl font-black tracking-tight" id="mainTitle">Mercado Limpio</h1>
-            <p class="text-[10px] text-muted font-bold uppercase tracking-widest mt-1">Facturación Express</p>
+          <div style="font-size:14px;font-weight:900;letter-spacing:.35px;">Mercado Limpio</div>
+          <div class="muted small">Facturación móvil • Inbox + Auditor + Emisión</div>
         </div>
-        <div class="bg-emerald-500/20 text-emerald-500 border border-emerald-500/50 text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-wide animate-pulse">Online</div>
-    </header>
+      </div>
+      <div class="badge" id="badgeApi">API: —</div>
+    </div>
+  </div>
 
-    <main class="flex-1 overflow-y-auto no-scrollbar pb-32 pt-4 px-4 space-y-4">
-        
-        <section id="tab-fast" class="space-y-4">
-            
-            <div class="card-bg rounded-3xl p-5">
-                <h2 class="text-xs font-black text-muted uppercase tracking-widest mb-4">Datos Principales</h2>
-                
-                <div class="grid grid-cols-2 gap-3 mb-4">
-                    <div>
-                        <label class="block text-[10px] font-bold text-muted uppercase ml-1 mb-1">CUIT Cliente</label>
-                        <input type="tel" id="fastCuit" inputmode="numeric" class="w-full input-bg rounded-xl p-3 text-lg font-bold text-center" placeholder="Sin guiones">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-muted uppercase ml-1 mb-1">Total (Con IVA)</label>
-                        <div class="relative">
-                            <span class="absolute left-3 top-3.5 font-black text-muted">$</span>
-                            <input type="tel" id="fastMonto" inputmode="decimal" class="w-full input-bg rounded-xl p-3 pl-7 text-lg font-black text-right" placeholder="0.00">
-                        </div>
-                    </div>
+  <div class="app">
+    <!-- PAGE: INBOX -->
+    <section id="pageInbox" class="page">
+      <div class="card">
+        <div class="card-h">
+          <h2>Inbox de Remitos (PDF)</h2>
+          <div class="row" style="gap:8px">
+            <button class="btn ghost" id="btnSyncInbox" title="Recalcular grupos">↻</button>
+            <button class="btn bad" id="btnClearInbox" title="Borrar todo el inbox">🧨 Vaciar</button>
+          </div>
+        </div>
+        <div class="card-b">
+          <div class="row">
+            <div class="col">
+              <div class="item">
+                <div class="item-top">
+                  <div>
+                    <div class="item-title">Agregar PDFs</div>
+                    <div class="item-sub">Se guardan en el teléfono (IndexedDB). Luego se agrupan por CUIT.</div>
+                  </div>
+                  <span class="pill" id="pillInboxCount">0 PDFs</span>
+                </div>
+                <div class="hr"></div>
+                <div class="row">
+                  <button class="btn primary" id="btnAddPdfs">➕ Cargar PDFs</button>
+                  <button class="btn" id="btnParseAll">⚡ Parsear pendientes</button>
+                  <input id="fileInput" type="file" accept="application/pdf" multiple hidden />
+                </div>
+                <div class="small muted" style="margin-top:10px">
+                  Tip: podés seleccionar varios PDFs. Si son de diferentes CUIT, quedarán en distintos grupos.
+                </div>
+              </div>
+            </div>
+            <div class="col">
+              <div class="item">
+                <div class="item-top">
+                  <div>
+                    <div class="item-title">Modo Lote</div>
+                    <div class="item-sub">Seleccioná un grupo (CUIT) → elegí remitos → “Preparar factura”.</div>
+                  </div>
+                  <span class="pill ok">Anti-pifiada</span>
+                </div>
+                <div class="hr"></div>
+                <div class="audit" id="inboxHint">
+                  <div class="audit-row">
+                    <div><strong>1)</strong> Cargá PDFs</div>
+                    <span class="audit-tag ok">OK</span>
+                  </div>
+                  <div class="audit-row">
+                    <div><strong>2)</strong> Parseá para detectar CUIT/total</div>
+                    <span class="audit-tag warn">Recomendado</span>
+                  </div>
+                  <div class="audit-row">
+                    <div><strong>3)</strong> Armá factura desde un CUIT</div>
+                    <span class="audit-tag ok">OK</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="height:12px"></div>
+
+          <div class="card" style="box-shadow:none">
+            <div class="card-h">
+              <h2>Grupos por CUIT</h2>
+              <span class="pill" id="pillGroups">0 grupos</span>
+            </div>
+            <div class="card-b">
+              <div id="groupsList" class="list"></div>
+              <div id="emptyGroups" class="muted small" style="display:none; padding:10px 2px;">
+                No hay PDFs todavía. Tocá “Cargar PDFs”.
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE: FACTURAR -->
+    <section id="pageFactura" class="page" style="display:none">
+      <div class="card">
+        <div class="card-h">
+          <h2>Preparar y Emitir</h2>
+          <div class="row" style="gap:8px">
+            <button class="btn" id="btnBackToInbox">← Inbox</button>
+            <button class="btn ghost" id="btnResetDraft" title="Reset borrador">↺</button>
+          </div>
+        </div>
+        <div class="card-b">
+          <div class="row">
+            <div class="col">
+              <div class="item">
+                <div class="item-top">
+                  <div>
+                    <div class="item-title">Datos del cliente</div>
+                    <div class="item-sub">Se completa desde PDF o manual.</div>
+                  </div>
+                  <span class="pill" id="pillDraftMode">Borrador</span>
                 </div>
 
-                <div class="mb-4">
-                    <label class="block text-[10px] font-bold text-muted uppercase ml-1 mb-1">Método de Pago</label>
-                    <select id="fastCondicion" class="w-full input-bg rounded-xl p-3 text-sm font-bold appearance-none">
-                        <option value="Cuenta Corriente">Cuenta Corriente</option>
-                        <option value="Otros: Para formas de pago no especificadas">Otros: No especificado</option>
-                        <option value="Otros medios de pago electrónicos">Otros medios electrónicos</option>
-                        <option value="Transferencia Bancaria">Transferencia Bancaria</option>
-                        <option value="Efectivo">Efectivo</option>
+                <div class="label"><span>CUIT</span><span class="muted small" id="lblClientName"></span></div>
+                <input class="input mono" id="inpCuit" placeholder="CUIT (11 números)" inputmode="numeric" />
+
+                <div class="row">
+                  <div class="col">
+                    <div class="label"><span>Condición de venta</span></div>
+                    <select id="selCondicion">
+                      <option value="Transferencia Bancaria">Transferencia Bancaria</option>
+                      <option value="Efectivo">Efectivo</option>
+                      <option value="Cheque">Cheque</option>
                     </select>
+                  </div>
+                  <div class="col">
+                    <div class="label"><span>Email (opcional)</span><span class="muted small">si vacío, usa default</span></div>
+                    <input class="input" id="inpEmail" placeholder="cliente@..." inputmode="email" />
+                  </div>
                 </div>
 
-                <div>
-                    <label class="block text-[10px] font-bold text-muted uppercase ml-1 mb-1">Descripción del Artículo</label>
-                    <input type="text" id="fastDesc" class="w-full input-bg rounded-xl p-3 text-sm font-bold mb-2" placeholder="Escriba el detalle...">
-                    
-                    <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2">
-                        <button onclick="setDesc('ARTICULOS VARIOS MARCA MAKE DE LIMPIEZA Y BAZAR')" class="shrink-0 bg-transparent border border-current text-current opacity-70 hover:opacity-100 rounded-lg px-3 py-1.5 text-xs font-bold whitespace-nowrap active:scale-95 transition">
-                            📦 Marca MAKE
-                        </button>
-                        <button onclick="pedirMarcaManual()" class="shrink-0 bg-transparent border border-current text-current opacity-70 hover:opacity-100 rounded-lg px-3 py-1.5 text-xs font-bold whitespace-nowrap active:scale-95 transition">
-                            ✏️ Otra Marca...
-                        </button>
-                    </div>
+                <div class="label"><span>Domicilio (Remito/AFIP)</span></div>
+                <textarea id="inpDom" placeholder="Se llena desde PDF..."></textarea>
+
+                <div class="row" style="margin-top:10px">
+                  <button class="btn primary" id="btnPreviewAll">👁️ Vista completa</button>
+                  <button class="btn" id="btnPreviewPart1">Parte 1</button>
+                  <button class="btn" id="btnCopyWA">📋 Copiar WhatsApp</button>
                 </div>
-            </div>
+              </div>
 
-            <div class="card-bg rounded-3xl p-4">
-                <label class="block text-[10px] font-bold text-muted uppercase ml-1 mb-1">Email destino (Opcional)</label>
-                <input type="email" id="fastEmail" class="w-full input-bg rounded-xl p-3 text-sm font-semibold" placeholder="distribuidoramercadolimpio@gmail.com">
-            </div>
+              <div style="height:12px"></div>
 
-        </section>
-
-        <section id="tab-capture" class="hidden space-y-4">
-            <input type="file" id="inputPdf" accept="application/pdf" multiple class="hidden" />
-
-            <div class="card-bg rounded-3xl p-6 text-center">
-                <div class="text-4xl mb-4 opacity-80">📄</div>
-                <h3 class="font-epic text-lg font-bold mb-2">Procesar PDF</h3>
-                <p class="text-xs text-muted mb-6">Si te enviaron el remito por WhatsApp, guardalo en Archivos y seleccionalo acá para procesarlo con IA.</p>
-                <button onclick="document.getElementById('inputPdf').click()" class="btn-accent w-full py-4 rounded-xl font-black tracking-widest uppercase text-sm">
-                    Seleccionar Archivo
-                </button>
-            </div>
-            
-            <div id="loaderUI" class="hidden card-bg rounded-2xl p-5 flex items-center justify-center gap-4 border-2 border-[var(--accent)] animate-pulse">
-                <div class="font-epic font-bold text-sm">Analizando documento...</div>
-            </div>
-        </section>
-
-        <section id="tab-preview" class="hidden flex flex-col h-full space-y-3">
-            <div class="card-bg p-5 rounded-2xl shrink-0 border-2 border-[var(--accent)]">
-                <div class="flex justify-between items-center mb-1">
-                    <span class="text-[10px] font-black text-muted uppercase tracking-widest">A Facturar</span>
+              <div class="item">
+                <div class="item-top">
+                  <div>
+                    <div class="item-title">Auditor</div>
+                    <div class="item-sub">Checks automáticos antes de emitir.</div>
+                  </div>
+                  <span class="pill" id="pillAudit">—</span>
                 </div>
-                <div class="flex items-baseline gap-2">
-                    <span class="text-4xl font-epic font-black tracking-tighter" id="txtTotal">$0.00</span>
+                <div class="hr"></div>
+                <div id="auditBox" class="audit"></div>
+              </div>
+
+              <div style="height:12px"></div>
+
+              <div class="item">
+                <div class="item-top">
+                  <div>
+                    <div class="item-title">Modo comando (dictado)</div>
+                    <div class="item-sub">“agregar 12 lavandina 1500”, “descuento 7”, “condición transferencia”, “emitir”.</div>
+                  </div>
+                  <span class="pill warn">Opcional</span>
                 </div>
-            </div>
-            
-            <div class="w-full overflow-x-auto snap-x-mandatory no-scrollbar flex gap-3 pb-2 shrink-0" id="railPartes"></div>
-
-            <div class="pb-5 flex-1 preview-wrapper" id="previewContainer">
-                <iframe id="previewFrame" class="border-2 border-[var(--border-color)]"></iframe>
-            </div>
-        </section>
-
-        <section id="tab-settings" class="hidden space-y-4">
-            <div class="card-bg rounded-3xl p-6">
-                <h2 class="text-sm font-epic font-black uppercase tracking-widest mb-6 border-b border-[var(--border-color)] pb-2">Apariencia de la App</h2>
-                
-                <div class="space-y-3">
-                    <button onclick="setTheme('light')" class="w-full flex items-center justify-between p-4 rounded-xl border border-[var(--border-color)] active:scale-95 transition bg-gray-100 text-slate-800">
-                        <span class="font-bold">☀️ Modo Claro</span>
-                    </button>
-                    
-                    <button onclick="setTheme('dark')" class="w-full flex items-center justify-between p-4 rounded-xl border border-[var(--border-color)] active:scale-95 transition bg-slate-800 text-white">
-                        <span class="font-bold">🌙 Modo Oscuro</span>
-                    </button>
-                    
-                    <button onclick="setTheme('gladiator')" class="w-full flex items-center justify-between p-4 rounded-xl border border-[#78350f] active:scale-95 transition bg-[#1a0a0a] text-[#fcd34d]">
-                        <span class="font-epic font-black tracking-widest">⚔️ TEMA GLADIADOR</span>
-                    </button>
+                <div class="hr"></div>
+                <div class="row">
+                  <button class="btn" id="btnMic">🎙️ Dictar</button>
+                  <input class="input" id="inpCmd" placeholder="o escribí un comando…" />
+                  <button class="btn" id="btnRunCmd">▶</button>
                 </div>
+                <div class="small muted" style="margin-top:8px">
+                  Si el mic no aparece, es normal en algunos Android/Chrome. El modo texto funciona igual.
+                </div>
+              </div>
+
             </div>
-        </section>
 
-    </main>
+            <div class="col">
+              <div class="item">
+                <div class="item-top">
+                  <div>
+                    <div class="item-title">Ítems</div>
+                    <div class="item-sub">Podés editar manualmente. El split se calcula por cantidad (25 por parte).</div>
+                  </div>
+                  <span class="pill" id="pillItems">0 ítems</span>
+                </div>
+                <div class="hr"></div>
 
-    <div id="statusAlert" class="hidden fixed top-16 left-1/2 transform -translate-x-1/2 z-[100] rounded-full px-5 py-3 text-xs font-black shadow-2xl min-w-[80%] text-center transition-all duration-300"></div>
+                <div class="row">
+                  <button class="btn" id="btnAddItem">➕ Ítem</button>
+                  <button class="btn" id="btnApplyDraftTotals">🧮 Recalcular</button>
+                </div>
 
-    <nav class="dock-blur fixed bottom-0 w-full pb-safe pt-2 px-6 flex justify-between items-center z-50 rounded-t-3xl">
-        <button onclick="switchTab('fast')" id="nav-fast" class="flex flex-col items-center gap-1 w-12 text-[var(--accent)] transition-colors opacity-100">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-            <span class="text-[8px] font-black uppercase tracking-widest">Rápida</span>
-        </button>
-        
-        <button onclick="switchTab('capture')" id="nav-capture" class="flex flex-col items-center gap-1 w-12 text-muted transition-colors opacity-60">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            <span class="text-[8px] font-black uppercase tracking-widest">PDFs</span>
-        </button>
+                <div class="label">
+                  <span>Resumen</span>
+                  <span class="muted small" id="lblTotals"></span>
+                </div>
 
-        <div class="relative -top-6">
-            <button id="btnMainAction" onclick="procesarFastYVer()" class="btn-accent w-16 h-16 rounded-full flex flex-col items-center justify-center transform transition border-4 border-[var(--bg-app)]">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
-                <span class="text-[7px] font-black mt-1 uppercase tracking-widest" id="lblMainBtn">Generar</span>
-            </button>
+                <div class="row">
+                  <div class="col">
+                    <div class="label"><span>Subtotal Bruto (Remito)</span></div>
+                    <input class="input mono" id="inpSubBruto" placeholder="0,00" inputmode="decimal" />
+                  </div>
+                  <div class="col">
+                    <div class="label"><span>Descuento %</span></div>
+                    <input class="input mono" id="inpDescPct" placeholder="0" inputmode="decimal" />
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col">
+                    <div class="label"><span>Descuento $</span></div>
+                    <input class="input mono" id="inpDescImp" placeholder="0,00" inputmode="decimal" />
+                  </div>
+                  <div class="col">
+                    <div class="label"><span>Total Final (post-desc)</span></div>
+                    <input class="input mono" id="inpTotalFinal" placeholder="0,00" inputmode="decimal" />
+                  </div>
+                </div>
+
+                <div style="height:10px"></div>
+                <div id="itemsBox" class="items"></div>
+
+                <div style="height:12px"></div>
+
+                <button class="btn ok w100" id="btnEmitir">✅ EMITIR FACTURA</button>
+                <div class="small muted" style="margin-top:8px">
+                  Si hay split, el backend emite N facturas y manda 1 email con N PDFs (si tenés Gmail configurado).
+                </div>
+              </div>
+
+              <div style="height:12px"></div>
+
+              <div class="item">
+                <div class="item-top">
+                  <div>
+                    <div class="item-title">Vista previa</div>
+                    <div class="item-sub">Parte por parte o “Vista completa”.</div>
+                  </div>
+                  <span class="pill" id="pillPreview">—</span>
+                </div>
+                <div class="hr"></div>
+
+                <div class="chips" id="partsChips"></div>
+
+                <div style="height:10px"></div>
+                <div class="preview">
+                  <iframe id="previewFrame" class="iframe" title="Vista previa"></iframe>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE: HISTORIAL -->
+    <section id="pageHist" class="page" style="display:none">
+      <div class="card">
+        <div class="card-h">
+          <h2>Historial</h2>
+          <div class="row" style="gap:8px">
+            <button class="btn bad" id="btnClearHist">🧨 Borrar</button>
+          </div>
+        </div>
+        <div class="card-b">
+          <div id="histList" class="list"></div>
+          <div id="emptyHist" class="muted small" style="display:none; padding:10px 2px;">
+            Sin historial todavía.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE: AJUSTES -->
+    <section id="pageSet" class="page" style="display:none">
+      <div class="card">
+        <div class="card-h">
+          <h2>Ajustes</h2>
+          <span class="pill">Render + GitHub Pages</span>
+        </div>
+        <div class="card-b">
+          <div class="item">
+            <div class="item-top">
+              <div>
+                <div class="item-title">API Base URL</div>
+                <div class="item-sub">Por defecto: tu Render.</div>
+              </div>
+              <span class="pill" id="pillApiOk">—</span>
+            </div>
+            <div class="hr"></div>
+
+            <div class="label">
+              <span>Base URL</span>
+              <span class="muted small">Ej: https://api-mercadolimpio.onrender.com</span>
+            </div>
+            <input class="input" id="inpApiBase" />
+
+            <div class="row" style="margin-top:10px">
+              <button class="btn primary" id="btnSaveApi">Guardar</button>
+              <button class="btn" id="btnPing">Probar /health</button>
+            </div>
+
+            <div class="small muted" style="margin-top:10px">
+              Recomendación: mantené HTTPS siempre (GitHub Pages ya lo es).
+            </div>
+          </div>
+
+          <div style="height:12px"></div>
+
+          <div class="item">
+            <div class="item-top">
+              <div>
+                <div class="item-title">Tips de uso</div>
+                <div class="item-sub">Operación real rápida.</div>
+              </div>
+              <span class="pill ok">Pro</span>
+            </div>
+            <div class="hr"></div>
+            <ul class="small muted" style="margin:0; padding-left:16px; line-height:1.6">
+              <li>Para descuentos globales correctos con múltiples remitos: siempre “Preparar factura” desde un CUIT.</li>
+              <li>Vista completa usa <span class="mono">previewParte:"ALL"</span>.</li>
+              <li>WhatsApp se abre con <span class="mono">waLink</span> que devuelve tu backend.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <div class="navbtn active" data-nav="inbox">📥 Inbox</div>
+      <div class="navbtn" data-nav="factura">🧾 Facturar</div>
+      <div class="navbtn" data-nav="hist">🕘 Historial</div>
+      <div class="navbtn" data-nav="set">⚙️ Ajustes</div>
+    </div>
+  </nav>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <div class="t" id="toastT">—</div>
+    <div class="d" id="toastD">—</div>
+  </div>
+
+  <!-- Modal: Group -->
+  <div class="modal" id="modal">
+    <div class="modal-card">
+      <div class="modal-h">
+        <strong id="modalTitle">Grupo</strong>
+        <button class="btn" id="btnCloseModal">Cerrar</button>
+      </div>
+      <div class="modal-b">
+        <div class="small muted" id="modalSub">Seleccioná remitos del mismo CUIT y prepará factura.</div>
+        <div style="height:10px"></div>
+
+        <div class="row">
+          <button class="btn primary" id="btnPrepareFromGroup">🧠 Preparar factura</button>
+          <button class="btn bad" id="btnDeleteSelected">🗑️ Borrar seleccionados</button>
         </div>
 
-        <button onclick="switchTab('preview')" id="nav-preview" class="flex flex-col items-center gap-1 w-12 text-muted transition-colors opacity-60">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-            <span class="text-[8px] font-black uppercase tracking-widest">Preview</span>
-        </button>
+        <div style="height:12px"></div>
 
-        <button onclick="switchTab('settings')" id="nav-settings" class="flex flex-col items-center gap-1 w-12 text-muted transition-colors opacity-60">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-            <span class="text-[8px] font-black uppercase tracking-widest">Tema</span>
-        </button>
-    </nav>
+        <div id="modalList" class="list"></div>
+        <div id="modalEmpty" class="muted small" style="display:none">Este grupo no tiene PDFs.</div>
+      </div>
+    </div>
+  </div>
 
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
-      }
-    </script>
-    <script src="app.js" defer></script>
+  <script src="./app.js"></script>
 </body>
 </html>
