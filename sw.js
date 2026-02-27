@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mercadolimpio-v4';
+const CACHE_NAME = 'mercadolimpio-v5';
 const urlsToCache = [
   './',
   './index.html',
@@ -20,5 +20,6 @@ self.addEventListener('fetch', event => {
   );
 
 });
+
 
 
