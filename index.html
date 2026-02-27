@@ -1,732 +1,340 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#0f172a" />
-  <title>Mercado Limpio — Facturación Móvil</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Mercado Limpio PRO</title>
 
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.png">
+
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    :root{
-      --bg:#0b1220;
-      --panel:#0f172a;
-      --card:#0b162a;
-      --card2:#0f1f3a;
-      --txt:#e5e7eb;
-      --muted:#94a3b8;
-      --line:#1f2a44;
-      --accent:#3b82f6;
-      --ok:#10b981;
-      --warn:#f59e0b;
-      --bad:#ef4444;
-      --white:#ffffff;
-      --shadow: 0 16px 30px rgba(0,0,0,.35);
-      --radius:16px;
-    }
+    body { background-color: #f2f2f7; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; overflow: hidden; }
+    .pt-safe { padding-top: env(safe-area-inset-top, 47px); }
+    .pb-safe { padding-bottom: env(safe-area-inset-bottom, 34px); }
+    .glass-dock { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 0.5px solid rgba(0,0,0,0.1); }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .snap-x-mandatory { scroll-snap-type: x mandatory; }
+    .snap-center { scroll-snap-align: center; }
+    .preview-wrapper iframe { width: 100%; height: 50vh; border: none; border-radius: 12px; background: #fff; }
 
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: radial-gradient(1200px 900px at 20% 0%, #14244a 0%, #0b1220 55%, #070c16 100%);
-      color:var(--txt);
-      -webkit-font-smoothing:antialiased;
-      padding-bottom: 78px; /* bottom nav */
-    }
-
-    a{color:inherit}
-    .app{
-      max-width: 980px;
-      margin: 0 auto;
-      padding: 18px 14px 0 14px;
-    }
-
-    /* Top bar */
-    .topbar{
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      background: rgba(11,18,32,.75);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid rgba(148,163,184,.12);
-      padding: 14px 14px;
-      margin: -18px -14px 14px -14px;
-    }
-    .topbar-row{
-      display:flex; gap:12px; align-items:center; justify-content:space-between;
-    }
-    .brand{
-      display:flex; gap:10px; align-items:center;
-      font-weight:900; letter-spacing:.4px;
-    }
-    .badge{
-      font-size:12px;
-      padding:6px 10px;
-      border:1px solid rgba(148,163,184,.25);
-      border-radius:999px;
-      color:var(--muted);
-      background: rgba(15,23,42,.5);
-    }
-
-    /* Cards */
-    .card{
-      background: linear-gradient(180deg, rgba(15,23,42,.92) 0%, rgba(11,22,42,.92) 100%);
-      border: 1px solid rgba(148,163,184,.14);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-    }
-    .card-h{
-      display:flex; align-items:center; justify-content:space-between;
-      padding:14px 14px;
-      border-bottom:1px solid rgba(148,163,184,.14);
-      background: rgba(15,23,42,.55);
-    }
-    .card-h h2{
-      margin:0;
-      font-size: 14px;
-      letter-spacing:.35px;
-      text-transform: uppercase;
-      color: #cbd5e1;
-    }
-    .card-b{padding:14px}
-    .row{display:flex; gap:10px; flex-wrap:wrap}
-    .col{flex:1 1 260px}
-    .muted{color:var(--muted)}
-    .small{font-size:12px}
-    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
-
-    /* Inputs */
-    .input, select, textarea{
-      width:100%;
-      padding: 14px 12px;
-      border-radius: 14px;
-      border: 1px solid rgba(148,163,184,.18);
-      background: rgba(2,6,23,.35);
-      color: var(--txt);
-      outline: none;
-      font-size: 14px;
-    }
-    textarea{min-height:88px; resize:vertical}
-    .input:focus, select:focus, textarea:focus{
-      border-color: rgba(59,130,246,.7);
-      box-shadow: 0 0 0 4px rgba(59,130,246,.15);
-    }
-    .label{
-      font-size: 12px;
-      color: var(--muted);
-      margin: 10px 0 6px 2px;
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-    }
-
-    /* Buttons */
-    .btn{
-      border: 1px solid rgba(148,163,184,.18);
-      background: rgba(15,23,42,.55);
-      color: var(--txt);
-      border-radius: 14px;
-      padding: 12px 12px;
-      font-weight: 800;
-      font-size: 13px;
-      cursor: pointer;
-      transition: .15s ease;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      user-select:none;
-    }
-    .btn:hover{transform: translateY(-1px); border-color: rgba(59,130,246,.45)}
-    .btn:active{transform: translateY(0px)}
-    .btn.primary{background: linear-gradient(180deg, rgba(59,130,246,.95), rgba(37,99,235,.95)); border-color: rgba(59,130,246,.65)}
-    .btn.ok{background: linear-gradient(180deg, rgba(16,185,129,.95), rgba(5,150,105,.95)); border-color: rgba(16,185,129,.65)}
-    .btn.bad{background: linear-gradient(180deg, rgba(239,68,68,.95), rgba(220,38,38,.95)); border-color: rgba(239,68,68,.65)}
-    .btn.ghost{background: transparent}
-    .btn:disabled{opacity:.5; cursor:not-allowed; transform:none}
-    .btn.w100{width:100%}
-
-    /* Chips / tabs */
-    .chips{display:flex; gap:8px; flex-wrap:wrap}
-    .chip{
-      border: 1px solid rgba(148,163,184,.18);
-      background: rgba(2,6,23,.25);
-      padding: 10px 12px;
-      border-radius: 999px;
-      font-weight: 900;
-      font-size: 12px;
-      cursor:pointer;
-      user-select:none;
-      color:#cbd5e1;
-    }
-    .chip.active{
-      background: rgba(59,130,246,.22);
-      border-color: rgba(59,130,246,.65);
-      color: #e0f2fe;
-    }
-
-    /* Inbox list */
-    .list{display:flex; flex-direction:column; gap:10px}
-    .item{
-      border: 1px solid rgba(148,163,184,.14);
-      background: rgba(2,6,23,.20);
-      border-radius: 14px;
-      padding: 12px;
-    }
-    .item-top{display:flex; align-items:flex-start; justify-content:space-between; gap:10px}
-    .item-title{font-weight:900}
-    .item-sub{color:var(--muted); font-size:12px; margin-top:4px}
-    .pill{
-      font-size:12px;
-      padding:6px 10px;
-      border-radius:999px;
-      border: 1px solid rgba(148,163,184,.18);
-      color:#cbd5e1;
-      background: rgba(15,23,42,.45);
-      white-space:nowrap;
-    }
-    .pill.ok{border-color: rgba(16,185,129,.55); background: rgba(16,185,129,.12); color:#a7f3d0}
-    .pill.warn{border-color: rgba(245,158,11,.55); background: rgba(245,158,11,.12); color:#fde68a}
-    .pill.bad{border-color: rgba(239,68,68,.55); background: rgba(239,68,68,.12); color:#fecaca}
-    .hr{height:1px; background: rgba(148,163,184,.14); margin: 10px 0}
-
-    /* Audit */
-    .audit{
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-    }
-    .audit-row{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-      padding:10px 12px;
-      border-radius: 14px;
-      border: 1px solid rgba(148,163,184,.12);
-      background: rgba(2,6,23,.18);
-      font-size: 13px;
-    }
-    .audit-row strong{font-weight:900}
-    .audit-tag{
-      font-size:12px;
-      font-weight:900;
-      padding:6px 10px;
-      border-radius:999px;
-      border:1px solid rgba(148,163,184,.18);
-      color:#cbd5e1;
-    }
-    .audit-tag.ok{border-color: rgba(16,185,129,.65); background: rgba(16,185,129,.14); color:#a7f3d0}
-    .audit-tag.warn{border-color: rgba(245,158,11,.65); background: rgba(245,158,11,.14); color:#fde68a}
-    .audit-tag.bad{border-color: rgba(239,68,68,.65); background: rgba(239,68,68,.14); color:#fecaca}
-
-    /* Items editor */
-    .items{
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-    }
-    .it{
-      border: 1px solid rgba(148,163,184,.14);
-      background: rgba(2,6,23,.18);
-      border-radius: 14px;
-      padding: 10px;
-    }
-    .it-grid{
-      display:grid;
-      grid-template-columns: 1fr 86px 110px;
-      gap:8px;
-    }
-    .it-grid .input{padding:12px 10px; border-radius:12px}
-    .it-actions{
-      display:flex; gap:8px; margin-top:10px;
-    }
-
-    /* Preview */
-    .preview{
-      border: 1px solid rgba(148,163,184,.14);
-      border-radius: 16px;
-      overflow:hidden;
-      background: rgba(2,6,23,.18);
-    }
-    .iframe{
-      width:100%;
-      height: 900px;
-      border:0;
-      background: transparent;
-    }
-    @media (max-width: 520px){
-      .iframe{height: 820px;}
-      .it-grid{grid-template-columns: 1fr 78px 106px}
-    }
-
-    /* Bottom nav */
-    .nav{
-      position: fixed;
-      left:0; right:0; bottom:0;
-      z-index: 50;
-      background: rgba(11,18,32,.9);
-      backdrop-filter: blur(12px);
-      border-top: 1px solid rgba(148,163,184,.14);
-      padding: 10px 10px calc(10px + env(safe-area-inset-bottom)) 10px;
-      display:flex;
-      justify-content:center;
-    }
-    .nav-inner{
-      max-width:980px;
-      width:100%;
-      display:grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap:8px;
-    }
-    .navbtn{
-      border: 1px solid rgba(148,163,184,.14);
-      background: rgba(15,23,42,.55);
-      color:#cbd5e1;
-      border-radius: 14px;
-      padding: 10px 8px;
-      text-align:center;
-      font-weight: 900;
-      font-size: 12px;
-      cursor:pointer;
-      user-select:none;
-    }
-    .navbtn.active{
-      border-color: rgba(59,130,246,.65);
-      background: rgba(59,130,246,.18);
-      color:#e0f2fe;
-    }
-
-    /* Toast */
-    .toast{
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: 90px;
-      z-index: 80;
-      min-width: 260px;
-      max-width: 92vw;
-      background: rgba(2,6,23,.88);
-      border: 1px solid rgba(148,163,184,.16);
-      border-radius: 14px;
-      padding: 12px 14px;
-      box-shadow: 0 16px 30px rgba(0,0,0,.35);
-      display:none;
-    }
-    .toast.show{display:block}
-    .toast .t{font-weight:900}
-    .toast .d{color:var(--muted); font-size:12px; margin-top:3px; white-space: pre-line}
+    /* iOS feel */
+    .ios-card { border: 1px solid rgba(226,232,240,1); box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+    .btn { transition: transform .08s ease, opacity .2s ease; }
+    .btn:active { transform: scale(.98); }
+    .pill { border: 1px solid rgba(226,232,240,1); }
+    .rail-card-active { outline: none; }
 
     /* Modal */
-    .modal{
-      position: fixed;
-      inset:0;
-      z-index: 90;
-      display:none;
-      background: rgba(0,0,0,.55);
-      padding: 18px;
-    }
-    .modal.show{display:flex; align-items:flex-end; justify-content:center;}
-    .modal-card{
-      max-width: 980px;
-      width: 100%;
-      border-radius: 18px;
-      background: rgba(15,23,42,.95);
-      border: 1px solid rgba(148,163,184,.16);
-      box-shadow: 0 24px 48px rgba(0,0,0,.55);
-      overflow:hidden;
-    }
-    .modal-h{
-      padding: 14px 14px;
-      border-bottom: 1px solid rgba(148,163,184,.14);
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-    }
-    .modal-b{padding: 14px}
-    .modal-h strong{font-weight:900}
+    .modal-backdrop { background: rgba(2,6,23,.55); }
   </style>
 </head>
 
-<body>
-  <div class="topbar">
-    <div class="topbar-row">
-      <div class="brand">
-        <div style="width:38px;height:38px;border-radius:14px;background:rgba(59,130,246,.18);border:1px solid rgba(59,130,246,.35);display:flex;align-items:center;justify-content:center;font-weight:900;">ML</div>
+<body class="text-slate-900 flex flex-col h-screen overflow-hidden pb-safe">
+
+  <header class="pt-safe bg-white px-5 pb-3 shadow-sm z-20 shrink-0 flex justify-between items-end">
+    <div>
+      <h1 class="text-2xl font-black tracking-tight text-slate-900">Mercado Limpio</h1>
+      <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Facturación ARCA (Calle)</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <div id="statusBadge" class="bg-slate-100 text-slate-700 text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-wide">
+        Verificando…
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 overflow-y-auto no-scrollbar pb-32 pt-2">
+
+    <!-- CAPTURE -->
+    <section id="tab-capture" class="p-5 space-y-6">
+      <input type="file" id="inputPdf" accept="application/pdf" multiple class="hidden" />
+
+      <div class="bg-white rounded-2xl p-5 ios-card">
+        <h3 class="font-black text-slate-900 text-base mb-2">Opción 1 — Desde PDF (WhatsApp)</h3>
+        <p class="text-sm text-slate-600 mb-3">
+          Procesá 1 o varios remitos PDF. Extrae ítems con tu motor (IA + regex) y arma el borrador.
+        </p>
+        <ol class="list-decimal list-inside text-sm text-slate-600 space-y-2">
+          <li>Abrí el PDF en WhatsApp.</li>
+          <li>Tocá <span class="bg-slate-100 px-1.5 py-0.5 rounded font-bold text-slate-900">Compartir</span> → <span class="bg-slate-100 px-1.5 py-0.5 rounded font-bold text-slate-900">Guardar en Archivos</span>.</li>
+          <li>Volvé acá y tocá <strong>Procesar PDF</strong>.</li>
+        </ol>
+
+        <div class="mt-4 grid grid-cols-2 gap-3">
+          <button id="btnPickPdf" class="btn bg-blue-600 text-white rounded-2xl py-3 font-black shadow-[0_10px_25px_rgba(59,130,246,0.22)]">
+            Procesar PDF
+          </button>
+          <button id="btnGoManual" class="btn bg-slate-950 text-white rounded-2xl py-3 font-black">
+            Factura Manual
+          </button>
+        </div>
+      </div>
+
+      <div id="loaderUI" class="hidden bg-slate-950 text-white rounded-2xl p-5 shadow-lg flex items-center gap-4">
+        <svg class="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
         <div>
-          <div style="font-size:14px;font-weight:900;letter-spacing:.35px;">Mercado Limpio</div>
-          <div class="muted small">Facturación móvil • Inbox + Auditor + Emisión</div>
+          <span class="block font-black">Procesando con IA…</span>
+          <span class="block text-xs opacity-80" id="loaderText">Extrayendo datos, totales y partes.</span>
         </div>
       </div>
-      <div class="badge" id="badgeApi">API: —</div>
+
+      <div id="statusAlert" class="hidden rounded-2xl p-4 text-sm font-black shadow-sm"></div>
+
+      <div class="bg-white rounded-2xl p-5 ios-card">
+        <h3 class="font-black text-slate-900 text-base mb-2">Opción 2 — Manual</h3>
+        <p class="text-sm text-slate-600">
+          Cargá CUIT + ítems manuales y emití igual. El backend consulta padrón y genera PDF + WhatsApp.
+        </p>
+        <button id="btnGoManual2" class="mt-3 btn w-full bg-slate-100 text-slate-900 rounded-2xl py-3 font-black">
+          Ir a Factura Manual
+        </button>
+      </div>
+    </section>
+
+    <!-- DATOS -->
+    <section id="tab-items" class="p-5 hidden space-y-5">
+      <div class="bg-white rounded-3xl p-5 ios-card">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-black text-slate-500 uppercase tracking-wide">Cliente</h3>
+          <span id="draftModePill" class="hidden pill text-[10px] font-black px-2 py-1 rounded-full bg-amber-50 text-amber-700">
+            Borrador guardado
+          </span>
+        </div>
+
+        <label class="block text-xs font-black text-slate-500 mt-3">CUIT (11 números)</label>
+        <input type="number" id="cuit" class="w-full bg-slate-50 border-none rounded-xl p-4 font-black text-lg text-slate-900 focus:ring-2 focus:ring-blue-500 mb-3" placeholder="20123456789">
+
+        <label class="block text-xs font-black text-slate-500">Domicilio (opcional)</label>
+        <input type="text" id="domicilioRemito" class="w-full bg-slate-50 border-none rounded-xl p-4 font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 mb-3" placeholder="Calle 123, Localidad">
+
+        <label class="block text-xs font-black text-slate-500">Condición de Venta</label>
+        <select id="condicionVenta" class="w-full bg-slate-50 border-none rounded-xl p-4 font-black text-slate-900 focus:ring-2 focus:ring-blue-500">
+          <option value="Transferencia Bancaria">Transferencia</option>
+          <option value="Efectivo">Efectivo</option>
+        </select>
+      </div>
+
+      <div class="bg-white rounded-3xl p-5 ios-card">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="text-sm font-black text-slate-500 uppercase tracking-wide">
+            Artículos (<span id="itemCount">0</span>)
+          </h3>
+          <button id="btnAddItem" class="btn bg-blue-600 text-white rounded-xl px-3 py-2 text-xs font-black">
+            + Agregar
+          </button>
+        </div>
+
+        <div id="itemsList" class="space-y-2 max-h-60 overflow-y-auto no-scrollbar">
+          <div class="text-sm text-slate-400 italic text-center py-4">Procesá un remito o cargá manual.</div>
+        </div>
+
+        <div class="mt-4 grid grid-cols-3 gap-2">
+          <button id="btnClearItems" class="btn bg-slate-100 text-slate-900 rounded-xl py-3 text-xs font-black">Limpiar</button>
+          <button id="btnRecalc" class="btn bg-slate-100 text-slate-900 rounded-xl py-3 text-xs font-black">Recalcular</button>
+          <button id="btnGoPreview" class="btn bg-slate-950 text-white rounded-xl py-3 text-xs font-black">Borrador</button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-3xl p-5 ios-card">
+        <h3 class="text-sm font-black text-slate-500 uppercase tracking-wide mb-3">Descuento (opcional)</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-black text-slate-500">%</label>
+            <input type="number" id="descuentoPct" class="w-full bg-slate-50 border-none rounded-xl p-4 font-black text-slate-900 focus:ring-2 focus:ring-blue-500" placeholder="0">
+          </div>
+          <div>
+            <label class="block text-xs font-black text-slate-500">$</label>
+            <input type="number" id="descuentoImporte" class="w-full bg-slate-50 border-none rounded-xl p-4 font-black text-slate-900 focus:ring-2 focus:ring-blue-500" placeholder="0">
+          </div>
+        </div>
+        <p class="text-xs text-slate-500 mt-2">
+          Si completás <strong>importe</strong>, gana sobre %. Si completás %, recalcula total.
+        </p>
+      </div>
+    </section>
+
+    <!-- MANUAL (atajo) -->
+    <section id="tab-manual" class="p-5 hidden space-y-5">
+      <div class="bg-white rounded-3xl p-5 ios-card">
+        <h3 class="text-base font-black text-slate-900">Factura Manual</h3>
+        <p class="text-sm text-slate-600 mt-1">
+          Cargá ítems acá. Podés pasar luego a “Datos” para editar cliente y descuento.
+        </p>
+
+        <div class="mt-4 grid grid-cols-2 gap-3">
+          <button id="btnManualAddItem" class="btn bg-blue-600 text-white rounded-2xl py-3 font-black">+ Agregar ítem</button>
+          <button id="btnManualGoData" class="btn bg-slate-950 text-white rounded-2xl py-3 font-black">Ir a Datos</button>
+        </div>
+
+        <div class="mt-4 bg-slate-50 rounded-2xl p-4">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-black text-slate-500 uppercase">Total estimado</span>
+            <span id="txtTotalManual" class="text-lg font-black text-slate-950">$0,00</span>
+          </div>
+          <div class="mt-2 flex gap-2">
+            <span id="pillSubtotalManual" class="hidden pill text-[10px] font-black px-2 py-1 rounded-full bg-white text-slate-600">Subtotal</span>
+            <span id="pillDescManual" class="hidden pill text-[10px] font-black px-2 py-1 rounded-full bg-white text-emerald-700">Desc</span>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <button id="btnManualGoPreview" class="btn w-full bg-slate-100 text-slate-900 rounded-2xl py-3 font-black">
+            Ver Borrador
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-3xl p-5 ios-card">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="text-sm font-black text-slate-500 uppercase tracking-wide">Ítems</h3>
+          <span class="pill text-[10px] font-black px-2 py-1 rounded-full bg-slate-50 text-slate-700">
+            <span id="itemCountManual">0</span> items
+          </span>
+        </div>
+        <div id="itemsListManual" class="space-y-2 max-h-72 overflow-y-auto no-scrollbar"></div>
+      </div>
+    </section>
+
+    <!-- PREVIEW -->
+    <section id="tab-preview" class="hidden flex flex-col h-full space-y-3">
+      <div class="bg-slate-950 text-white p-5 rounded-2xl mx-5 shadow-lg shrink-0">
+        <div class="flex justify-between items-center mb-1">
+          <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Resumen</span>
+          <span id="txtDescPct" class="bg-emerald-500/20 text-emerald-400 text-[10px] font-black px-2 py-0.5 rounded uppercase hidden">
+            Desc 0%
+          </span>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <span class="text-3xl font-black tracking-tighter" id="txtTotal">$0,00</span>
+          <span class="text-sm font-black text-slate-500 line-through hidden" id="txtSubtotal">$0,00</span>
+        </div>
+
+        <div class="mt-3 grid grid-cols-2 gap-3">
+          <button id="btnEmitir" class="btn bg-blue-600 text-white rounded-2xl py-3 font-black">
+            Emitir factura
+          </button>
+          <button id="btnResetDraft" class="btn bg-white/10 text-white rounded-2xl py-3 font-black">
+            Nuevo
+          </button>
+        </div>
+      </div>
+
+      <div class="w-full overflow-x-auto snap-x-mandatory no-scrollbar flex gap-3 px-5 shrink-0" id="railPartes"></div>
+
+      <div class="px-5 pb-5 flex-1 preview-wrapper" id="previewContainer">
+        <iframe id="previewFrame"></iframe>
+
+        <div id="resultBox" class="hidden mt-4 bg-white rounded-2xl p-4 ios-card">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-xs font-black text-slate-500 uppercase">Resultado</div>
+              <div id="resultTitle" class="text-sm font-black text-slate-900">Factura emitida</div>
+            </div>
+            <button id="btnShareWa" class="btn bg-emerald-600 text-white rounded-xl px-3 py-2 text-xs font-black">
+              WhatsApp
+            </button>
+          </div>
+
+          <div id="resultList" class="mt-3 space-y-2"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- NAV -->
+  <nav class="glass-dock fixed bottom-0 w-full pb-safe pt-2 px-6 flex justify-between items-center z-50">
+    <button data-tab="capture" id="nav-capture" class="flex flex-col items-center gap-1 w-14 text-blue-600 transition-colors">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+      </svg>
+      <span class="text-[9px] font-extrabold uppercase tracking-wide">Inicio</span>
+    </button>
+
+    <button data-tab="items" id="nav-items" class="flex flex-col items-center gap-1 w-14 text-slate-400 transition-colors">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+      </svg>
+      <span class="text-[9px] font-extrabold uppercase tracking-wide">Datos</span>
+    </button>
+
+    <div class="relative -top-5">
+      <button id="btnMainAction" class="btn bg-blue-600 text-white w-18 h-18 rounded-full shadow-[0_10px_25px_rgba(59,130,246,0.3)] flex flex-col items-center justify-center transform active:scale-90 transition border-4 border-white">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+        <span class="text-[8px] font-black mt-1 uppercase" id="btnMainLabel">Procesar</span>
+      </button>
     </div>
-  </div>
 
-  <div class="app">
-    <!-- PAGE: INBOX -->
-    <section id="pageInbox" class="page">
-      <div class="card">
-        <div class="card-h">
-          <h2>Inbox de Remitos (PDF)</h2>
-          <div class="row" style="gap:8px">
-            <button class="btn ghost" id="btnSyncInbox" title="Recalcular grupos">↻</button>
-            <button class="btn bad" id="btnClearInbox" title="Borrar todo el inbox">🧨 Vaciar</button>
-          </div>
-        </div>
-        <div class="card-b">
-          <div class="row">
-            <div class="col">
-              <div class="item">
-                <div class="item-top">
-                  <div>
-                    <div class="item-title">Agregar PDFs</div>
-                    <div class="item-sub">Se guardan en el teléfono (IndexedDB). Luego se agrupan por CUIT.</div>
-                  </div>
-                  <span class="pill" id="pillInboxCount">0 PDFs</span>
-                </div>
-                <div class="hr"></div>
-                <div class="row">
-                  <button class="btn primary" id="btnAddPdfs">➕ Cargar PDFs</button>
-                  <button class="btn" id="btnParseAll">⚡ Parsear pendientes</button>
-                  <input id="fileInput" type="file" accept="application/pdf" multiple hidden />
-                </div>
-                <div class="small muted" style="margin-top:10px">
-                  Tip: podés seleccionar varios PDFs. Si son de diferentes CUIT, quedarán en distintos grupos.
-                </div>
-              </div>
-            </div>
-            <div class="col">
-              <div class="item">
-                <div class="item-top">
-                  <div>
-                    <div class="item-title">Modo Lote</div>
-                    <div class="item-sub">Seleccioná un grupo (CUIT) → elegí remitos → “Preparar factura”.</div>
-                  </div>
-                  <span class="pill ok">Anti-pifiada</span>
-                </div>
-                <div class="hr"></div>
-                <div class="audit" id="inboxHint">
-                  <div class="audit-row">
-                    <div><strong>1)</strong> Cargá PDFs</div>
-                    <span class="audit-tag ok">OK</span>
-                  </div>
-                  <div class="audit-row">
-                    <div><strong>2)</strong> Parseá para detectar CUIT/total</div>
-                    <span class="audit-tag warn">Recomendado</span>
-                  </div>
-                  <div class="audit-row">
-                    <div><strong>3)</strong> Armá factura desde un CUIT</div>
-                    <span class="audit-tag ok">OK</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+    <button data-tab="preview" id="nav-preview" class="flex flex-col items-center gap-1 w-14 text-slate-400 transition-colors">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+      </svg>
+      <span class="text-[9px] font-extrabold uppercase tracking-wide">Borrador</span>
+    </button>
 
-          <div style="height:12px"></div>
-
-          <div class="card" style="box-shadow:none">
-            <div class="card-h">
-              <h2>Grupos por CUIT</h2>
-              <span class="pill" id="pillGroups">0 grupos</span>
-            </div>
-            <div class="card-b">
-              <div id="groupsList" class="list"></div>
-              <div id="emptyGroups" class="muted small" style="display:none; padding:10px 2px;">
-                No hay PDFs todavía. Tocá “Cargar PDFs”.
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </section>
-
-    <!-- PAGE: FACTURAR -->
-    <section id="pageFactura" class="page" style="display:none">
-      <div class="card">
-        <div class="card-h">
-          <h2>Preparar y Emitir</h2>
-          <div class="row" style="gap:8px">
-            <button class="btn" id="btnBackToInbox">← Inbox</button>
-            <button class="btn ghost" id="btnResetDraft" title="Reset borrador">↺</button>
-          </div>
-        </div>
-        <div class="card-b">
-          <div class="row">
-            <div class="col">
-              <div class="item">
-                <div class="item-top">
-                  <div>
-                    <div class="item-title">Datos del cliente</div>
-                    <div class="item-sub">Se completa desde PDF o manual.</div>
-                  </div>
-                  <span class="pill" id="pillDraftMode">Borrador</span>
-                </div>
-
-                <div class="label"><span>CUIT</span><span class="muted small" id="lblClientName"></span></div>
-                <input class="input mono" id="inpCuit" placeholder="CUIT (11 números)" inputmode="numeric" />
-
-                <div class="row">
-                  <div class="col">
-                    <div class="label"><span>Condición de venta</span></div>
-                    <select id="selCondicion">
-                      <option value="Transferencia Bancaria">Transferencia Bancaria</option>
-                      <option value="Efectivo">Efectivo</option>
-                      <option value="Cheque">Cheque</option>
-                    </select>
-                  </div>
-                  <div class="col">
-                    <div class="label"><span>Email (opcional)</span><span class="muted small">si vacío, usa default</span></div>
-                    <input class="input" id="inpEmail" placeholder="cliente@..." inputmode="email" />
-                  </div>
-                </div>
-
-                <div class="label"><span>Domicilio (Remito/AFIP)</span></div>
-                <textarea id="inpDom" placeholder="Se llena desde PDF..."></textarea>
-
-                <div class="row" style="margin-top:10px">
-                  <button class="btn primary" id="btnPreviewAll">👁️ Vista completa</button>
-                  <button class="btn" id="btnPreviewPart1">Parte 1</button>
-                  <button class="btn" id="btnCopyWA">📋 Copiar WhatsApp</button>
-                </div>
-              </div>
-
-              <div style="height:12px"></div>
-
-              <div class="item">
-                <div class="item-top">
-                  <div>
-                    <div class="item-title">Auditor</div>
-                    <div class="item-sub">Checks automáticos antes de emitir.</div>
-                  </div>
-                  <span class="pill" id="pillAudit">—</span>
-                </div>
-                <div class="hr"></div>
-                <div id="auditBox" class="audit"></div>
-              </div>
-
-              <div style="height:12px"></div>
-
-              <div class="item">
-                <div class="item-top">
-                  <div>
-                    <div class="item-title">Modo comando (dictado)</div>
-                    <div class="item-sub">“agregar 12 lavandina 1500”, “descuento 7”, “condición transferencia”, “emitir”.</div>
-                  </div>
-                  <span class="pill warn">Opcional</span>
-                </div>
-                <div class="hr"></div>
-                <div class="row">
-                  <button class="btn" id="btnMic">🎙️ Dictar</button>
-                  <input class="input" id="inpCmd" placeholder="o escribí un comando…" />
-                  <button class="btn" id="btnRunCmd">▶</button>
-                </div>
-                <div class="small muted" style="margin-top:8px">
-                  Si el mic no aparece, es normal en algunos Android/Chrome. El modo texto funciona igual.
-                </div>
-              </div>
-
-            </div>
-
-            <div class="col">
-              <div class="item">
-                <div class="item-top">
-                  <div>
-                    <div class="item-title">Ítems</div>
-                    <div class="item-sub">Podés editar manualmente. El split se calcula por cantidad (25 por parte).</div>
-                  </div>
-                  <span class="pill" id="pillItems">0 ítems</span>
-                </div>
-                <div class="hr"></div>
-
-                <div class="row">
-                  <button class="btn" id="btnAddItem">➕ Ítem</button>
-                  <button class="btn" id="btnApplyDraftTotals">🧮 Recalcular</button>
-                </div>
-
-                <div class="label">
-                  <span>Resumen</span>
-                  <span class="muted small" id="lblTotals"></span>
-                </div>
-
-                <div class="row">
-                  <div class="col">
-                    <div class="label"><span>Subtotal Bruto (Remito)</span></div>
-                    <input class="input mono" id="inpSubBruto" placeholder="0,00" inputmode="decimal" />
-                  </div>
-                  <div class="col">
-                    <div class="label"><span>Descuento %</span></div>
-                    <input class="input mono" id="inpDescPct" placeholder="0" inputmode="decimal" />
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="col">
-                    <div class="label"><span>Descuento $</span></div>
-                    <input class="input mono" id="inpDescImp" placeholder="0,00" inputmode="decimal" />
-                  </div>
-                  <div class="col">
-                    <div class="label"><span>Total Final (post-desc)</span></div>
-                    <input class="input mono" id="inpTotalFinal" placeholder="0,00" inputmode="decimal" />
-                  </div>
-                </div>
-
-                <div style="height:10px"></div>
-                <div id="itemsBox" class="items"></div>
-
-                <div style="height:12px"></div>
-
-                <button class="btn ok w100" id="btnEmitir">✅ EMITIR FACTURA</button>
-                <div class="small muted" style="margin-top:8px">
-                  Si hay split, el backend emite N facturas y manda 1 email con N PDFs (si tenés Gmail configurado).
-                </div>
-              </div>
-
-              <div style="height:12px"></div>
-
-              <div class="item">
-                <div class="item-top">
-                  <div>
-                    <div class="item-title">Vista previa</div>
-                    <div class="item-sub">Parte por parte o “Vista completa”.</div>
-                  </div>
-                  <span class="pill" id="pillPreview">—</span>
-                </div>
-                <div class="hr"></div>
-
-                <div class="chips" id="partsChips"></div>
-
-                <div style="height:10px"></div>
-                <div class="preview">
-                  <iframe id="previewFrame" class="iframe" title="Vista previa"></iframe>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </section>
-
-    <!-- PAGE: HISTORIAL -->
-    <section id="pageHist" class="page" style="display:none">
-      <div class="card">
-        <div class="card-h">
-          <h2>Historial</h2>
-          <div class="row" style="gap:8px">
-            <button class="btn bad" id="btnClearHist">🧨 Borrar</button>
-          </div>
-        </div>
-        <div class="card-b">
-          <div id="histList" class="list"></div>
-          <div id="emptyHist" class="muted small" style="display:none; padding:10px 2px;">
-            Sin historial todavía.
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- PAGE: AJUSTES -->
-    <section id="pageSet" class="page" style="display:none">
-      <div class="card">
-        <div class="card-h">
-          <h2>Ajustes</h2>
-          <span class="pill">Render + GitHub Pages</span>
-        </div>
-        <div class="card-b">
-          <div class="item">
-            <div class="item-top">
-              <div>
-                <div class="item-title">API Base URL</div>
-                <div class="item-sub">Por defecto: tu Render.</div>
-              </div>
-              <span class="pill" id="pillApiOk">—</span>
-            </div>
-            <div class="hr"></div>
-
-            <div class="label">
-              <span>Base URL</span>
-              <span class="muted small">Ej: https://api-mercadolimpio.onrender.com</span>
-            </div>
-            <input class="input" id="inpApiBase" />
-
-            <div class="row" style="margin-top:10px">
-              <button class="btn primary" id="btnSaveApi">Guardar</button>
-              <button class="btn" id="btnPing">Probar /health</button>
-            </div>
-
-            <div class="small muted" style="margin-top:10px">
-              Recomendación: mantené HTTPS siempre (GitHub Pages ya lo es).
-            </div>
-          </div>
-
-          <div style="height:12px"></div>
-
-          <div class="item">
-            <div class="item-top">
-              <div>
-                <div class="item-title">Tips de uso</div>
-                <div class="item-sub">Operación real rápida.</div>
-              </div>
-              <span class="pill ok">Pro</span>
-            </div>
-            <div class="hr"></div>
-            <ul class="small muted" style="margin:0; padding-left:16px; line-height:1.6">
-              <li>Para descuentos globales correctos con múltiples remitos: siempre “Preparar factura” desde un CUIT.</li>
-              <li>Vista completa usa <span class="mono">previewParte:"ALL"</span>.</li>
-              <li>WhatsApp se abre con <span class="mono">waLink</span> que devuelve tu backend.</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </section>
-
-  </div>
-
-  <!-- Bottom Nav -->
-  <nav class="nav">
-    <div class="nav-inner">
-      <div class="navbtn active" data-nav="inbox">📥 Inbox</div>
-      <div class="navbtn" data-nav="factura">🧾 Facturar</div>
-      <div class="navbtn" data-nav="hist">🕘 Historial</div>
-      <div class="navbtn" data-nav="set">⚙️ Ajustes</div>
-    </div>
+    <button id="btnShareNative" class="flex flex-col items-center gap-1 w-14 text-slate-400 transition-colors">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path>
+      </svg>
+      <span class="text-[9px] font-extrabold uppercase tracking-wide">Enviar</span>
+    </button>
   </nav>
 
-  <!-- Toast -->
-  <div class="toast" id="toast">
-    <div class="t" id="toastT">—</div>
-    <div class="d" id="toastD">—</div>
-  </div>
-
-  <!-- Modal: Group -->
-  <div class="modal" id="modal">
-    <div class="modal-card">
-      <div class="modal-h">
-        <strong id="modalTitle">Grupo</strong>
-        <button class="btn" id="btnCloseModal">Cerrar</button>
+  <!-- MODAL ITEM -->
+  <div id="modalItem" class="hidden fixed inset-0 z-[200] flex items-end">
+    <div class="absolute inset-0 modal-backdrop" id="modalBackdrop"></div>
+    <div class="relative w-full bg-white rounded-t-3xl p-5 pb-safe ios-card">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-xs font-black text-slate-500 uppercase">Ítem</div>
+          <div id="modalTitle" class="text-base font-black text-slate-900">Agregar ítem</div>
+        </div>
+        <button id="btnCloseModal" class="btn bg-slate-100 text-slate-900 rounded-xl px-3 py-2 text-xs font-black">Cerrar</button>
       </div>
-      <div class="modal-b">
-        <div class="small muted" id="modalSub">Seleccioná remitos del mismo CUIT y prepará factura.</div>
-        <div style="height:10px"></div>
 
-        <div class="row">
-          <button class="btn primary" id="btnPrepareFromGroup">🧠 Preparar factura</button>
-          <button class="btn bad" id="btnDeleteSelected">🗑️ Borrar seleccionados</button>
+      <div class="mt-4 space-y-3">
+        <div>
+          <label class="block text-xs font-black text-slate-500">Descripción</label>
+          <input id="m_desc" type="text" class="w-full bg-slate-50 border-none rounded-xl p-4 font-bold text-slate-900 focus:ring-2 focus:ring-blue-500" placeholder="Ej: Detergente 5L">
         </div>
 
-        <div style="height:12px"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-black text-slate-500">Cantidad</label>
+            <input id="m_qty" type="number" class="w-full bg-slate-50 border-none rounded-xl p-4 font-black text-slate-900 focus:ring-2 focus:ring-blue-500" placeholder="1">
+          </div>
+          <div>
+            <label class="block text-xs font-black text-slate-500">Precio unit c/IVA</label>
+            <input id="m_unit" type="number" class="w-full bg-slate-50 border-none rounded-xl p-4 font-black text-slate-900 focus:ring-2 focus:ring-blue-500" placeholder="0">
+          </div>
+        </div>
 
-        <div id="modalList" class="list"></div>
-        <div id="modalEmpty" class="muted small" style="display:none">Este grupo no tiene PDFs.</div>
+        <div class="grid grid-cols-2 gap-3">
+          <button id="btnDeleteItem" class="hidden btn bg-red-600 text-white rounded-2xl py-3 font-black">Eliminar</button>
+          <button id="btnSaveItem" class="btn bg-blue-600 text-white rounded-2xl py-3 font-black col-span-2">Guardar</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <script src="./app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
+      });
+    }
+  </script>
+
+  <script src="app.js" defer></script>
 </body>
 </html>
