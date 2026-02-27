@@ -2,339 +2,1084 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+  />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Mercado Limpio PRO</title>
+  <meta name="theme-color" content="#0B1220" />
 
-  <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="icon.png">
+  <title>Mercado Limpio — Facturación</title>
 
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- (Opcional PWA) -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon.png" />
+
   <style>
-    body { background-color: #f2f2f7; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; overflow: hidden; }
-    .pt-safe { padding-top: env(safe-area-inset-top, 47px); }
-    .pb-safe { padding-bottom: env(safe-area-inset-bottom, 34px); }
-    .glass-dock { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 0.5px solid rgba(0,0,0,0.1); }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    .snap-x-mandatory { scroll-snap-type: x mandatory; }
-    .snap-center { scroll-snap-align: center; }
-    .preview-wrapper iframe { width: 100%; height: 50vh; border: none; border-radius: 12px; background: #fff; }
+    :root{
+      --bg0:#070A12;
+      --bg1:#0B1220;
+      --card:#0F172A;
+      --card2:#0B1020;
+      --stroke: rgba(255,255,255,.08);
+      --stroke2: rgba(255,255,255,.12);
+      --text:#E6EAF2;
+      --muted: rgba(230,234,242,.68);
+      --muted2: rgba(230,234,242,.48);
+      --accent:#5B8CFF;      /* azul */
+      --accent2:#19D3C5;     /* turquesa */
+      --danger:#FF4D6D;
+      --ok:#22C55E;
+      --warn:#FBBF24;
+      --shadow: 0 18px 60px rgba(0,0,0,.35);
+      --radius: 22px;
+      --radius2: 16px;
+      --tap: 52px; /* target táctil */
+      --font: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Helvetica,Arial,sans-serif;
+    }
 
-    /* iOS feel */
-    .ios-card { border: 1px solid rgba(226,232,240,1); box-shadow: 0 1px 2px rgba(0,0,0,.04); }
-    .btn { transition: transform .08s ease, opacity .2s ease; }
-    .btn:active { transform: scale(.98); }
-    .pill { border: 1px solid rgba(226,232,240,1); }
-    .rail-card-active { outline: none; }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family:var(--font);
+      color:var(--text);
+      background:
+        radial-gradient(1200px 700px at 20% -10%, rgba(91,140,255,.35), transparent 60%),
+        radial-gradient(900px 500px at 90% 10%, rgba(25,211,197,.22), transparent 55%),
+        radial-gradient(1200px 800px at 50% 110%, rgba(91,140,255,.18), transparent 65%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      overflow:hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-    /* Modal */
-    .modal-backdrop { background: rgba(2,6,23,.55); }
+    /* safe areas */
+    .pt-safe{ padding-top: env(safe-area-inset-top, 12px); }
+    .pb-safe{ padding-bottom: env(safe-area-inset-bottom, 12px); }
+
+    /* layout */
+    .app{
+      height:100%;
+      display:flex;
+      flex-direction:column;
+    }
+
+    header{
+      position:sticky;
+      top:0;
+      z-index:30;
+      padding: 14px 16px 10px 16px;
+      padding-top: calc(14px + env(safe-area-inset-top, 12px));
+      background: linear-gradient(180deg, rgba(7,10,18,.85), rgba(7,10,18,.45));
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--stroke);
+    }
+
+    .hrow{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .brand{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+    .brand h1{
+      margin:0;
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height:1.05;
+    }
+    .brand .sub{
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      color: var(--muted);
+    }
+
+    .badges{
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .badge{
+      font-size:10px;
+      font-weight:900;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--stroke2);
+      background: rgba(255,255,255,.04);
+      color: var(--muted);
+      user-select:none;
+    }
+    .badge.ok{ color: rgba(34,197,94,.95); border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.08); }
+    .badge.bad{ color: rgba(255,77,109,.95); border-color: rgba(255,77,109,.35); background: rgba(255,77,109,.08); }
+    .badge.draft{ color: rgba(251,191,36,.95); border-color: rgba(251,191,36,.35); background: rgba(251,191,36,.08); }
+
+    main{
+      flex:1;
+      overflow:hidden;
+      position:relative;
+    }
+
+    .screen{
+      position:absolute;
+      inset:0;
+      overflow:auto;
+      padding: 14px 14px 110px 14px;
+      scrollbar-width:none;
+    }
+    .screen::-webkit-scrollbar{ display:none; }
+
+    .hidden{ display:none !important; }
+
+    /* transitions between tabs */
+    .screen{
+      opacity:0;
+      transform: translateY(10px);
+      pointer-events:none;
+      transition: opacity .18s ease, transform .18s ease;
+    }
+    .screen.active{
+      opacity:1;
+      transform: translateY(0);
+      pointer-events:auto;
+    }
+
+    /* cards */
+    .card{
+      background: linear-gradient(180deg, rgba(15,23,42,.92), rgba(15,23,42,.82));
+      border: 1px solid var(--stroke);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+    .card.soft{
+      box-shadow: 0 10px 30px rgba(0,0,0,.24);
+    }
+    .sectionTitle{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    .sectionTitle .t{
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing:.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .sectionTitle .hint{
+      font-size:11px;
+      font-weight:800;
+      color: var(--muted2);
+    }
+
+    /* buttons */
+    .btn{
+      height: var(--tap);
+      border-radius: 18px;
+      border: 1px solid var(--stroke2);
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+      font-weight: 900;
+      letter-spacing: -.01em;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding: 0 14px;
+      cursor:pointer;
+      user-select:none;
+      transition: transform .08s ease, filter .12s ease, background .12s ease, opacity .12s ease;
+    }
+    .btn:active{ transform: scale(.98); }
+    .btn:disabled{ opacity:.55; cursor:not-allowed; }
+
+    .btn.primary{
+      border-color: rgba(91,140,255,.40);
+      background: linear-gradient(135deg, rgba(91,140,255,.95), rgba(25,211,197,.72));
+      box-shadow: 0 18px 45px rgba(91,140,255,.22);
+    }
+    .btn.dark{
+      border-color: rgba(255,255,255,.10);
+      background: rgba(255,255,255,.07);
+    }
+    .btn.ghost{
+      background: rgba(255,255,255,.03);
+      border-color: rgba(255,255,255,.08);
+    }
+    .btn.danger{
+      border-color: rgba(255,77,109,.35);
+      background: rgba(255,77,109,.14);
+      color: rgba(255,77,109,.95);
+    }
+    .btn.ok{
+      border-color: rgba(34,197,94,.35);
+      background: rgba(34,197,94,.14);
+      color: rgba(34,197,94,.95);
+    }
+
+    .btnIcon{
+      width: 24px; height: 24px; display:inline-flex; align-items:center; justify-content:center;
+      border-radius: 10px;
+      background: rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.10);
+    }
+    .btn.primary .btnIcon{ background: rgba(0,0,0,.18); border-color: rgba(0,0,0,.10); }
+
+    .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+    .grid3{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; }
+
+    /* inputs */
+    .field{ display:flex; flex-direction:column; gap:8px; }
+    label{
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing:.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    input, select{
+      height: 54px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.10);
+      outline:none;
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 900;
+      padding: 0 14px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.02);
+    }
+    input::placeholder{ color: rgba(230,234,242,.35); font-weight:800; }
+    select{ font-weight:900; }
+
+    .helper{
+      font-size: 12px;
+      color: var(--muted2);
+      line-height:1.4;
+      font-weight:700;
+    }
+    .ol{
+      margin:10px 0 0 18px;
+      padding:0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight:700;
+      line-height:1.45;
+    }
+    .ol li{ margin: 6px 0; }
+
+    /* items list */
+    .list{ display:flex; flex-direction:column; gap:10px; }
+    .item{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      padding: 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.14);
+    }
+    .item .left{ min-width:0; }
+    .item .desc{
+      font-size: 14px;
+      font-weight: 950;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      margin-bottom: 2px;
+    }
+    .item .meta{
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--muted);
+    }
+    .item .right{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-shrink:0;
+    }
+    .money{
+      font-size: 14px;
+      font-weight: 950;
+      letter-spacing:-.01em;
+    }
+    .mini{
+      height: 44px;
+      border-radius: 16px;
+      padding: 0 12px;
+      font-size: 13px;
+      font-weight: 950;
+    }
+
+    /* preview */
+    .summary{
+      padding: 16px;
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, rgba(91,140,255,.20), rgba(25,211,197,.10));
+      border: 1px solid rgba(91,140,255,.18);
+      box-shadow: 0 18px 55px rgba(0,0,0,.28);
+    }
+    .sumTop{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom: 8px;
+    }
+    .chip{
+      font-size:10px;
+      font-weight:950;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.12);
+      color: var(--muted);
+    }
+    .chip.ok{ border-color: rgba(34,197,94,.30); background: rgba(34,197,94,.10); color: rgba(34,197,94,.95); }
+    .chip.warn{ border-color: rgba(251,191,36,.30); background: rgba(251,191,36,.10); color: rgba(251,191,36,.95); }
+    .totalRow{
+      display:flex;
+      align-items:baseline;
+      gap:10px;
+    }
+    .total{
+      font-size: 34px;
+      font-weight: 1000;
+      letter-spacing:-.03em;
+    }
+    .strike{
+      font-size: 14px;
+      font-weight: 900;
+      color: rgba(230,234,242,.55);
+      text-decoration: line-through;
+    }
+
+    .rail{
+      display:flex;
+      gap:10px;
+      overflow:auto;
+      padding-bottom: 4px;
+      scroll-snap-type: x mandatory;
+      scrollbar-width:none;
+    }
+    .rail::-webkit-scrollbar{ display:none; }
+    .railCard{
+      flex: 0 0 56%;
+      scroll-snap-align:center;
+      border-radius: 20px;
+      padding: 14px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.14);
+      cursor:pointer;
+      user-select:none;
+      transition: transform .10s ease, background .12s ease, border-color .12s ease;
+    }
+    .railCard:active{ transform: scale(.985); }
+    .railCard.active{
+      border-color: rgba(91,140,255,.45);
+      background: rgba(91,140,255,.14);
+    }
+    .railCard .top{
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+    }
+    .railCard .p1{
+      font-size: 11px; font-weight: 950; letter-spacing:.14em; text-transform:uppercase; color: rgba(91,140,255,.95);
+    }
+    .dot{ width:10px; height:10px; border-radius:999px; background: rgba(255,255,255,.16); }
+    .railCard.active .dot{ background: rgba(91,140,255,.95); }
+    .railCard .p2{ margin-top:8px; font-size:12px; font-weight:900; color: var(--muted); }
+
+    .frameWrap{
+      margin-top: 12px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(255,255,255,.08);
+      overflow:hidden;
+      background: rgba(0,0,0,.18);
+      min-height: 52vh;
+      position:relative;
+    }
+    iframe{
+      width:100%;
+      height: 52vh;
+      border:0;
+      background:#fff;
+      display:block;
+    }
+    .frameLoading{
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      background: rgba(0,0,0,.22);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .14s ease;
+    }
+    .frameWrap.loading .frameLoading{
+      opacity:1;
+      pointer-events:auto;
+    }
+
+    /* bottom nav */
+    nav{
+      position:fixed;
+      left:0; right:0; bottom:0;
+      z-index:50;
+      padding: 10px 14px;
+      padding-bottom: calc(10px + env(safe-area-inset-bottom, 12px));
+      background: linear-gradient(180deg, rgba(7,10,18,.30), rgba(7,10,18,.85));
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-top: 1px solid var(--stroke);
+    }
+    .dock{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+    }
+    .navBtn{
+      height: 56px;
+      min-width: 72px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.04);
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      gap:4px;
+      color: var(--muted);
+      font-weight:950;
+      cursor:pointer;
+      user-select:none;
+      transition: transform .08s ease, background .12s ease, border-color .12s ease, color .12s ease;
+    }
+    .navBtn:active{ transform: scale(.985); }
+    .navBtn.active{
+      color: var(--text);
+      border-color: rgba(91,140,255,.45);
+      background: rgba(91,140,255,.12);
+    }
+    .navBtn span{ font-size: 10px; letter-spacing:.14em; text-transform:uppercase; }
+
+    .fabWrap{
+      transform: translateY(-14px);
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      min-width: 86px;
+    }
+    .fab{
+      width: 76px;
+      height: 76px;
+      border-radius: 999px;
+      border: 4px solid rgba(7,10,18,.92);
+      background: linear-gradient(135deg, rgba(91,140,255,.95), rgba(25,211,197,.80));
+      box-shadow: 0 22px 60px rgba(91,140,255,.25);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:4px;
+      cursor:pointer;
+      user-select:none;
+      transition: transform .08s ease, filter .12s ease;
+    }
+    .fab:active{ transform: scale(.96); }
+    .fab .lbl{ font-size:10px; font-weight:1000; letter-spacing:.14em; text-transform:uppercase; color: rgba(0,0,0,.75); }
+
+    /* toast */
+    .toast{
+      position:fixed;
+      top: calc(10px + env(safe-area-inset-top, 12px));
+      left:50%;
+      transform: translateX(-50%);
+      z-index:100;
+      max-width: min(560px, 92vw);
+      padding: 12px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(15,23,42,.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 18px 60px rgba(0,0,0,.35);
+      font-weight: 950;
+      font-size: 13px;
+      letter-spacing:-.01em;
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .14s ease, transform .14s ease;
+    }
+    .toast.show{
+      opacity:1;
+      pointer-events:auto;
+      transform: translateX(-50%) translateY(4px);
+    }
+    .toast.ok{ border-color: rgba(34,197,94,.28); }
+    .toast.bad{ border-color: rgba(255,77,109,.28); }
+    .toast.info{ border-color: rgba(91,140,255,.28); }
+
+    /* global loading overlay */
+    .overlay{
+      position:fixed; inset:0;
+      z-index:120;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+      background: rgba(0,0,0,.32);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .14s ease;
+    }
+    .overlay.show{ opacity:1; pointer-events:auto; }
+    .loaderCard{
+      width: min(520px, 92vw);
+      border-radius: 26px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(15,23,42,.92);
+      box-shadow: 0 22px 70px rgba(0,0,0,.45);
+      padding: 16px;
+    }
+    .spinRow{
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+    .spinner{
+      width: 28px; height: 28px;
+      border-radius: 999px;
+      border: 3px solid rgba(255,255,255,.18);
+      border-top-color: rgba(91,140,255,.95);
+      animation: spin 1s linear infinite;
+      flex-shrink:0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loaderTitle{ font-size: 14px; font-weight: 1000; }
+    .loaderSub{ font-size: 12px; font-weight: 850; color: var(--muted); margin-top:2px; }
+    .steps{
+      margin-top: 12px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .step{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding: 10px 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.14);
+      font-size: 12px;
+      font-weight: 900;
+      color: var(--muted);
+    }
+    .step.on{ color: var(--text); border-color: rgba(91,140,255,.22); background: rgba(91,140,255,.10); }
+    .step .k{ font-weight:1000; }
+
+    /* bottom sheet modal */
+    .sheet{
+      position:fixed;
+      inset:0;
+      z-index:200;
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      padding: 12px;
+      padding-bottom: calc(12px + env(safe-area-inset-bottom, 12px));
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .14s ease;
+    }
+    .sheet.show{ opacity:1; pointer-events:auto; }
+    .sheet .backdrop{
+      position:absolute; inset:0;
+      background: rgba(0,0,0,.48);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    .sheet .panel{
+      position:relative;
+      width: min(560px, 96vw);
+      border-radius: 28px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(15,23,42,.96);
+      box-shadow: 0 26px 90px rgba(0,0,0,.55);
+      padding: 14px;
+      transform: translateY(18px);
+      transition: transform .14s ease;
+    }
+    .sheet.show .panel{ transform: translateY(0); }
+
+    .sheetTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding: 6px 4px 10px 4px;
+    }
+    .grab{
+      width: 44px; height: 5px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.16);
+      margin: 0 auto 10px auto;
+    }
+    .sheetTitle{
+      font-size: 12px;
+      font-weight: 1000;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color: var(--muted);
+    }
+    .sheetH{
+      font-size: 16px;
+      font-weight: 1000;
+      letter-spacing:-.02em;
+      margin-top: 3px;
+    }
+
+    /* result cards */
+    .resultList{ display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+    .res{
+      border-radius: 20px;
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.14);
+      padding: 12px;
+    }
+    .resTop{
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+      font-size: 12px; font-weight: 950;
+      color: var(--muted);
+      letter-spacing:.10em; text-transform:uppercase;
+    }
+    .resMid{
+      margin-top: 6px;
+      display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+    }
+    .resMid .n{ font-size: 15px; font-weight: 1000; }
+    .resMid .v{ font-size: 15px; font-weight: 1000; }
+    .resBtns{ margin-top: 10px; display:flex; gap:10px; }
+
+    /* small text */
+    .empty{
+      padding: 14px;
+      border-radius: 18px;
+      border:1px dashed rgba(255,255,255,.14);
+      color: var(--muted);
+      text-align:center;
+      font-weight: 850;
+      font-size: 13px;
+    }
+
+    /* reduce motion support */
+    @media (prefers-reduced-motion: reduce){
+      .screen, .toast, .overlay, .sheet, .sheet .panel, .btn, .navBtn, .fab { transition:none !important; }
+      .spinner{ animation:none !important; }
+    }
   </style>
 </head>
 
-<body class="text-slate-900 flex flex-col h-screen overflow-hidden pb-safe">
+<body>
+  <div class="app">
 
-  <header class="pt-safe bg-white px-5 pb-3 shadow-sm z-20 shrink-0 flex justify-between items-end">
-    <div>
-      <h1 class="text-2xl font-black tracking-tight text-slate-900">Mercado Limpio</h1>
-      <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Facturación ARCA (Calle)</p>
-    </div>
-    <div class="flex items-center gap-2">
-      <div id="statusBadge" class="bg-slate-100 text-slate-700 text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-wide">
-        Verificando…
-      </div>
-    </div>
-  </header>
-
-  <main class="flex-1 overflow-y-auto no-scrollbar pb-32 pt-2">
-
-    <!-- CAPTURE -->
-    <section id="tab-capture" class="p-5 space-y-6">
-      <input type="file" id="inputPdf" accept="application/pdf" multiple class="hidden" />
-
-      <div class="bg-white rounded-2xl p-5 ios-card">
-        <h3 class="font-black text-slate-900 text-base mb-2">Opción 1 — Desde PDF (WhatsApp)</h3>
-        <p class="text-sm text-slate-600 mb-3">
-          Procesá 1 o varios remitos PDF. Extrae ítems con tu motor (IA + regex) y arma el borrador.
-        </p>
-        <ol class="list-decimal list-inside text-sm text-slate-600 space-y-2">
-          <li>Abrí el PDF en WhatsApp.</li>
-          <li>Tocá <span class="bg-slate-100 px-1.5 py-0.5 rounded font-bold text-slate-900">Compartir</span> → <span class="bg-slate-100 px-1.5 py-0.5 rounded font-bold text-slate-900">Guardar en Archivos</span>.</li>
-          <li>Volvé acá y tocá <strong>Procesar PDF</strong>.</li>
-        </ol>
-
-        <div class="mt-4 grid grid-cols-2 gap-3">
-          <button id="btnPickPdf" class="btn bg-blue-600 text-white rounded-2xl py-3 font-black shadow-[0_10px_25px_rgba(59,130,246,0.22)]">
-            Procesar PDF
-          </button>
-          <button id="btnGoManual" class="btn bg-slate-950 text-white rounded-2xl py-3 font-black">
-            Factura Manual
-          </button>
-        </div>
-      </div>
-
-      <div id="loaderUI" class="hidden bg-slate-950 text-white rounded-2xl p-5 shadow-lg flex items-center gap-4">
-        <svg class="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        <div>
-          <span class="block font-black">Procesando con IA…</span>
-          <span class="block text-xs opacity-80" id="loaderText">Extrayendo datos, totales y partes.</span>
-        </div>
-      </div>
-
-      <div id="statusAlert" class="hidden rounded-2xl p-4 text-sm font-black shadow-sm"></div>
-
-      <div class="bg-white rounded-2xl p-5 ios-card">
-        <h3 class="font-black text-slate-900 text-base mb-2">Opción 2 — Manual</h3>
-        <p class="text-sm text-slate-600">
-          Cargá CUIT + ítems manuales y emití igual. El backend consulta padrón y genera PDF + WhatsApp.
-        </p>
-        <button id="btnGoManual2" class="mt-3 btn w-full bg-slate-100 text-slate-900 rounded-2xl py-3 font-black">
-          Ir a Factura Manual
-        </button>
-      </div>
-    </section>
-
-    <!-- DATOS -->
-    <section id="tab-items" class="p-5 hidden space-y-5">
-      <div class="bg-white rounded-3xl p-5 ios-card">
-        <div class="flex items-center justify-between">
-          <h3 class="text-sm font-black text-slate-500 uppercase tracking-wide">Cliente</h3>
-          <span id="draftModePill" class="hidden pill text-[10px] font-black px-2 py-1 rounded-full bg-amber-50 text-amber-700">
-            Borrador guardado
-          </span>
+    <header>
+      <div class="hrow">
+        <div class="brand">
+          <h1>Mercado Limpio</h1>
+          <div class="sub">Facturación ARCA · PRO</div>
         </div>
 
-        <label class="block text-xs font-black text-slate-500 mt-3">CUIT (11 números)</label>
-        <input type="number" id="cuit" class="w-full bg-slate-50 border-none rounded-xl p-4 font-black text-lg text-slate-900 focus:ring-2 focus:ring-blue-500 mb-3" placeholder="20123456789">
-
-        <label class="block text-xs font-black text-slate-500">Domicilio (opcional)</label>
-        <input type="text" id="domicilioRemito" class="w-full bg-slate-50 border-none rounded-xl p-4 font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 mb-3" placeholder="Calle 123, Localidad">
-
-        <label class="block text-xs font-black text-slate-500">Condición de Venta</label>
-        <select id="condicionVenta" class="w-full bg-slate-50 border-none rounded-xl p-4 font-black text-slate-900 focus:ring-2 focus:ring-blue-500">
-          <option value="Transferencia Bancaria">Transferencia</option>
-          <option value="Efectivo">Efectivo</option>
-        </select>
-      </div>
-
-      <div class="bg-white rounded-3xl p-5 ios-card">
-        <div class="flex justify-between items-center mb-3">
-          <h3 class="text-sm font-black text-slate-500 uppercase tracking-wide">
-            Artículos (<span id="itemCount">0</span>)
-          </h3>
-          <button id="btnAddItem" class="btn bg-blue-600 text-white rounded-xl px-3 py-2 text-xs font-black">
-            + Agregar
-          </button>
-        </div>
-
-        <div id="itemsList" class="space-y-2 max-h-60 overflow-y-auto no-scrollbar">
-          <div class="text-sm text-slate-400 italic text-center py-4">Procesá un remito o cargá manual.</div>
-        </div>
-
-        <div class="mt-4 grid grid-cols-3 gap-2">
-          <button id="btnClearItems" class="btn bg-slate-100 text-slate-900 rounded-xl py-3 text-xs font-black">Limpiar</button>
-          <button id="btnRecalc" class="btn bg-slate-100 text-slate-900 rounded-xl py-3 text-xs font-black">Recalcular</button>
-          <button id="btnGoPreview" class="btn bg-slate-950 text-white rounded-xl py-3 text-xs font-black">Borrador</button>
+        <div class="badges">
+          <div id="badgeDraft" class="badge draft hidden">Borrador</div>
+          <div id="badgeOnline" class="badge">Verificando…</div>
         </div>
       </div>
+    </header>
 
-      <div class="bg-white rounded-3xl p-5 ios-card">
-        <h3 class="text-sm font-black text-slate-500 uppercase tracking-wide mb-3">Descuento (opcional)</h3>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-black text-slate-500">%</label>
-            <input type="number" id="descuentoPct" class="w-full bg-slate-50 border-none rounded-xl p-4 font-black text-slate-900 focus:ring-2 focus:ring-blue-500" placeholder="0">
+    <main>
+
+      <!-- CAPTURE -->
+      <section id="screen-capture" class="screen active">
+        <input id="inputPdf" type="file" accept="application/pdf" multiple class="hidden"/>
+
+        <div class="card soft">
+          <div class="sectionTitle">
+            <div class="t">Opción 1</div>
+            <div class="hint">PDF / WhatsApp</div>
           </div>
-          <div>
-            <label class="block text-xs font-black text-slate-500">$</label>
-            <input type="number" id="descuentoImporte" class="w-full bg-slate-50 border-none rounded-xl p-4 font-black text-slate-900 focus:ring-2 focus:ring-blue-500" placeholder="0">
+
+          <div style="font-size:15px;font-weight:1000;letter-spacing:-.02em;margin-bottom:6px;">
+            Procesar remito PDF
           </div>
-        </div>
-        <p class="text-xs text-slate-500 mt-2">
-          Si completás <strong>importe</strong>, gana sobre %. Si completás %, recalcula total.
-        </p>
-      </div>
-    </section>
-
-    <!-- MANUAL (atajo) -->
-    <section id="tab-manual" class="p-5 hidden space-y-5">
-      <div class="bg-white rounded-3xl p-5 ios-card">
-        <h3 class="text-base font-black text-slate-900">Factura Manual</h3>
-        <p class="text-sm text-slate-600 mt-1">
-          Cargá ítems acá. Podés pasar luego a “Datos” para editar cliente y descuento.
-        </p>
-
-        <div class="mt-4 grid grid-cols-2 gap-3">
-          <button id="btnManualAddItem" class="btn bg-blue-600 text-white rounded-2xl py-3 font-black">+ Agregar ítem</button>
-          <button id="btnManualGoData" class="btn bg-slate-950 text-white rounded-2xl py-3 font-black">Ir a Datos</button>
-        </div>
-
-        <div class="mt-4 bg-slate-50 rounded-2xl p-4">
-          <div class="flex justify-between items-center">
-            <span class="text-xs font-black text-slate-500 uppercase">Total estimado</span>
-            <span id="txtTotalManual" class="text-lg font-black text-slate-950">$0,00</span>
+          <div class="helper">
+            Extrae ítems con tu backend (IA + regex), arma el borrador, y te deja listo para emitir.
           </div>
-          <div class="mt-2 flex gap-2">
-            <span id="pillSubtotalManual" class="hidden pill text-[10px] font-black px-2 py-1 rounded-full bg-white text-slate-600">Subtotal</span>
-            <span id="pillDescManual" class="hidden pill text-[10px] font-black px-2 py-1 rounded-full bg-white text-emerald-700">Desc</span>
+
+          <ol class="ol">
+            <li>Abrí el PDF desde WhatsApp.</li>
+            <li>Compartir → Guardar en Archivos.</li>
+            <li>Volvé acá y tocá “Procesar PDF”.</li>
+          </ol>
+
+          <div style="height:12px;"></div>
+          <div class="grid2">
+            <button id="btnPickPdf" class="btn primary">
+              <span class="btnIcon">📄</span>
+              Procesar PDF
+            </button>
+            <button id="btnGoManual" class="btn dark">
+              <span class="btnIcon">✍️</span>
+              Manual
+            </button>
           </div>
         </div>
 
-        <div class="mt-4">
-          <button id="btnManualGoPreview" class="btn w-full bg-slate-100 text-slate-900 rounded-2xl py-3 font-black">
-            Ver Borrador
+        <div style="height:14px;"></div>
+
+        <div class="card">
+          <div class="sectionTitle">
+            <div class="t">Opción 2</div>
+            <div class="hint">Carga rápida</div>
+          </div>
+          <div style="font-size:15px;font-weight:1000;letter-spacing:-.02em;margin-bottom:6px;">
+            Factura manual
+          </div>
+          <div class="helper">
+            Cargás CUIT + ítems manuales. El backend consulta padrón y genera PDFs + link WhatsApp.
+          </div>
+
+          <div style="height:12px;"></div>
+          <button id="btnGoManual2" class="btn ghost" style="width:100%;">
+            <span class="btnIcon">➡️</span>
+            Ir a Manual
           </button>
         </div>
-      </div>
+      </section>
 
-      <div class="bg-white rounded-3xl p-5 ios-card">
-        <div class="flex justify-between items-center mb-3">
-          <h3 class="text-sm font-black text-slate-500 uppercase tracking-wide">Ítems</h3>
-          <span class="pill text-[10px] font-black px-2 py-1 rounded-full bg-slate-50 text-slate-700">
-            <span id="itemCountManual">0</span> items
-          </span>
+      <!-- DATA -->
+      <section id="screen-data" class="screen">
+        <div class="card soft">
+          <div class="sectionTitle">
+            <div class="t">Cliente</div>
+            <div class="hint">CUIT + domicilio + venta</div>
+          </div>
+
+          <div class="field">
+            <label for="cuit">CUIT (11 números)</label>
+            <input id="cuit" inputmode="numeric" type="text" placeholder="20123456789" />
+          </div>
+
+          <div style="height:12px;"></div>
+
+          <div class="field">
+            <label for="domicilioRemito">Domicilio (opcional)</label>
+            <input id="domicilioRemito" type="text" placeholder="Calle 123, Localidad" />
+          </div>
+
+          <div style="height:12px;"></div>
+
+          <div class="field">
+            <label for="condicionVenta">Condición de venta</label>
+            <select id="condicionVenta">
+              <option value="Transferencia Bancaria">Transferencia</option>
+              <option value="Efectivo">Efectivo</option>
+            </select>
+          </div>
         </div>
-        <div id="itemsListManual" class="space-y-2 max-h-72 overflow-y-auto no-scrollbar"></div>
-      </div>
-    </section>
 
-    <!-- PREVIEW -->
-    <section id="tab-preview" class="hidden flex flex-col h-full space-y-3">
-      <div class="bg-slate-950 text-white p-5 rounded-2xl mx-5 shadow-lg shrink-0">
-        <div class="flex justify-between items-center mb-1">
-          <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Resumen</span>
-          <span id="txtDescPct" class="bg-emerald-500/20 text-emerald-400 text-[10px] font-black px-2 py-0.5 rounded uppercase hidden">
-            Desc 0%
-          </span>
-        </div>
-        <div class="flex items-baseline gap-2">
-          <span class="text-3xl font-black tracking-tighter" id="txtTotal">$0,00</span>
-          <span class="text-sm font-black text-slate-500 line-through hidden" id="txtSubtotal">$0,00</span>
-        </div>
+        <div style="height:14px;"></div>
 
-        <div class="mt-3 grid grid-cols-2 gap-3">
-          <button id="btnEmitir" class="btn bg-blue-600 text-white rounded-2xl py-3 font-black">
-            Emitir factura
-          </button>
-          <button id="btnResetDraft" class="btn bg-white/10 text-white rounded-2xl py-3 font-black">
-            Nuevo
-          </button>
-        </div>
-      </div>
+        <div class="card">
+          <div class="sectionTitle">
+            <div class="t">Artículos</div>
+            <div class="hint"><span id="itemCount">0</span> ítems</div>
+          </div>
 
-      <div class="w-full overflow-x-auto snap-x-mandatory no-scrollbar flex gap-3 px-5 shrink-0" id="railPartes"></div>
-
-      <div class="px-5 pb-5 flex-1 preview-wrapper" id="previewContainer">
-        <iframe id="previewFrame"></iframe>
-
-        <div id="resultBox" class="hidden mt-4 bg-white rounded-2xl p-4 ios-card">
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="text-xs font-black text-slate-500 uppercase">Resultado</div>
-              <div id="resultTitle" class="text-sm font-black text-slate-900">Factura emitida</div>
-            </div>
-            <button id="btnShareWa" class="btn bg-emerald-600 text-white rounded-xl px-3 py-2 text-xs font-black">
-              WhatsApp
+          <div style="display:flex; gap:10px; margin-bottom:10px;">
+            <button id="btnAddItem" class="btn primary mini" style="flex:1;">
+              <span class="btnIcon">＋</span>
+              Agregar
+            </button>
+            <button id="btnClearItems" class="btn ghost mini">
+              🧹 Limpiar
             </button>
           </div>
 
-          <div id="resultList" class="mt-3 space-y-2"></div>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <!-- NAV -->
-  <nav class="glass-dock fixed bottom-0 w-full pb-safe pt-2 px-6 flex justify-between items-center z-50">
-    <button data-tab="capture" id="nav-capture" class="flex flex-col items-center gap-1 w-14 text-blue-600 transition-colors">
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-      </svg>
-      <span class="text-[9px] font-extrabold uppercase tracking-wide">Inicio</span>
-    </button>
-
-    <button data-tab="items" id="nav-items" class="flex flex-col items-center gap-1 w-14 text-slate-400 transition-colors">
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
-      </svg>
-      <span class="text-[9px] font-extrabold uppercase tracking-wide">Datos</span>
-    </button>
-
-    <div class="relative -top-5">
-      <button id="btnMainAction" class="btn bg-blue-600 text-white w-18 h-18 rounded-full shadow-[0_10px_25px_rgba(59,130,246,0.3)] flex flex-col items-center justify-center transform active:scale-90 transition border-4 border-white">
-        <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-        </svg>
-        <span class="text-[8px] font-black mt-1 uppercase" id="btnMainLabel">Procesar</span>
-      </button>
-    </div>
-
-    <button data-tab="preview" id="nav-preview" class="flex flex-col items-center gap-1 w-14 text-slate-400 transition-colors">
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-        <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-      </svg>
-      <span class="text-[9px] font-extrabold uppercase tracking-wide">Borrador</span>
-    </button>
-
-    <button id="btnShareNative" class="flex flex-col items-center gap-1 w-14 text-slate-400 transition-colors">
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path>
-      </svg>
-      <span class="text-[9px] font-extrabold uppercase tracking-wide">Enviar</span>
-    </button>
-  </nav>
-
-  <!-- MODAL ITEM -->
-  <div id="modalItem" class="hidden fixed inset-0 z-[200] flex items-end">
-    <div class="absolute inset-0 modal-backdrop" id="modalBackdrop"></div>
-    <div class="relative w-full bg-white rounded-t-3xl p-5 pb-safe ios-card">
-      <div class="flex items-center justify-between">
-        <div>
-          <div class="text-xs font-black text-slate-500 uppercase">Ítem</div>
-          <div id="modalTitle" class="text-base font-black text-slate-900">Agregar ítem</div>
-        </div>
-        <button id="btnCloseModal" class="btn bg-slate-100 text-slate-900 rounded-xl px-3 py-2 text-xs font-black">Cerrar</button>
-      </div>
-
-      <div class="mt-4 space-y-3">
-        <div>
-          <label class="block text-xs font-black text-slate-500">Descripción</label>
-          <input id="m_desc" type="text" class="w-full bg-slate-50 border-none rounded-xl p-4 font-bold text-slate-900 focus:ring-2 focus:ring-blue-500" placeholder="Ej: Detergente 5L">
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-black text-slate-500">Cantidad</label>
-            <input id="m_qty" type="number" class="w-full bg-slate-50 border-none rounded-xl p-4 font-black text-slate-900 focus:ring-2 focus:ring-blue-500" placeholder="1">
+          <div id="itemsList" class="list">
+            <div class="empty">Procesá un PDF o cargá ítems manuales.</div>
           </div>
-          <div>
-            <label class="block text-xs font-black text-slate-500">Precio unit c/IVA</label>
-            <input id="m_unit" type="number" class="w-full bg-slate-50 border-none rounded-xl p-4 font-black text-slate-900 focus:ring-2 focus:ring-blue-500" placeholder="0">
+
+          <div style="height:12px;"></div>
+          <div class="grid3">
+            <button id="btnRecalc" class="btn ghost">↻ Totales</button>
+            <button id="btnGoManualFromData" class="btn ghost">✍️ Manual</button>
+            <button id="btnGoPreview" class="btn dark">👁️ Borrador</button>
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <button id="btnDeleteItem" class="hidden btn bg-red-600 text-white rounded-2xl py-3 font-black">Eliminar</button>
-          <button id="btnSaveItem" class="btn bg-blue-600 text-white rounded-2xl py-3 font-black col-span-2">Guardar</button>
+        <div style="height:14px;"></div>
+
+        <div class="card">
+          <div class="sectionTitle">
+            <div class="t">Descuento</div>
+            <div class="hint">opcional</div>
+          </div>
+          <div class="grid2">
+            <div class="field">
+              <label for="descuentoPct">%</label>
+              <input id="descuentoPct" inputmode="decimal" type="text" placeholder="0" />
+            </div>
+            <div class="field">
+              <label for="descuentoImporte">$</label>
+              <input id="descuentoImporte" inputmode="decimal" type="text" placeholder="0" />
+            </div>
+          </div>
+          <div class="helper" style="margin-top:10px;">
+            Si completás <b>importe</b>, manda sobre %. Si completás %, recalcula total.
+          </div>
+        </div>
+      </section>
+
+      <!-- MANUAL -->
+      <section id="screen-manual" class="screen">
+        <div class="card soft">
+          <div class="sectionTitle">
+            <div class="t">Manual</div>
+            <div class="hint">carga por ítem</div>
+          </div>
+
+          <div style="font-size:16px;font-weight:1000;letter-spacing:-.02em;margin-bottom:6px;">
+            Factura manual (rápida)
+          </div>
+          <div class="helper">
+            Agregá ítems acá. Si querés editar CUIT, domicilio o descuento: andá a “Datos”.
+          </div>
+
+          <div style="height:12px;"></div>
+          <div class="grid2">
+            <button id="btnManualAddItem" class="btn primary">
+              <span class="btnIcon">＋</span>
+              Agregar ítem
+            </button>
+            <button id="btnManualGoData" class="btn dark">
+              <span class="btnIcon">≡</span>
+              Ir a Datos
+            </button>
+          </div>
+
+          <div style="height:12px;"></div>
+
+          <div class="summary">
+            <div class="sumTop">
+              <div class="chip">Total estimado</div>
+              <div class="chip warn hidden" id="chipDescManual">Descuento</div>
+            </div>
+            <div class="totalRow">
+              <div class="total" id="txtTotalManual">$0,00</div>
+              <div class="strike hidden" id="txtSubtotalManual">$0,00</div>
+            </div>
+          </div>
+
+          <div style="height:12px;"></div>
+          <button id="btnManualGoPreview" class="btn ghost" style="width:100%;">
+            👁️ Ver borrador
+          </button>
+        </div>
+
+        <div style="height:14px;"></div>
+
+        <div class="card">
+          <div class="sectionTitle">
+            <div class="t">Ítems</div>
+            <div class="hint"><span id="itemCountManual">0</span> ítems</div>
+          </div>
+
+          <div id="itemsListManual" class="list">
+            <div class="empty">Agregá ítems para emitir manual.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PREVIEW -->
+      <section id="screen-preview" class="screen">
+        <div class="summary">
+          <div class="sumTop">
+            <div class="chip">Resumen</div>
+            <div id="chipDescPct" class="chip ok hidden">DESC 0%</div>
+          </div>
+          <div class="totalRow">
+            <div class="total" id="txtTotal">$0,00</div>
+            <div class="strike hidden" id="txtSubtotal">$0,00</div>
+          </div>
+
+          <div style="height:12px;"></div>
+          <div class="grid2">
+            <button id="btnEmitir" class="btn primary">
+              <span class="btnIcon">⚡</span>
+              Emitir
+            </button>
+            <button id="btnResetDraft" class="btn danger">
+              ♻️ Nuevo
+            </button>
+          </div>
+        </div>
+
+        <div style="height:14px;"></div>
+
+        <div class="card">
+          <div class="sectionTitle">
+            <div class="t">Partes</div>
+            <div class="hint">preview backend</div>
+          </div>
+
+          <div id="railPartes" class="rail"></div>
+
+          <div class="frameWrap" id="frameWrap">
+            <div class="frameLoading">
+              <div class="spinner" aria-hidden="true"></div>
+            </div>
+            <iframe id="previewFrame" title="Preview"></iframe>
+          </div>
+
+          <div id="resultBox" class="hidden" style="margin-top:12px;">
+            <div class="sectionTitle" style="margin-bottom:8px;">
+              <div class="t">Resultado</div>
+              <button id="btnShareWa" class="btn ok mini">📲 WhatsApp</button>
+            </div>
+            <div class="helper" id="resultTitle" style="font-weight:950;color:var(--text);margin-bottom:8px;">
+              Factura emitida
+            </div>
+            <div id="resultList" class="resultList"></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <nav>
+      <div class="dock">
+        <button id="navCapture" class="navBtn active" data-screen="capture">
+          <div>🏠</div><span>Inicio</span>
+        </button>
+
+        <button id="navData" class="navBtn" data-screen="data">
+          <div>≡</div><span>Datos</span>
+        </button>
+
+        <div class="fabWrap">
+          <button id="btnMainAction" class="fab" aria-label="Acción principal">
+            <div style="font-size:22px;">📄</div>
+            <div class="lbl" id="btnMainLabel">Procesar</div>
+          </button>
+        </div>
+
+        <button id="navPreview" class="navBtn" data-screen="preview">
+          <div>👁️</div><span>Borrador</span>
+        </button>
+
+        <button id="btnShareNative" class="navBtn">
+          <div>📤</div><span>Enviar</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- TOAST -->
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <!-- GLOBAL OVERLAY -->
+    <div id="overlay" class="overlay" aria-hidden="true">
+      <div class="loaderCard">
+        <div class="spinRow">
+          <div class="spinner" aria-hidden="true"></div>
+          <div>
+            <div id="overlayTitle" class="loaderTitle">Procesando…</div>
+            <div id="overlaySub" class="loaderSub">Un segundo…</div>
+          </div>
+        </div>
+        <div class="steps">
+          <div class="step" id="st1"><span class="k">1</span> Subiendo / leyendo</div>
+          <div class="step" id="st2"><span class="k">2</span> Extrayendo ítems</div>
+          <div class="step" id="st3"><span class="k">3</span> Generando preview</div>
+          <div class="step" id="st4"><span class="k">4</span> Emitiendo (ARCA + PDF)</div>
         </div>
       </div>
     </div>
+
+    <!-- ITEM SHEET -->
+    <div id="sheetItem" class="sheet" aria-hidden="true">
+      <div class="backdrop" id="sheetBackdrop"></div>
+      <div class="panel">
+        <div class="grab"></div>
+
+        <div class="sheetTop">
+          <div>
+            <div class="sheetTitle">Ítem</div>
+            <div id="sheetH" class="sheetH">Agregar ítem</div>
+          </div>
+          <button id="btnCloseSheet" class="btn ghost mini">Cerrar</button>
+        </div>
+
+        <div class="card" style="box-shadow:none;background:rgba(0,0,0,.14);border-color:rgba(255,255,255,.08);">
+          <div class="field">
+            <label for="m_desc">Descripción</label>
+            <input id="m_desc" type="text" placeholder="Ej: Detergente 5L" />
+          </div>
+
+          <div style="height:12px;"></div>
+
+          <div class="grid2">
+            <div class="field">
+              <label for="m_qty">Cantidad</label>
+              <input id="m_qty" inputmode="decimal" type="text" placeholder="1" />
+            </div>
+            <div class="field">
+              <label for="m_unit">Precio unit c/IVA</label>
+              <input id="m_unit" inputmode="decimal" type="text" placeholder="0" />
+            </div>
+          </div>
+
+          <div style="height:12px;"></div>
+
+          <div class="grid2">
+            <button id="btnDeleteItem" class="btn danger hidden">🗑️ Eliminar</button>
+            <button id="btnSaveItem" class="btn primary">✅ Guardar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <script>
+    // (Opcional PWA)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
       });
     }
   </script>
-
-  <script src="app.js" defer></script>
+  <script src="./app.js" defer></script>
 </body>
 </html>
