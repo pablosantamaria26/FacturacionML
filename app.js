@@ -1,756 +1,766 @@
 "use strict";
 
-// =========================
-// CONFIG
-// =========================
+/* =========================================================
+   CONFIG
+========================================================= */
 const BASE = "https://api-mercadolimpio.onrender.com";
 const ITEMS_POR_FACTURA = 25;
+const DRAFT_KEY = "ml_facturacion_draft_v2_native";
 
-// Draft storage
-const DRAFT_KEY = "ml_facturacion_draft_v1";
+/* =========================================================
+   STATE
+========================================================= */
+const state = {
+  items: [],
+  domicilioRemito: "",
+  subtotalBruto: 0,
+  descuentoPct: 0,
+  descuentoImporte: 0,
+  total: 0,
 
-// Estado global
-let itemsGlobal = [];
-let domicilioRemitoGlobal = "";
-let subtotalBrutoGlobal = 0;
-let descuentoPctGlobal = 0;
-let descuentoImporteGlobal = 0;
-let totalFinalGlobal = 0;
+  facturas: [],
+  waText: "",
+  waLink: "",
 
-let facturasEmitidas = [];
-let currentWaText = "";
-let currentWaLink = "";
+  active: "capture",
+  editingIndex: -1,
 
-// UI refs
-let inputPdf, loaderUI, statusAlert, btnMainAction, btnShareNative, statusBadge, btnMainLabel;
-let modalItem, modalBackdrop, btnCloseModal, btnSaveItem, btnDeleteItem, modalTitle;
-let m_desc, m_qty, m_unit;
-let editingIndex = -1;
+  online: null,
+  toastTimer: null
+};
 
-// =========================
-// INIT
-// =========================
+/* =========================================================
+   DOM refs
+========================================================= */
+const $ = (id) => document.getElementById(id);
+
+let inputPdf;
+
 document.addEventListener("DOMContentLoaded", () => {
-  // UI
-  inputPdf = document.getElementById("inputPdf");
-  loaderUI = document.getElementById("loaderUI");
-  statusAlert = document.getElementById("statusAlert");
-  btnMainAction = document.getElementById("btnMainAction");
-  btnShareNative = document.getElementById("btnShareNative");
-  statusBadge = document.getElementById("statusBadge");
-  btnMainLabel = document.getElementById("btnMainLabel");
+  inputPdf = $("inputPdf");
 
-  // Buttons
-  document.getElementById("btnPickPdf")?.addEventListener("click", () => inputPdf.click());
-  document.getElementById("btnGoManual")?.addEventListener("click", () => switchTab("manual"));
-  document.getElementById("btnGoManual2")?.addEventListener("click", () => switchTab("manual"));
+  // nav
+  document.querySelectorAll("[data-screen]").forEach(btn => {
+    btn.addEventListener("click", () => switchScreen(btn.getAttribute("data-screen")));
+  });
 
-  document.getElementById("btnManualAddItem")?.addEventListener("click", () => openItemModal(-1));
-  document.getElementById("btnManualGoData")?.addEventListener("click", () => switchTab("items"));
-  document.getElementById("btnManualGoPreview")?.addEventListener("click", () => { recalcTotals(); switchTab("preview"); });
+  // primary actions
+  $("btnPickPdf")?.addEventListener("click", () => inputPdf.click());
+  $("btnMainAction")?.addEventListener("click", onMainAction);
 
-  document.getElementById("btnAddItem")?.addEventListener("click", () => openItemModal(-1));
-  document.getElementById("btnClearItems")?.addEventListener("click", clearItems);
-  document.getElementById("btnRecalc")?.addEventListener("click", () => { recalcTotals(); mostrarAlerta("✅ Totales actualizados.", "success"); });
-  document.getElementById("btnGoPreview")?.addEventListener("click", () => { recalcTotals(); switchTab("preview"); });
+  $("btnGoManual")?.addEventListener("click", () => switchScreen("manual"));
+  $("btnGoManual2")?.addEventListener("click", () => switchScreen("manual"));
+  $("btnGoManualFromData")?.addEventListener("click", () => switchScreen("manual"));
+  $("btnManualGoData")?.addEventListener("click", () => switchScreen("data"));
 
-  document.getElementById("btnEmitir")?.addEventListener("click", emitirFactura);
-  document.getElementById("btnResetDraft")?.addEventListener("click", resetDraft);
-  document.getElementById("btnShareWa")?.addEventListener("click", shareWhatsAppDirect);
+  $("btnAddItem")?.addEventListener("click", () => openItemSheet(-1));
+  $("btnManualAddItem")?.addEventListener("click", () => openItemSheet(-1));
+  $("btnManualGoPreview")?.addEventListener("click", () => { recalcTotals(); switchScreen("preview"); });
+  $("btnGoPreview")?.addEventListener("click", () => { recalcTotals(); switchScreen("preview"); });
 
-  // Modal refs
-  modalItem = document.getElementById("modalItem");
-  modalBackdrop = document.getElementById("modalBackdrop");
-  btnCloseModal = document.getElementById("btnCloseModal");
-  btnSaveItem = document.getElementById("btnSaveItem");
-  btnDeleteItem = document.getElementById("btnDeleteItem");
-  modalTitle = document.getElementById("modalTitle");
+  $("btnClearItems")?.addEventListener("click", clearItems);
+  $("btnRecalc")?.addEventListener("click", () => { recalcTotals(); toast("✅ Totales actualizados", "ok"); });
 
-  m_desc = document.getElementById("m_desc");
-  m_qty = document.getElementById("m_qty");
-  m_unit = document.getElementById("m_unit");
+  $("btnEmitir")?.addEventListener("click", emitirFactura);
+  $("btnResetDraft")?.addEventListener("click", resetDraft);
 
-  btnCloseModal?.addEventListener("click", closeItemModal);
-  modalBackdrop?.addEventListener("click", closeItemModal);
-  btnSaveItem?.addEventListener("click", saveItemFromModal);
-  btnDeleteItem?.addEventListener("click", deleteItemFromModal);
+  $("btnShareWa")?.addEventListener("click", shareWhatsAppDirect);
+  $("btnShareNative")?.addEventListener("click", shareNative);
 
-  // Inputs -> autosave + recalc
+  // sheet
+  $("btnCloseSheet")?.addEventListener("click", closeItemSheet);
+  $("sheetBackdrop")?.addEventListener("click", closeItemSheet);
+  $("btnSaveItem")?.addEventListener("click", saveItemFromSheet);
+  $("btnDeleteItem")?.addEventListener("click", deleteItemFromSheet);
+
+  // inputs -> autosave
   ["cuit", "domicilioRemito", "condicionVenta", "descuentoPct", "descuentoImporte"].forEach(id => {
-    const el = document.getElementById(id);
-    el?.addEventListener("input", () => {
-      pullFormIntoGlobals();
-      recalcTotals();
-      saveDraft();
-    });
-    el?.addEventListener("change", () => {
-      pullFormIntoGlobals();
-      recalcTotals();
-      saveDraft();
-    });
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener("input", onFormChanged);
+    el.addEventListener("change", onFormChanged);
   });
 
-  // Nav buttons
-  document.querySelectorAll("button[data-tab]").forEach(btn => {
-    btn.addEventListener("click", () => switchTab(btn.getAttribute("data-tab")));
-  });
-
-  // Main action = procesar PDF (si estás en capture) / agregar item (si estás en manual)
-  btnMainAction?.addEventListener("click", () => {
-    const active = getActiveTab();
-    if (active === "manual" || active === "items") openItemModal(-1);
-    else inputPdf.click();
-  });
-
-  // Share native
-  btnShareNative?.addEventListener("click", shareNative);
-
-  // File change
+  // file
   inputPdf?.addEventListener("change", procesarArchivo);
 
-  // Health ping
-  startHealthPolling();
-
-  // Restore draft
+  // init
   loadDraft();
-
-  // Initial tab
-  switchTab("capture");
+  renderAll();
+  startHealthPolling();
+  switchScreen("capture", { silent: true });
 });
 
-// =========================
-// HELPERS
-// =========================
-function moneyAR(n) {
+/* =========================================================
+   UTIL
+========================================================= */
+function moneyAR(n){
   const v = Number(n || 0);
   return v.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
-function round2(n) {
+function round2(n){
   return Math.round((Number(n || 0) + Number.EPSILON) * 100) / 100;
 }
-function sumItems() {
-  return round2(itemsGlobal.reduce((a, it) => a + Number(it.subtotalConIva || 0), 0));
+function sumItems(){
+  return round2(state.items.reduce((a,it) => a + Number(it.subtotalConIva || 0), 0));
 }
-function getActiveTab() {
-  const tabs = ["capture", "items", "manual", "preview"];
-  for (const t of tabs) {
-    const el = document.getElementById(`tab-${t}`);
-    if (el && !el.classList.contains("hidden")) return t;
-  }
-  return "capture";
+function escapeHtml(s){
+  return String(s || "").replace(/[&<>"']/g, (m) => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[m]));
 }
-function setMainActionLabel() {
-  const active = getActiveTab();
-  if (!btnMainLabel) return;
-  if (active === "manual" || active === "items") btnMainLabel.textContent = "Agregar";
-  else btnMainLabel.textContent = "Procesar";
+function escapeJs(s){
+  return String(s || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 }
-
-// =========================
-// ALERTS
-// =========================
-function mostrarAlerta(msg, tipo) {
-  statusAlert.innerHTML = msg;
-  statusAlert.className = `fixed top-16 left-1/2 transform -translate-x-1/2 z-[100] rounded-full px-5 py-3 text-xs font-black shadow-2xl min-w-[80%] text-center transition-all duration-300 ${
-    tipo === "success" ? "bg-emerald-600 text-white" :
-    tipo === "error" ? "bg-red-600 text-white" :
-    "bg-slate-900 text-white"
-  }`;
-  statusAlert.classList.remove("hidden");
-  if (tipo !== "info") setTimeout(() => statusAlert.classList.add("hidden"), 3500);
+function vibrate(ms=10){
+  // haptic-lite (Android) - silencioso si no soporta
+  try { if (navigator.vibrate) navigator.vibrate(ms); } catch {}
+}
+function parseNum(str){
+  // acepta "1.234,56" / "1234.56" / "1234,56"
+  const s = String(str ?? "").trim();
+  if (!s) return 0;
+  const cleaned = s
+    .replace(/\s/g,"")
+    .replace(/\./g,"")
+    .replace(/,/g,".");
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : 0;
 }
 
-// =========================
-// TAB NAV
-// =========================
-function switchTab(tabId) {
-  ["tab-capture", "tab-items", "tab-manual", "tab-preview"].forEach(id => document.getElementById(id)?.classList.add("hidden"));
-  ["nav-capture", "nav-items", "nav-preview"].forEach(id => {
-    const el = document.getElementById(id);
+/* =========================================================
+   TOAST + OVERLAY
+========================================================= */
+function toast(msg, kind="info", timeout=2800){
+  const el = $("toast");
+  if (!el) return;
+
+  el.className = `toast ${kind}`;
+  el.textContent = msg;
+  el.classList.add("show");
+
+  if (state.toastTimer) clearTimeout(state.toastTimer);
+  state.toastTimer = setTimeout(() => el.classList.remove("show"), timeout);
+}
+
+function overlay(show, { title="Procesando…", sub="Un segundo…", step=1 } = {}){
+  const ov = $("overlay");
+  if (!ov) return;
+
+  $("overlayTitle").textContent = title;
+  $("overlaySub").textContent = sub;
+
+  // steps highlight
+  ["st1","st2","st3","st4"].forEach((id, idx) => {
+    const el = $(id);
     if (!el) return;
-    el.classList.remove("text-blue-600");
-    el.classList.add("text-slate-400");
+    el.classList.toggle("on", (idx+1) === step);
   });
 
-  document.getElementById(`tab-${tabId}`)?.classList.remove("hidden");
-  if (tabId === "capture") highlightNav("nav-capture");
-  if (tabId === "items" || tabId === "manual") highlightNav("nav-items");
-  if (tabId === "preview") highlightNav("nav-preview");
+  ov.classList.toggle("show", !!show);
+  ov.setAttribute("aria-hidden", show ? "false" : "true");
+}
 
-  setMainActionLabel();
+/* =========================================================
+   NAV / SCREENS
+========================================================= */
+function switchScreen(name, { silent=false } = {}){
+  state.active = name;
 
-  if (tabId === "preview") {
-    pullFormIntoGlobals();
+  // screens
+  ["capture","data","manual","preview"].forEach(s => {
+    const sc = $(`screen-${s}`);
+    if (!sc) return;
+    sc.classList.toggle("active", s === name);
+  });
+
+  // nav buttons
+  $("navCapture")?.classList.toggle("active", name === "capture");
+  $("navData")?.classList.toggle("active", name === "data" || name === "manual");
+  $("navPreview")?.classList.toggle("active", name === "preview");
+
+  setMainLabel();
+
+  if (!silent) vibrate(8);
+
+  if (name === "preview"){
+    pullFormIntoState();
     recalcTotals();
     buildPreviewRail().catch(() => {});
   }
-  if (tabId === "manual") {
+  if (name === "manual"){
     renderManualList();
-    refreshManualTotalsPills();
+    refreshManualTotals();
   }
 }
 
-function highlightNav(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.classList.remove("text-slate-400");
-  el.classList.add("text-blue-600");
+function setMainLabel(){
+  const lbl = $("btnMainLabel");
+  if (!lbl) return;
+  if (state.active === "data" || state.active === "manual") lbl.textContent = "Agregar";
+  else lbl.textContent = "Procesar";
 }
 
-// =========================
-// FORM <-> GLOBALS
-// =========================
-function pullFormIntoGlobals() {
-  const cuit = document.getElementById("cuit")?.value?.trim() || "";
-  const dom = document.getElementById("domicilioRemito")?.value?.trim() || "";
-  domicilioRemitoGlobal = dom;
-
-  descuentoPctGlobal = Number(document.getElementById("descuentoPct")?.value || 0);
-  descuentoImporteGlobal = Number(document.getElementById("descuentoImporte")?.value || 0);
-
-  // subtotalBrutoGlobal: lo usamos como "subtotal pre-desc" si estamos en manual
-  subtotalBrutoGlobal = sumItems();
-
-  // no guardo cuit acá global (solo en draft), pero queda en el input
-  return cuit;
+/* =========================================================
+   FORM <-> STATE
+========================================================= */
+function onFormChanged(){
+  pullFormIntoState();
+  recalcTotals();
+  saveDraft();
+  renderBadges();
 }
 
-function pushGlobalsToForm() {
-  document.getElementById("domicilioRemito").value = domicilioRemitoGlobal || "";
-  document.getElementById("descuentoPct").value = String(descuentoPctGlobal || 0);
-  document.getElementById("descuentoImporte").value = String(descuentoImporteGlobal || 0);
+function pullFormIntoState(){
+  state.domicilioRemito = ($("domicilioRemito")?.value || "").trim();
+
+  state.descuentoPct = parseNum($("descuentoPct")?.value);
+  state.descuentoImporte = parseNum($("descuentoImporte")?.value);
+
+  // subtotal base
+  state.subtotalBruto = sumItems();
 }
 
-// =========================
-// DRAFT STORAGE
-// =========================
-function saveDraft() {
+function pushStateToForm(){
+  if ($("domicilioRemito")) $("domicilioRemito").value = state.domicilioRemito || "";
+  if ($("descuentoPct")) $("descuentoPct").value = String(state.descuentoPct || 0);
+  if ($("descuentoImporte")) $("descuentoImporte").value = String(state.descuentoImporte || 0);
+}
+
+/* =========================================================
+   DRAFT
+========================================================= */
+function saveDraft(){
   const draft = {
-    cuit: document.getElementById("cuit")?.value?.trim() || "",
-    domicilioRemito: domicilioRemitoGlobal || "",
-    condicionVenta: document.getElementById("condicionVenta")?.value || "Transferencia Bancaria",
-    descuentoPct: Number(descuentoPctGlobal || 0),
-    descuentoImporte: Number(descuentoImporteGlobal || 0),
-    items: itemsGlobal,
+    cuit: ($("cuit")?.value || "").trim(),
+    domicilioRemito: state.domicilioRemito || "",
+    condicionVenta: $("condicionVenta")?.value || "Transferencia Bancaria",
+    descuentoPct: Number(state.descuentoPct || 0),
+    descuentoImporte: Number(state.descuentoImporte || 0),
+    items: state.items,
     ts: Date.now()
   };
-  try {
+
+  try{
     localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-    showDraftPill(true);
-  } catch {}
+  }catch{}
 }
 
-function loadDraft() {
-  try {
+function loadDraft(){
+  try{
     const raw = localStorage.getItem(DRAFT_KEY);
     if (!raw) return;
     const d = JSON.parse(raw);
 
-    if (d?.cuit) document.getElementById("cuit").value = d.cuit;
-    if (d?.domicilioRemito) domicilioRemitoGlobal = d.domicilioRemito;
-    if (d?.condicionVenta) document.getElementById("condicionVenta").value = d.condicionVenta;
+    if (d?.cuit) $("cuit").value = d.cuit;
+    if (d?.domicilioRemito) state.domicilioRemito = d.domicilioRemito;
+    if (d?.condicionVenta) $("condicionVenta").value = d.condicionVenta;
 
-    descuentoPctGlobal = Number(d?.descuentoPct || 0);
-    descuentoImporteGlobal = Number(d?.descuentoImporte || 0);
+    state.descuentoPct = Number(d?.descuentoPct || 0);
+    state.descuentoImporte = Number(d?.descuentoImporte || 0);
+    state.items = Array.isArray(d?.items) ? d.items : [];
 
-    itemsGlobal = Array.isArray(d?.items) ? d.items : [];
-
-    pushGlobalsToForm();
-    updateItemsListUI();
-    renderManualList();
+    pushStateToForm();
     recalcTotals();
-    showDraftPill(itemsGlobal.length > 0 || !!d?.cuit);
-  } catch {}
+    renderAll();
+  }catch{}
 }
 
-function resetDraft() {
-  itemsGlobal = [];
-  domicilioRemitoGlobal = "";
-  subtotalBrutoGlobal = 0;
-  descuentoPctGlobal = 0;
-  descuentoImporteGlobal = 0;
-  totalFinalGlobal = 0;
-  facturasEmitidas = [];
-  currentWaText = "";
-  currentWaLink = "";
+function resetDraft(){
+  state.items = [];
+  state.domicilioRemito = "";
+  state.subtotalBruto = 0;
+  state.descuentoPct = 0;
+  state.descuentoImporte = 0;
+  state.total = 0;
+  state.facturas = [];
+  state.waText = "";
+  state.waLink = "";
 
-  document.getElementById("cuit").value = "";
-  document.getElementById("domicilioRemito").value = "";
-  document.getElementById("descuentoPct").value = "0";
-  document.getElementById("descuentoImporte").value = "0";
-  document.getElementById("condicionVenta").value = "Transferencia Bancaria";
+  if ($("cuit")) $("cuit").value = "";
+  if ($("condicionVenta")) $("condicionVenta").value = "Transferencia Bancaria";
+  pushStateToForm();
 
-  try { localStorage.removeItem(DRAFT_KEY); } catch {}
+  try{ localStorage.removeItem(DRAFT_KEY); }catch{}
 
-  updateItemsListUI();
-  renderManualList();
-  recalcTotals();
+  renderAll();
   hideResultBox();
-  showDraftPill(false);
-
-  mostrarAlerta("✅ Listo. Nuevo borrador.", "success");
-  switchTab("capture");
+  toast("✅ Listo. Nuevo borrador.", "ok");
+  switchScreen("capture");
 }
 
-function showDraftPill(show) {
-  const pill = document.getElementById("draftModePill");
-  if (!pill) return;
-  if (show) pill.classList.remove("hidden");
-  else pill.classList.add("hidden");
+function renderBadges(){
+  const hasDraft = (state.items.length > 0) || !!(($("cuit")?.value || "").trim());
+  $("badgeDraft")?.classList.toggle("hidden", !hasDraft);
 }
 
-function clearItems() {
-  itemsGlobal = [];
-  updateItemsListUI();
-  renderManualList();
-  recalcTotals();
-  saveDraft();
-  mostrarAlerta("🧹 Ítems limpiados.", "success");
-}
-
-// =========================
-// HEALTH / ONLINE BADGE
-// =========================
-async function healthOnce() {
-  try {
+/* =========================================================
+   HEALTH / ONLINE
+========================================================= */
+async function healthOnce(){
+  const badge = $("badgeOnline");
+  try{
     const r = await fetch(`${BASE}/health`, { cache: "no-store" });
     if (!r.ok) throw new Error("bad");
-    const j = await r.json();
-    statusBadge.className = "bg-emerald-100 text-emerald-700 text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-wide";
-    statusBadge.textContent = "Online";
-    return j;
-  } catch {
-    statusBadge.className = "bg-red-100 text-red-700 text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-wide";
-    statusBadge.textContent = "Offline";
-    return null;
+    await r.json();
+
+    state.online = true;
+    if (badge){
+      badge.className = "badge ok";
+      badge.textContent = "Online";
+    }
+  }catch{
+    state.online = false;
+    if (badge){
+      badge.className = "badge bad";
+      badge.textContent = "Offline";
+    }
   }
 }
-function startHealthPolling() {
+function startHealthPolling(){
   healthOnce();
   setInterval(healthOnce, 15000);
 }
 
-// =========================
-// PDF FLOW
-// =========================
-async function procesarArchivo(e) {
+/* =========================================================
+   MAIN ACTION
+========================================================= */
+function onMainAction(){
+  vibrate(10);
+  if (state.active === "data" || state.active === "manual"){
+    openItemSheet(-1);
+  }else{
+    inputPdf.click();
+  }
+}
+
+/* =========================================================
+   PDF FLOW
+========================================================= */
+async function procesarArchivo(e){
   if (!e.target.files || !e.target.files.length) return;
 
-  loaderUI.classList.remove("hidden");
-  statusAlert.classList.add("hidden");
+  hideResultBox();
+  overlay(true, { title:"Procesando PDF…", sub:"Subiendo y leyendo remitos", step:1 });
 
-  btnMainAction.disabled = true;
-  btnMainAction.classList.add("opacity-50");
+  // disable main
+  const fab = $("btnMainAction");
+  if (fab) fab.disabled = true;
 
   const formData = new FormData();
-  for (let i = 0; i < e.target.files.length; i++) formData.append("remito", e.target.files[i]);
+  for (let i = 0; i < e.target.files.length; i++){
+    formData.append("remito", e.target.files[i]);
+  }
 
-  try {
-    const r = await fetch(`${BASE}/leer-remito`, { method: "POST", body: formData });
+  try{
+    overlay(true, { title:"Procesando PDF…", sub:"Extrayendo ítems y totales", step:2 });
+    const r = await fetch(`${BASE}/leer-remito`, { method:"POST", body: formData });
     const res = await r.json();
     if (!r.ok) throw new Error(res.detail || "Error al procesar");
 
-    // Fill base
-    document.getElementById("cuit").value = res.cuit || "";
-    domicilioRemitoGlobal = res.domicilioRemito || "";
-    document.getElementById("domicilioRemito").value = domicilioRemitoGlobal;
+    // fill
+    $("cuit").value = res.cuit || "";
+    state.domicilioRemito = res.domicilioRemito || "";
+    $("domicilioRemito").value = state.domicilioRemito;
 
-    itemsGlobal = Array.isArray(res.items) ? res.items : [];
-    subtotalBrutoGlobal = Number(res.subtotalBruto || 0);
-    descuentoPctGlobal = Number(res.descuentoPct || 0);
-    descuentoImporteGlobal = Number(res.descuentoImporte || 0);
-    totalFinalGlobal = Number(res.total || 0);
+    state.items = Array.isArray(res.items) ? res.items : [];
+    state.subtotalBruto = Number(res.subtotalBruto || 0);
+    state.descuentoPct = Number(res.descuentoPct || 0);
+    state.descuentoImporte = Number(res.descuentoImporte || 0);
+    state.total = Number(res.total || 0);
 
-    document.getElementById("descuentoPct").value = String(descuentoPctGlobal || 0);
-    document.getElementById("descuentoImporte").value = String(descuentoImporteGlobal || 0);
+    $("descuentoPct").value = String(state.descuentoPct || 0);
+    $("descuentoImporte").value = String(state.descuentoImporte || 0);
 
-    updateItemsListUI();
-    renderManualList();
     recalcTotals(true);
-
     saveDraft();
 
-    loaderUI.classList.add("hidden");
-    mostrarAlerta(`✅ ¡Listo! ${itemsGlobal.length} ítems extraídos.`, "success");
-    setTimeout(() => switchTab("preview"), 700);
+    renderAll();
+    toast(`✅ Listo: ${state.items.length} ítems extraídos`, "ok");
+    vibrate(15);
 
-  } catch (err) {
-    loaderUI.classList.add("hidden");
-    mostrarAlerta(`❌ Error: ${err.message}`, "error");
-  } finally {
-    btnMainAction.disabled = false;
-    btnMainAction.classList.remove("opacity-50");
+    overlay(false);
+    switchScreen("preview");
+  }catch(err){
+    overlay(false);
+    toast(`❌ ${err.message}`, "bad", 4200);
+  }finally{
+    if (fab) fab.disabled = false;
     inputPdf.value = "";
   }
 }
 
-// =========================
-// ITEMS UI (Datos)
-// =========================
-function updateItemsListUI() {
-  const list = document.getElementById("itemsList");
-  const count = document.getElementById("itemCount");
-  if (count) count.textContent = itemsGlobal.length;
+/* =========================================================
+   ITEMS UI
+========================================================= */
+function updateItemsListUI(){
+  const list = $("itemsList");
+  const count = $("itemCount");
+  if (count) count.textContent = String(state.items.length);
 
   if (!list) return;
 
-  if (itemsGlobal.length === 0) {
-    list.innerHTML = `<div class="text-sm text-slate-400 italic text-center py-4">No hay artículos.</div>`;
+  if (!state.items.length){
+    list.innerHTML = `<div class="empty">Procesá un PDF o cargá ítems manuales.</div>`;
     return;
   }
 
-  list.innerHTML = itemsGlobal.map((it, idx) => `
-    <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
-      <div class="max-w-[70%]">
-        <div class="font-black text-slate-800 text-sm truncate">${escapeHtml(it.descripcion || "")}</div>
-        <div class="text-xs text-slate-500 font-bold">${Number(it.cantidad || 0)} un · $${moneyAR(Number(it.precioConIva || 0))} c/u</div>
+  list.innerHTML = state.items.map((it, idx) => `
+    <div class="item">
+      <div class="left">
+        <div class="desc">${escapeHtml(it.descripcion || "")}</div>
+        <div class="meta">${Number(it.cantidad || 0)} un · $${moneyAR(Number(it.precioConIva || 0))} c/u</div>
       </div>
-      <div class="flex items-center gap-2">
-        <div class="text-sm font-black text-slate-900">$${moneyAR(Number(it.subtotalConIva || 0))}</div>
-        <button class="btn bg-white border border-slate-200 rounded-lg px-2 py-2" onclick="openItemModal(${idx})" aria-label="Editar">
-          ✎
-        </button>
+      <div class="right">
+        <div class="money">$${moneyAR(Number(it.subtotalConIva || 0))}</div>
+        <button class="btn ghost mini" style="height:44px" onclick="window.__editItem(${idx})">✎ Editar</button>
       </div>
     </div>
   `).join("");
 }
 
-function escapeHtml(s) {
-  return String(s || "").replace(/[&<>"']/g, (m) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;" }[m]));
-}
-
-// =========================
-// ITEMS UI (Manual Tab)
-// =========================
-function renderManualList() {
-  const list = document.getElementById("itemsListManual");
-  const count = document.getElementById("itemCountManual");
-  if (count) count.textContent = itemsGlobal.length;
+function renderManualList(){
+  const list = $("itemsListManual");
+  const count = $("itemCountManual");
+  if (count) count.textContent = String(state.items.length);
 
   if (!list) return;
 
-  if (itemsGlobal.length === 0) {
-    list.innerHTML = `<div class="text-sm text-slate-400 italic text-center py-6">Agregá ítems para emitir manual.</div>`;
-    document.getElementById("txtTotalManual").textContent = "$0,00";
+  if (!state.items.length){
+    list.innerHTML = `<div class="empty">Agregá ítems para emitir manual.</div>`;
     return;
   }
 
-  list.innerHTML = itemsGlobal.map((it, idx) => `
-    <div class="flex justify-between items-center bg-slate-50 p-3 rounded-2xl border border-slate-100">
-      <div class="max-w-[72%]">
-        <div class="font-black text-slate-900 text-sm truncate">${escapeHtml(it.descripcion || "")}</div>
-        <div class="text-xs text-slate-500 font-bold">${Number(it.cantidad || 0)} un · $${moneyAR(Number(it.precioConIva || 0))} c/u</div>
+  list.innerHTML = state.items.map((it, idx) => `
+    <div class="item">
+      <div class="left">
+        <div class="desc">${escapeHtml(it.descripcion || "")}</div>
+        <div class="meta">${Number(it.cantidad || 0)} un · $${moneyAR(Number(it.precioConIva || 0))} c/u</div>
       </div>
-      <div class="flex items-center gap-2">
-        <div class="text-sm font-black text-slate-900">$${moneyAR(Number(it.subtotalConIva || 0))}</div>
-        <button class="btn bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-black" onclick="openItemModal(${idx})">Editar</button>
+      <div class="right">
+        <div class="money">$${moneyAR(Number(it.subtotalConIva || 0))}</div>
+        <button class="btn ghost mini" style="height:44px" onclick="window.__editItem(${idx})">✎ Editar</button>
       </div>
     </div>
   `).join("");
-
-  refreshManualTotalsPills();
 }
 
-function refreshManualTotalsPills() {
-  const total = Number(totalFinalGlobal || 0);
-  const sub = Number(subtotalBrutoGlobal || 0);
-  document.getElementById("txtTotalManual").textContent = `$${moneyAR(total)}`;
+window.__editItem = (idx) => openItemSheet(idx);
 
-  const pillSub = document.getElementById("pillSubtotalManual");
-  const pillDesc = document.getElementById("pillDescManual");
-
-  const hasDesc = (Number(descuentoImporteGlobal || 0) > 0 || Number(descuentoPctGlobal || 0) > 0) && sub > 0 && total > 0 && total < sub;
-  if (hasDesc) {
-    pillSub.classList.remove("hidden");
-    pillDesc.classList.remove("hidden");
-    pillSub.textContent = `Subtotal $${moneyAR(sub)}`;
-    const d = round2(sub - total);
-    pillDesc.textContent = `Desc -$${moneyAR(d)}`;
-  } else {
-    pillSub.classList.add("hidden");
-    pillDesc.classList.add("hidden");
-  }
+function clearItems(){
+  state.items = [];
+  recalcTotals();
+  saveDraft();
+  renderAll();
+  toast("🧹 Ítems limpiados", "ok");
+  vibrate(12);
 }
 
-// =========================
-// ITEM MODAL (ADD/EDIT)
-// =========================
-window.openItemModal = function(idx) {
-  editingIndex = Number(idx);
-  const isEdit = editingIndex >= 0;
+/* =========================================================
+   ITEM SHEET (ADD/EDIT)
+========================================================= */
+function openItemSheet(idx){
+  state.editingIndex = Number(idx);
+  const isEdit = state.editingIndex >= 0;
 
-  modalTitle.textContent = isEdit ? "Editar ítem" : "Agregar ítem";
-  btnDeleteItem.classList.toggle("hidden", !isEdit);
-  btnSaveItem.classList.toggle("col-span-2", !isEdit);
+  const sheet = $("sheetItem");
+  const del = $("btnDeleteItem");
+  const h = $("sheetH");
 
-  if (isEdit) {
-    const it = itemsGlobal[editingIndex];
-    m_desc.value = String(it.descripcion || "");
-    m_qty.value = String(Number(it.cantidad || 1));
-    m_unit.value = String(Number(it.precioConIva || 0));
-  } else {
-    m_desc.value = "";
-    m_qty.value = "1";
-    m_unit.value = "";
+  if (h) h.textContent = isEdit ? "Editar ítem" : "Agregar ítem";
+  if (del) del.classList.toggle("hidden", !isEdit);
+
+  if (isEdit){
+    const it = state.items[state.editingIndex];
+    $("m_desc").value = String(it.descripcion || "");
+    $("m_qty").value = String(Number(it.cantidad || 1));
+    $("m_unit").value = String(Number(it.precioConIva || 0));
+  }else{
+    $("m_desc").value = "";
+    $("m_qty").value = "1";
+    $("m_unit").value = "";
   }
 
-  modalItem.classList.remove("hidden");
-  setTimeout(() => m_desc.focus(), 50);
-};
-
-function closeItemModal() {
-  modalItem.classList.add("hidden");
-  editingIndex = -1;
+  sheet.classList.add("show");
+  sheet.setAttribute("aria-hidden", "false");
+  setTimeout(() => $("m_desc")?.focus(), 60);
+  vibrate(8);
 }
 
-function saveItemFromModal() {
-  const desc = String(m_desc.value || "").trim();
-  const qty = Number(m_qty.value || 0);
-  const unit = Number(m_unit.value || 0);
+function closeItemSheet(){
+  const sheet = $("sheetItem");
+  sheet.classList.remove("show");
+  sheet.setAttribute("aria-hidden", "true");
+  state.editingIndex = -1;
+}
 
-  if (!desc) return mostrarAlerta("Falta descripción.", "info");
-  if (!(qty > 0)) return mostrarAlerta("Cantidad inválida.", "info");
-  if (!(unit > 0)) return mostrarAlerta("Precio inválido.", "info");
+function saveItemFromSheet(){
+  const desc = String($("m_desc").value || "").trim();
+  const qty = parseNum($("m_qty").value);
+  const unit = parseNum($("m_unit").value);
+
+  if (!desc) return toast("Falta descripción", "info");
+  if (!(qty > 0)) return toast("Cantidad inválida", "info");
+  if (!(unit > 0)) return toast("Precio inválido", "info");
 
   const subtotal = round2(qty * unit);
-  const item = { cantidad: qty, descripcion: desc, precioConIva: round2(unit), subtotalConIva: subtotal };
+  const item = {
+    cantidad: qty,
+    descripcion: desc,
+    precioConIva: round2(unit),
+    subtotalConIva: subtotal
+  };
 
-  if (editingIndex >= 0) itemsGlobal[editingIndex] = item;
-  else itemsGlobal.push(item);
+  if (state.editingIndex >= 0) state.items[state.editingIndex] = item;
+  else state.items.push(item);
 
-  updateItemsListUI();
-  renderManualList();
+  pullFormIntoState();
   recalcTotals();
   saveDraft();
-
-  closeItemModal();
-  mostrarAlerta("✅ Ítem guardado.", "success");
+  renderAll();
+  closeItemSheet();
+  toast("✅ Ítem guardado", "ok");
+  vibrate(14);
 }
 
-function deleteItemFromModal() {
-  if (editingIndex < 0) return;
-  itemsGlobal.splice(editingIndex, 1);
-  updateItemsListUI();
-  renderManualList();
+function deleteItemFromSheet(){
+  if (state.editingIndex < 0) return;
+  state.items.splice(state.editingIndex, 1);
+
+  pullFormIntoState();
   recalcTotals();
   saveDraft();
+  renderAll();
+  closeItemSheet();
 
-  closeItemModal();
-  mostrarAlerta("🗑️ Ítem eliminado.", "success");
+  toast("🗑️ Ítem eliminado", "ok");
+  vibrate(14);
 }
 
-// =========================
-// TOTALS + DISCOUNT
-// =========================
-function recalcTotals(fromPdf = false) {
-  // Subtotal bruto = suma de items (si venís de PDF y tu backend ya calculó subtotalBrutoGlobal,
-  // lo respetamos SOLO si tiene sentido (>= sumaItems). Si no, recalculamos con items.)
+/* =========================================================
+   TOTALS + DISCOUNT
+========================================================= */
+function recalcTotals(fromPdf=false){
   const sum = sumItems();
-  const existingSub = Number(subtotalBrutoGlobal || 0);
+  const existingSub = Number(state.subtotalBruto || 0);
 
-  if (!fromPdf) subtotalBrutoGlobal = sum;
-  else {
-    // si backend dio subtotalBruto, úsalo; si no, sum
-    subtotalBrutoGlobal = existingSub > 0 ? existingSub : sum;
-  }
+  // subtotal
+  if (!fromPdf) state.subtotalBruto = sum;
+  else state.subtotalBruto = existingSub > 0 ? existingSub : sum;
 
-  // descuento
-  descuentoPctGlobal = Number(document.getElementById("descuentoPct")?.value || descuentoPctGlobal || 0);
-  descuentoImporteGlobal = Number(document.getElementById("descuentoImporte")?.value || descuentoImporteGlobal || 0);
+  // descuento (desde inputs)
+  state.descuentoPct = parseNum($("descuentoPct")?.value);
+  state.descuentoImporte = parseNum($("descuentoImporte")?.value);
 
-  // total final:
+  // total
   let total = sum;
 
-  // Si estás en modo remito: totalFinalGlobal viene del backend y ya es el total post-desc.
-  // Pero si el usuario toca descuento manualmente, recalculamos.
-  const userTouchedDiscount = (descuentoPctGlobal > 0 || descuentoImporteGlobal > 0);
-
-  if (userTouchedDiscount) {
-    const subForDisc = subtotalBrutoGlobal > 0 ? subtotalBrutoGlobal : sum;
-    if (descuentoImporteGlobal > 0) total = round2(subForDisc - descuentoImporteGlobal);
-    else if (descuentoPctGlobal > 0) total = round2(subForDisc * (1 - (descuentoPctGlobal / 100)));
+  const userTouchedDiscount = (state.descuentoPct > 0 || state.descuentoImporte > 0);
+  if (userTouchedDiscount){
+    const subForDisc = state.subtotalBruto > 0 ? state.subtotalBruto : sum;
+    if (state.descuentoImporte > 0) total = round2(subForDisc - state.descuentoImporte);
+    else if (state.descuentoPct > 0) total = round2(subForDisc * (1 - (state.descuentoPct / 100)));
     else total = sum;
-  } else {
-    // si venís de PDF y backend dio totalFinalGlobal úsalo; si no, sum
-    if (fromPdf && Number(totalFinalGlobal || 0) > 0) total = Number(totalFinalGlobal || 0);
+  }else{
+    if (fromPdf && Number(state.total || 0) > 0) total = Number(state.total || 0);
     else total = sum;
   }
 
   if (total < 0) total = 0;
-  totalFinalGlobal = round2(total);
+  state.total = round2(total);
 
-  // Update preview top
-  const totalEl = document.getElementById("txtTotal");
-  if (totalEl) totalEl.textContent = `$${moneyAR(totalFinalGlobal)}`;
+  // preview summary
+  if ($("txtTotal")) $("txtTotal").textContent = `$${moneyAR(state.total)}`;
 
-  const subEl = document.getElementById("txtSubtotal");
-  const pctEl = document.getElementById("txtDescPct");
+  const hasDesc = state.subtotalBruto > 0 && state.total > 0 && state.total < state.subtotalBruto - 0.005;
 
-  const hasDesc = subtotalBrutoGlobal > 0 && totalFinalGlobal > 0 && totalFinalGlobal < subtotalBrutoGlobal - 0.005;
-  if (hasDesc) {
-    subEl.classList.remove("hidden");
-    subEl.textContent = `$${moneyAR(subtotalBrutoGlobal)}`;
+  if (hasDesc){
+    $("txtSubtotal")?.classList.remove("hidden");
+    $("txtSubtotal").textContent = `$${moneyAR(state.subtotalBruto)}`;
 
-    pctEl.classList.remove("hidden");
-    const pct = (descuentoPctGlobal > 0) ? descuentoPctGlobal : round2(((subtotalBrutoGlobal - totalFinalGlobal) / subtotalBrutoGlobal) * 100);
-    pctEl.textContent = `DESC ${moneyAR(pct)}%`;
-  } else {
-    subEl.classList.add("hidden");
-    pctEl.classList.add("hidden");
+    $("chipDescPct")?.classList.remove("hidden");
+    const pct = (state.descuentoPct > 0)
+      ? state.descuentoPct
+      : round2(((state.subtotalBruto - state.total) / state.subtotalBruto) * 100);
+    $("chipDescPct").textContent = `DESC ${moneyAR(pct)}%`;
+  }else{
+    $("txtSubtotal")?.classList.add("hidden");
+    $("chipDescPct")?.classList.add("hidden");
   }
 
-  // Manual tab badges
-  refreshManualTotalsPills();
+  refreshManualTotals();
 }
 
-// =========================
-// PREVIEW RAIL + IFRAME
-// =========================
-async function buildPreviewRail() {
-  const cuit = (document.getElementById("cuit").value || "").trim();
-  if (itemsGlobal.length === 0 || !cuit || cuit.length < 11) {
-    // igual dejamos ver todo si hay items
-    if (itemsGlobal.length === 0) return;
+function refreshManualTotals(){
+  if ($("txtTotalManual")) $("txtTotalManual").textContent = `$${moneyAR(state.total || 0)}`;
+
+  const hasDesc = state.subtotalBruto > 0 && state.total > 0 && state.total < state.subtotalBruto - 0.005;
+  const chip = $("chipDescManual");
+
+  if (hasDesc){
+    chip?.classList.remove("hidden");
+    $("txtSubtotalManual")?.classList.remove("hidden");
+    $("txtSubtotalManual").textContent = `$${moneyAR(state.subtotalBruto)}`;
+  }else{
+    chip?.classList.add("hidden");
+    $("txtSubtotalManual")?.classList.add("hidden");
+  }
+}
+
+/* =========================================================
+   PREVIEW RAIL + IFRAME
+========================================================= */
+async function buildPreviewRail(){
+  const cuit = ($("cuit")?.value || "").trim();
+  const rail = $("railPartes");
+  if (!rail) return;
+
+  rail.innerHTML = "";
+
+  if (!state.items.length){
+    rail.innerHTML = `<div class="empty" style="width:100%;">No hay ítems para previsualizar.</div>`;
+    return;
   }
 
-  const partes = Math.max(1, Math.ceil(itemsGlobal.length / ITEMS_POR_FACTURA));
-  const rail = document.getElementById("railPartes");
-  rail.innerHTML = `
-    <div onclick="loadIframe('ALL', this)" class="snap-center shrink-0 w-[40%] bg-slate-950 text-white rounded-2xl p-4 shadow-sm active:scale-95 transition flex flex-col justify-center items-center cursor-pointer border-2 border-slate-950 rail-card-active">
-      <span class="block font-black text-lg">VER TODO</span>
-      <span class="block text-[10px] text-slate-500 font-black uppercase">${partes} Partes</span>
+  const partes = Math.max(1, Math.ceil(state.items.length / ITEMS_POR_FACTURA));
+
+  // "ALL"
+  rail.appendChild(makeRailCard("ALL", `VER TODO`, `${partes} partes`, true));
+
+  for (let i=1; i<=partes; i++){
+    rail.appendChild(makeRailCard(i, `Parte ${i}`, `Toque para ver`, false));
+  }
+
+  // load first
+  await loadIframe("ALL");
+}
+
+function makeRailCard(value, t1, t2, active){
+  const div = document.createElement("div");
+  div.className = `railCard ${active ? "active" : ""}`;
+  div.dataset.value = String(value);
+
+  div.innerHTML = `
+    <div class="top">
+      <div class="p1">${escapeHtml(t1)}</div>
+      <div class="dot"></div>
     </div>
+    <div class="p2">${escapeHtml(t2)}</div>
   `;
 
-  for (let i = 1; i <= partes; i++) {
-    rail.innerHTML += `
-      <div onclick="loadIframe(${i}, this)" class="snap-center shrink-0 w-[50%] bg-white rounded-2xl p-4 shadow-sm border border-slate-200 active:bg-blue-50 transition cursor-pointer flex flex-col justify-between">
-        <div class="flex justify-between items-center mb-1">
-          <span class="text-xs font-black text-blue-600">Parte ${i}</span>
-          <div class="w-2 h-2 rounded-full bg-slate-200 status-dot"></div>
-        </div>
-        <div class="text-[10px] text-slate-400 font-bold">Toque para ver</div>
-      </div>
-    `;
-  }
-
-  const first = rail.querySelector(".rail-card-active");
-  await loadIframe("ALL", first);
-}
-
-window.loadIframe = async function(parteNum, element) {
-  const rail = document.getElementById("railPartes");
-  rail.querySelectorAll(".snap-center").forEach(el => {
-    el.classList.remove("border-blue-500", "border-2", "rail-card-active", "bg-slate-950", "text-white");
-    el.classList.add("bg-white", "text-slate-900", "border-slate-200");
-    const dot = el.querySelector(".status-dot");
-    if (dot) dot.classList.replace("bg-blue-500", "bg-slate-200");
+  div.addEventListener("click", async () => {
+    document.querySelectorAll(".railCard").forEach(x => x.classList.remove("active"));
+    div.classList.add("active");
+    vibrate(8);
+    await loadIframe(value);
   });
 
-  if (parteNum === "ALL") {
-    element.classList.add("bg-slate-950", "text-white", "border-slate-950", "rail-card-active");
-  } else {
-    element.classList.add("border-blue-500", "border-2", "rail-card-active");
-    const dot = element.querySelector(".status-dot");
-    if (dot) dot.classList.replace("bg-slate-200", "bg-blue-500");
-  }
+  return div;
+}
 
-  const container = document.getElementById("previewContainer");
-  container.classList.add("animate-pulse");
+async function loadIframe(parteNum){
+  const wrap = $("frameWrap");
+  const frame = $("previewFrame");
+  if (!wrap || !frame) return;
 
-  pullFormIntoGlobals();
+  wrap.classList.add("loading");
+
+  pullFormIntoState();
   recalcTotals();
 
   const payload = {
-    cuitCliente: (document.getElementById("cuit").value || "").trim(),
-    domicilioRemito: (document.getElementById("domicilioRemito").value || "").trim(),
-    condicionVenta: document.getElementById("condicionVenta").value,
-    items: itemsGlobal,
-    subtotalBruto: subtotalBrutoGlobal,
-    descuentoPct: descuentoPctGlobal,
-    descuentoImporte: descuentoImporteGlobal,
-    total: totalFinalGlobal,
+    cuitCliente: ($("cuit")?.value || "").trim(),
+    domicilioRemito: ($("domicilioRemito")?.value || "").trim(),
+    condicionVenta: $("condicionVenta")?.value || "Transferencia Bancaria",
+    items: state.items,
+    subtotalBruto: state.subtotalBruto,
+    descuentoPct: state.descuentoPct,
+    descuentoImporte: state.descuentoImporte,
+    total: state.total,
     previewParte: parteNum
   };
 
-  try {
+  try{
+    overlay(true, { title:"Generando preview…", sub:"Preparando HTML desde backend", step:3 });
     const r = await fetch(`${BASE}/debug/preview`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
       body: JSON.stringify(payload)
     });
-    if (r.ok) {
+
+    if (r.ok){
       const htmlStr = await r.text();
-      const doc = document.getElementById("previewFrame").contentWindow.document;
+      const doc = frame.contentWindow.document;
       doc.open(); doc.write(htmlStr); doc.close();
     }
-  } catch (e) {
-    console.error(e);
-  } finally {
-    container.classList.remove("animate-pulse");
+  }catch(e){
+    // silencioso
+  }finally{
+    overlay(false);
+    wrap.classList.remove("loading");
   }
-};
+}
 
-// =========================
-// EMITIR (MANUAL o PDF)
-// =========================
-async function emitirFactura() {
-  const cuit = (document.getElementById("cuit").value || "").trim();
-  if (!cuit || cuit.length !== 11) return mostrarAlerta("❗ CUIT inválido (11 números).", "info");
-  if (!itemsGlobal.length) return mostrarAlerta("❗ No hay ítems para facturar.", "info");
+/* =========================================================
+   EMITIR
+========================================================= */
+async function emitirFactura(){
+  const cuit = ($("cuit")?.value || "").trim();
+  if (!cuit || cuit.length !== 11) return toast("❗ CUIT inválido (11 números)", "info");
+  if (!state.items.length) return toast("❗ No hay ítems para facturar", "info");
 
-  // UX: disable
-  const btn = document.getElementById("btnEmitir");
-  btn.disabled = true;
-  btn.classList.add("opacity-50");
-  mostrarAlerta("⏳ Emitiendo… (ARCA + PDF)", "info");
   hideResultBox();
 
-  pullFormIntoGlobals();
+  const btn = $("btnEmitir");
+  if (btn){ btn.disabled = true; }
+
+  pullFormIntoState();
   recalcTotals();
 
   const payload = {
     cuitCliente: cuit,
-    domicilioRemito: (document.getElementById("domicilioRemito").value || "").trim(),
-    condicionVenta: document.getElementById("condicionVenta").value,
-    items: itemsGlobal,
-    subtotalBruto: subtotalBrutoGlobal,
-    descuentoPct: descuentoPctGlobal,
-    descuentoImporte: descuentoImporteGlobal,
-    total: totalFinalGlobal
-    // emailCliente: "" // opcional, si querés pedirlo en UI después
+    domicilioRemito: ($("domicilioRemito")?.value || "").trim(),
+    condicionVenta: $("condicionVenta")?.value || "Transferencia Bancaria",
+    items: state.items,
+    subtotalBruto: state.subtotalBruto,
+    descuentoPct: state.descuentoPct,
+    descuentoImporte: state.descuentoImporte,
+    total: state.total
   };
 
-  try {
+  try{
+    overlay(true, { title:"Emitiendo…", sub:"ARCA + PDF + links", step:4 });
+    toast("⏳ Emitiendo…", "info", 2400);
+
     const r = await fetch(`${BASE}/facturar`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
       body: JSON.stringify(payload)
     });
 
     const res = await r.json();
     if (!r.ok) throw new Error(res?.message || "Error al facturar");
 
-    facturasEmitidas = Array.isArray(res.facturas) ? res.facturas : [];
-    currentWaLink = res.waLink || "";
-    currentWaText = buildWaTextFallback(res);
+    state.facturas = Array.isArray(res.facturas) ? res.facturas : [];
+    state.waLink = res.waLink || "";
+    state.waText = buildWaTextFallback(res);
 
-    // Guardar draft (por si querés reimprimir / reenviar)
     saveDraft();
+    overlay(false);
 
-    mostrarAlerta(`✅ ${res.mensaje || "Factura emitida"}`, "success");
+    toast(`✅ ${res.mensaje || "Factura emitida"}`, "ok", 3200);
+    vibrate(18);
     showResultBox(res);
-
-  } catch (err) {
-    mostrarAlerta(`❌ ${err.message}`, "error");
-  } finally {
-    btn.disabled = false;
-    btn.classList.remove("opacity-50");
+  }catch(err){
+    overlay(false);
+    toast(`❌ ${err.message}`, "bad", 4500);
+    vibrate(20);
+  }finally{
+    if (btn){ btn.disabled = false; }
   }
 }
 
-function buildWaTextFallback(res) {
-  // Si por algún motivo faltara waLink, armamos un texto mínimo
+function buildWaTextFallback(res){
   const receptor = res?.receptor?.nombre || "Cliente";
   const cuit = res?.receptor?.cuit || "";
   let t = `Factura - Mercado Limpio\nCliente: ${receptor}\nCUIT: ${cuit}\n\n`;
@@ -762,41 +772,39 @@ function buildWaTextFallback(res) {
   return t.trim();
 }
 
-// =========================
-// RESULT UI
-// =========================
-function hideResultBox() {
-  document.getElementById("resultBox")?.classList.add("hidden");
+/* =========================================================
+   RESULT UI
+========================================================= */
+function hideResultBox(){
+  $("resultBox")?.classList.add("hidden");
 }
 
-function showResultBox(res) {
-  const box = document.getElementById("resultBox");
-  const list = document.getElementById("resultList");
-  const title = document.getElementById("resultTitle");
-  const btnWa = document.getElementById("btnShareWa");
-
-  if (!box || !list || !title || !btnWa) return;
+function showResultBox(res){
+  const box = $("resultBox");
+  const list = $("resultList");
+  const title = $("resultTitle");
+  if (!box || !list || !title) return;
 
   title.textContent = res?.mensaje || "Factura emitida";
   list.innerHTML = "";
 
   const facts = Array.isArray(res?.facturas) ? res.facturas : [];
-  if (!facts.length) {
-    list.innerHTML = `<div class="text-sm text-slate-500 font-bold">Sin datos de comprobantes.</div>`;
-  } else {
+  if (!facts.length){
+    list.innerHTML = `<div class="empty">Sin datos de comprobantes.</div>`;
+  }else{
     list.innerHTML = facts.map((f, i) => `
-      <div class="bg-slate-50 border border-slate-100 rounded-2xl p-3">
-        <div class="flex justify-between items-center">
-          <div class="text-xs font-black text-slate-500 uppercase">Parte ${i + 1}</div>
-          <div class="text-xs font-black text-slate-700">CAE ${escapeHtml(f.cae || "")}</div>
+      <div class="res">
+        <div class="resTop">
+          <div>Parte ${i + 1}</div>
+          <div>CAE ${escapeHtml(f.cae || "")}</div>
         </div>
-        <div class="mt-1 flex justify-between items-center">
-          <div class="text-sm font-black text-slate-900">Comp. ${String(f.nroFactura || "").padStart(8, "0")}</div>
-          <div class="text-sm font-black text-slate-900">$${moneyAR(f.total || 0)}</div>
+        <div class="resMid">
+          <div class="n">Comp. ${String(f.nroFactura || "").padStart(8, "0")}</div>
+          <div class="v">$${moneyAR(f.total || 0)}</div>
         </div>
-        <div class="mt-2 flex gap-2">
-          ${f.pdfUrl ? `<a class="btn bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-black" href="${f.pdfUrl}" target="_blank" rel="noopener">Abrir PDF</a>` : ""}
-          ${f.pdfUrl ? `<button class="btn bg-slate-950 text-white rounded-xl px-3 py-2 text-xs font-black" onclick="copyToClipboard('${escapeJs(f.pdfUrl)}')">Copiar link</button>` : ""}
+        <div class="resBtns">
+          ${f.pdfUrl ? `<a class="btn ghost mini" style="height:44px" href="${f.pdfUrl}" target="_blank" rel="noopener">📄 Abrir PDF</a>` : ``}
+          ${f.pdfUrl ? `<button class="btn dark mini" style="height:44px" onclick="window.__copy('${escapeJs(f.pdfUrl)}')">📋 Copiar link</button>` : ``}
         </div>
       </div>
     `).join("");
@@ -805,44 +813,54 @@ function showResultBox(res) {
   box.classList.remove("hidden");
 }
 
-function escapeJs(s) {
-  return String(s || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-}
-
-window.copyToClipboard = async function(text) {
-  try {
+window.__copy = async (text) => {
+  try{
     await navigator.clipboard.writeText(text);
-    mostrarAlerta("✅ Link copiado.", "success");
-  } catch {
-    mostrarAlerta("❌ No pude copiar (iOS a veces bloquea).", "error");
+    toast("✅ Link copiado", "ok");
+    vibrate(10);
+  }catch{
+    toast("❌ No pude copiar (bloqueo del navegador)", "bad", 3600);
   }
 };
 
-// =========================
-// SHARE
-// =========================
-async function shareWhatsAppDirect() {
-  if (currentWaLink) return window.open(currentWaLink, "_blank");
-  const text = currentWaText || `Factura - Mercado Limpio\nTotal: $${moneyAR(totalFinalGlobal)}`;
+/* =========================================================
+   SHARE
+========================================================= */
+async function shareWhatsAppDirect(){
+  if (state.waLink) return window.open(state.waLink, "_blank");
+
+  const text = state.waText || `Factura - Mercado Limpio\nTotal: $${moneyAR(state.total)}`;
   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
 }
 
-async function shareNative() {
-  // Si ya emitiste, compartimos el waLink (mejor que texto)
-  const link = currentWaLink || "";
-  const text = currentWaText || `Factura - Mercado Limpio\nTotal: $${moneyAR(totalFinalGlobal)}`;
+async function shareNative(){
+  const link = state.waLink || "";
+  const text = state.waText || `Factura - Mercado Limpio\nTotal: $${moneyAR(state.total)}`;
 
-  if (navigator.share) {
-    try {
-      // iOS: share link si existe
-      if (link) await navigator.share({ title: "Factura", text: "Enviar factura por WhatsApp", url: link });
-      else await navigator.share({ title: "Factura", text });
-    } catch {
+  if (navigator.share){
+    try{
+      if (link) await navigator.share({ title:"Factura", text:"Enviar factura por WhatsApp", url: link });
+      else await navigator.share({ title:"Factura", text });
+    }catch{
       // cancelado
     }
-  } else {
-    // fallback
+  }else{
     if (link) window.open(link, "_blank");
     else window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   }
 }
+
+/* =========================================================
+   RENDER
+========================================================= */
+function renderAll(){
+  renderBadges();
+  updateItemsListUI();
+  renderManualList();
+  refreshManualTotals();
+  recalcTotals();
+}
+
+/* =========================================================
+   END
+========================================================= */
