@@ -11,7 +11,7 @@ let currentWaText = "";
 
 let parteActual = 1;
 let totalPartes = 1;
-const ITEMS_POR_FACTURA = 25; // Sincronizado con backend
+const ITEMS_POR_FACTURA = 25; // Sincronizado exacto con el backend
 
 // Referencias UI
 let statusAlert, btnMainAction, lblMainBtn, iconMainBtn, inputPdf, loaderUI;
@@ -44,14 +44,23 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ==========================================
-// CONTROL DE TEMAS
+// EFECTOS TÁCTILES Y TEMAS
 // ==========================================
+function tactileFeedback(element) {
+    element.classList.remove("tactile-click");
+    // Forzar reflow para reiniciar la animación CSS
+    void element.offsetWidth; 
+    element.classList.add("tactile-click");
+}
+
 function setTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem("ml_theme", theme);
     const title = document.getElementById("mainTitle");
     if(theme === 'gladiator') title.innerText = "MAXIMUS LIMPIO";
     else title.innerText = "Mercado Limpio";
+    
+    actualizarBotonCentral(); // Refresca colores del botón principal según el tema
 }
 
 // ==========================================
@@ -62,7 +71,7 @@ let currentTab = 'fast';
 function switchTab(tabId) {
     currentTab = tabId;
     
-    // Ocultar todos con animacion
+    // Ocultar todos
     ['tab-fast', 'tab-capture', 'tab-preview', 'tab-settings'].forEach(id => {
         const el = document.getElementById(id);
         el.classList.remove('tab-active');
@@ -91,26 +100,30 @@ function switchTab(tabId) {
 }
 
 function actualizarBotonCentral() {
-    btnMainAction.classList.remove('animate-pulse', 'bg-emerald-600', 'border-emerald-600', 'bg-slate-900', 'border-slate-900');
+    // Resetea clases extras
+    btnMainAction.classList.remove('animate-pulse');
+    btnMainAction.style.backgroundColor = '';
+    btnMainAction.style.borderColor = '';
     
     if (currentTab === 'fast' || currentTab === 'capture' || currentTab === 'settings') {
-        // Modo Borrador / Preview
+        // Modo Borrador / Preview (Usa el color de Acento del Tema)
         lblMainBtn.innerText = "Preview";
         btnMainAction.onclick = procesarYPrevisualizar;
+        btnMainAction.style.backgroundColor = 'var(--accent)';
         iconMainBtn.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>`;
     } 
     else if (currentTab === 'preview') {
         if (facturasEmitidas.length > 0) {
-            // Modo Enviar WhatsApp
+            // Modo Enviar WhatsApp (Verde Fuerte)
             lblMainBtn.innerText = "Enviar";
             btnMainAction.onclick = shareNative;
-            btnMainAction.classList.add('bg-emerald-600', 'border-emerald-600');
+            btnMainAction.style.backgroundColor = '#10b981'; // emerald-500
             iconMainBtn.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path>`;
         } else {
-            // Modo Emitir AFIP
+            // Modo Emitir AFIP (Oscuro/Negro)
             lblMainBtn.innerText = "Emitir";
             btnMainAction.onclick = emitirFactura;
-            btnMainAction.classList.add('bg-slate-900', 'border-slate-900');
+            btnMainAction.style.backgroundColor = '#0f172a'; // slate-900
             iconMainBtn.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>`;
         }
     }
@@ -127,13 +140,15 @@ function pedirMarcaManual() {
 }
 
 function procesarYPrevisualizar() {
+    tactileFeedback(btnMainAction);
+
     if (currentTab === 'fast') {
         const cuit = document.getElementById("fastCuit").value.trim();
         const strMonto = document.getElementById("fastMonto").value.trim().replace(',', '.');
         const monto = parseFloat(strMonto);
         const desc = document.getElementById("fastDesc").value.trim() || "Artículos varios";
         
-        if (cuit.length !== 11) return mostrarAlerta("El CUIT debe tener 11 números.", "error");
+        if (cuit.length !== 11) return mostrarAlerta("El CUIT debe tener 11 números exactos.", "error");
         if (isNaN(monto) || monto <= 0) return mostrarAlerta("Ingrese un monto válido.", "error");
 
         // Setear Globales
@@ -148,10 +163,10 @@ function procesarYPrevisualizar() {
         itemsGlobal = [{ cantidad: 1, descripcion: desc, precioConIva: monto, subtotalConIva: monto }];
     }
 
-    if (itemsGlobal.length === 0) return mostrarAlerta("No hay datos para previsualizar.", "error");
+    if (itemsGlobal.length === 0) return mostrarAlerta("No hay datos cargados.", "error");
 
     switchTab('preview');
-    generarVistaPrevia(1); // Carga la parte 1
+    generarVistaPrevia(1);
 }
 
 // ==========================================
@@ -161,6 +176,8 @@ async function procesarPDF(e) {
     if (!e.target.files || !e.target.files.length) return;
     
     loaderUI.classList.remove("hidden");
+    loaderUI.classList.add("flex");
+    
     const formData = new FormData();
     for (let i = 0; i < e.target.files.length; i++) formData.append("remito", e.target.files[i]);
 
@@ -181,15 +198,14 @@ async function procesarPDF(e) {
         document.getElementById("fastMonto").value = totalFinalGlobal;
         facturasEmitidas = [];
 
-        loaderUI.classList.add("hidden");
-        mostrarAlerta(`✅ ¡PDF Procesado! (${itemsGlobal.length} ítems)`, "success");
-        
+        mostrarAlerta(`✅ PDF Listo! (${itemsGlobal.length} ítems)`, "success");
         procesarYPrevisualizar();
 
     } catch (err) {
-        loaderUI.classList.add("hidden");
         mostrarAlerta(`❌ Error: ${err.message}`, "error");
     } finally {
+        loaderUI.classList.add("hidden");
+        loaderUI.classList.remove("flex");
         inputPdf.value = "";
     }
 }
@@ -200,6 +216,7 @@ async function procesarPDF(e) {
 function cambiarParte(dir) {
     const nuevaParte = parteActual + dir;
     if (nuevaParte >= 1 && nuevaParte <= totalPartes) {
+        tactileFeedback(dir === 1 ? btnNextParte : btnPrevParte);
         generarVistaPrevia(nuevaParte);
     }
 }
@@ -229,8 +246,10 @@ async function generarVistaPrevia(parteReq) {
 
     // Loading State Iframe
     const container = document.getElementById("previewContainer");
-    container.classList.add("animate-pulse");
+    container.classList.add("opacity-50");
 
+    // NOTA: El Backend ya se encarga de usar getReceptorDesdePadron(cuitCliente)
+    // para mostrar el domicilio fiscal correcto en este HTML devuelto.
     const payload = {
         cuitCliente: cuit,
         domicilioRemito: domicilioRemitoGlobal,
@@ -250,26 +269,30 @@ async function generarVistaPrevia(parteReq) {
             const doc = document.getElementById("previewFrame").contentWindow.document;
             doc.open(); doc.write(htmlStr); doc.close();
             
-            // Intento extraer el nombre del cliente desde el HTML devuelto por ARCA/AFIP
+            // Intento extraer el nombre del cliente desde el HTML devuelto por AFIP
             const matchName = htmlStr.match(/Apellido y Nombre \/ Razón Social:\s*<strong>(.*?)<\/strong>/);
             if(matchName && matchName[1]) txtClientName.textContent = matchName[1];
         }
     } catch(e) { console.error("Error cargando iframe:", e); }
-    finally { container.classList.remove("animate-pulse"); }
+    finally { container.classList.remove("opacity-50"); }
 }
 
 // ==========================================
 // EMITIR Y COMPARTIR NATIVO
 // ==========================================
 async function emitirFactura() {
+    tactileFeedback(btnMainAction);
     const cuit = document.getElementById("fastCuit").value;
     btnMainAction.classList.add("animate-pulse");
     btnMainAction.disabled = true;
     
     try {
+        // NOTA SOBRE EL EMAIL: Si emailCliente viaja vacío, tu backend Node.js
+        // usa automáticamente DEFAULT_EMAIL ("distribuidoramercadolimpio@gmail.com") 
+        // y le manda el mail HTML profesional que ya programaste ahí.
         const payload = {
             cuitCliente: cuit,
-            emailCliente: document.getElementById("fastEmail").value.trim(),
+            emailCliente: emailGlobal, 
             domicilioRemito: domicilioRemitoGlobal,
             condicionVenta: document.getElementById("fastCondicion").value,
             items: itemsGlobal,
@@ -296,7 +319,7 @@ async function emitirFactura() {
         
         currentWaText += `\n¡Muchas gracias por elegirnos! 🙌`;
 
-        mostrarAlerta(`✅ Emitida en AFIP.`, "success");
+        mostrarAlerta(`✅ Factura Autorizada por AFIP.`, "success");
         actualizarBotonCentral(); 
 
     } catch (e) {
@@ -308,6 +331,7 @@ async function emitirFactura() {
 }
 
 async function shareNative() {
+    tactileFeedback(btnMainAction);
     if (!currentWaText) return;
     if (navigator.share) {
         try { await navigator.share({ title: 'Factura Mercado Limpio', text: currentWaText }); } 
@@ -317,25 +341,15 @@ async function shareNative() {
     }
 }
 
-// Descargar Borrador actual de Iframe
-function descargarBorrador() {
-    try {
-        const iframe = document.getElementById("previewFrame");
-        iframe.contentWindow.print();
-    } catch(e) {
-        mostrarAlerta("No se pudo descargar.", "error");
-    }
-}
-
-// ALERTAS GLOBALES NATIVAS
+// ALERTAS GLOBALES NATIVAS (Aparecen arriba suavemente)
 function mostrarAlerta(msg, tipo) {
     statusAlert.innerHTML = msg;
-    statusAlert.className = `fixed top-12 left-1/2 transform -translate-x-1/2 -translate-y-4 z-[100] rounded-full px-6 py-4 text-xs font-black shadow-2xl min-w-[85%] text-center transition-all duration-300 ${
+    statusAlert.className = `fixed top-20 left-1/2 transform -translate-x-1/2 z-[100] rounded-full px-6 py-4 text-xs font-black shadow-2xl min-w-[85%] text-center transition-all duration-300 ${
         tipo === 'success' ? 'bg-emerald-500 text-white' : 
         tipo === 'error' ? 'bg-rose-500 text-white' : 'bg-slate-900 text-white'
     }`;
     
-    // Animar entrada
+    // Animar entrada sin afectar el layout
     requestAnimationFrame(() => {
         statusAlert.classList.remove("opacity-0", "-translate-y-4");
         statusAlert.classList.add("opacity-100", "translate-y-0");
@@ -344,5 +358,5 @@ function mostrarAlerta(msg, tipo) {
     setTimeout(() => {
         statusAlert.classList.remove("opacity-100", "translate-y-0");
         statusAlert.classList.add("opacity-0", "-translate-y-4");
-    }, 3500);
+    }, 4000);
 }
