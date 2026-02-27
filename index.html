@@ -9,13 +9,12 @@
     
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon.png">
-
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
-
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <style>
         /* ==========================================
-           SISTEMA DE TEMAS (Claro / Oscuro / Gladiador)
+           SISTEMA DE TEMAS Y VARIABLES
            ========================================== */
         :root {
             --bg-app: #f2f2f7;
@@ -29,64 +28,75 @@
             --font-head: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
-
         [data-theme="dark"] {
-            --bg-app: #0f172a;
-            --bg-card: #1e293b;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --border-color: #334155;
-            --accent: #3b82f6;
-            --accent-text: #ffffff;
-            --dock-bg: rgba(30, 41, 59, 0.85);
+            --bg-app: #0f172a; --bg-card: #1e293b; --text-main: #f8fafc; --text-muted: #94a3b8;
+            --border-color: #334155; --accent: #3b82f6; --accent-text: #ffffff; --dock-bg: rgba(30, 41, 59, 0.85);
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
         }
-
         [data-theme="gladiator"] {
-            --bg-app: #120a0a; 
-            --bg-card: #241414; 
-            --text-main: #fcd34d; 
-            --text-muted: #d6d3d1; 
-            --border-color: #78350f; 
-            --accent: #7f1d1d; 
-            --accent-text: #fef3c7; 
-            --dock-bg: rgba(26, 11, 11, 0.9);
-            --font-head: 'Cinzel', serif;
-            --shadow: 0 8px 15px -3px rgba(180, 83, 9, 0.2);
+            --bg-app: #120a0a; --bg-card: #241414; --text-main: #fcd34d; --text-muted: #d6d3d1;
+            --border-color: #78350f; --accent: #7f1d1d; --accent-text: #fef3c7; --dock-bg: rgba(26, 11, 11, 0.9);
+            --font-head: 'Cinzel', serif; --shadow: 0 8px 15px -3px rgba(180, 83, 9, 0.2);
         }
 
-        /* Aplicación de Variables y Transiciones Nativas */
-        body { background-color: var(--bg-app); color: var(--text-main); font-family: -apple-system, sans-serif; transition: background-color 0.3s, color 0.3s; overflow: hidden; -webkit-tap-highlight-color: transparent;}
-        h1, h2, h3, .font-epic { font-family: var(--font-head); transition: font-family 0.3s; }
-        .card-bg { background-color: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow); transition: all 0.3s; }
-        .input-bg { background-color: var(--bg-app); color: var(--text-main); border: 1px solid var(--border-color); transition: all 0.3s; }
-        .input-bg:focus { border-color: var(--accent); outline: none; }
-        .text-muted { color: var(--text-muted); }
-        .btn-accent { background-color: var(--accent); color: var(--accent-text); border: 2px solid var(--border-color); box-shadow: var(--shadow); transition: all 0.2s; }
-        .btn-accent:active { transform: scale(0.96); opacity: 0.9; }
-        .dock-blur { background: var(--dock-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--border-color); }
+        /* ==========================================
+           BLOQUEO NATIVO (Adiós scroll infinito/rebote)
+           ========================================== */
+        html, body {
+            width: 100vw; height: 100vh;
+            overflow: hidden; /* Corta todo lo que salga de la pantalla */
+            overscroll-behavior: none; /* Elimina el rebote de iOS */
+            position: fixed; /* Clava la app en el lugar */
+            touch-action: none; /* Bloquea gestos generales en el fondo */
+            background-color: var(--bg-app); color: var(--text-main); font-family: -apple-system, sans-serif;
+            transition: background-color 0.4s ease, color 0.4s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-        /* Componentes UI Nativos */
+        /* El contenedor principal SÍ puede scrollear, pero SOLO vertical */
+        main {
+            touch-action: pan-y; /* Permite scroll vertical interno */
+            -webkit-overflow-scrolling: touch; /* Suavidad en iOS */
+            overflow-y: auto; overflow-x: hidden;
+            height: 100%;
+        }
+
+        /* UI Elementos */
+        h1, h2, h3, .font-epic { font-family: var(--font-head); transition: font-family 0.4s ease; }
+        .card-bg { background-color: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow); transition: all 0.3s ease; }
+        .input-bg { background-color: var(--bg-app); color: var(--text-main); border: 1px solid var(--border-color); transition: all 0.3s ease; }
+        .input-bg:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px var(--accent); }
+        .text-muted { color: var(--text-muted); transition: color 0.3s ease; }
+        .dock-blur { background: var(--dock-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--border-color); transition: background 0.4s ease; }
+
+        /* Componentes de Pestaña */
         .tab-content { transition: opacity 0.3s ease, transform 0.3s ease; }
-        .tab-hidden { opacity: 0; transform: translateY(10px); pointer-events: none; position: absolute; width: 100%; }
-        .tab-active { opacity: 1; transform: translateY(0); position: relative; }
+        .tab-hidden { opacity: 0; transform: translateY(15px); pointer-events: none; position: absolute; width: 100%; top: 0; left: 0; }
+        .tab-active { opacity: 1; transform: translateY(0); position: relative; width: 100%; }
 
-        /* iPhone Safe Areas */
+        /* Efectos Táctiles (Haptic Visual Feedback) */
+        .pill-btn { padding: 12px 20px; border-radius: 999px; font-weight: 800; font-size: 13px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease; white-space: nowrap; }
+        
+        .tactile-click { animation: tactilePulse 0.3s ease-out; }
+        @keyframes tactilePulse { 
+            0% { transform: scale(1); } 
+            50% { transform: scale(0.90); background-color: var(--accent); color: var(--accent-text); border-color: var(--accent); } 
+            100% { transform: scale(1); } 
+        }
+
+        /* Botón Central Transiciones */
+        .btn-main-center { transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.4s ease, transform 0.2s ease, width 0.3s ease; }
+        .btn-main-center:active { transform: scale(0.92); }
+
         .pt-safe { padding-top: env(safe-area-inset-top, 47px); }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom, 34px); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        /* Iframe estático y sólido */
         .preview-wrapper { flex: 1; display: flex; flex-direction: column; background: var(--bg-card); border-radius: 16px; overflow: hidden; border: 1px solid var(--border-color); margin-top: 12px; }
-        .preview-wrapper iframe { width: 100%; height: 100%; border: none; background: #fff; min-height: 50vh;}
-        
-        .pill-btn { padding: 12px 20px; border-radius: 999px; font-weight: 800; font-size: 13px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); transition: 0.2s; white-space: nowrap; }
-        .pill-btn:active { background: var(--border-color); transform: scale(0.95); }
-        .pill-btn.active { background: var(--text-main); color: var(--bg-app); border-color: transparent; }
+        .preview-wrapper iframe { width: 100%; height: 100%; border: none; background: #fff; min-height: 50vh; pointer-events: none;} /* Bloquea arrastre interno raro */
     </style>
 </head>
-<body class="flex flex-col h-screen pb-safe">
+<body class="pb-safe">
 
     <header class="pt-safe card-bg px-5 pb-3 z-20 shrink-0 flex justify-between items-end border-b-0 rounded-b-3xl absolute top-0 w-full shadow-sm">
         <div>
@@ -99,130 +109,128 @@
         </div>
     </header>
 
-    <main class="flex-1 overflow-y-auto no-scrollbar pb-32 pt-28 px-4 relative">
-        
-        <section id="tab-fast" class="tab-content tab-active space-y-4">
-            <div class="card-bg rounded-3xl p-5">
-                <h2 class="text-xs font-black text-muted uppercase tracking-widest mb-4">Ingreso Manual</h2>
-                
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-[10px] font-bold text-muted uppercase ml-1 mb-1">CUIT Cliente (11 números)</label>
-                        <input type="tel" id="fastCuit" inputmode="numeric" class="w-full input-bg rounded-xl p-4 text-lg font-bold tracking-widest text-center shadow-inner" placeholder="Sin guiones">
-                    </div>
+    <main class="no-scrollbar pb-[140px] pt-28 px-4 relative">
+        <div class="relative w-full">
+            
+            <section id="tab-fast" class="tab-content tab-active space-y-4">
+                <div class="card-bg rounded-3xl p-5 shadow-sm">
+                    <h2 class="text-xs font-black text-muted uppercase tracking-widest mb-4">Ingreso Manual</h2>
+                    
+                    <div class="space-y-5">
+                        <div>
+                            <label class="block text-[10px] font-bold text-muted uppercase ml-1 mb-1">CUIT Cliente (11 números)</label>
+                            <input type="tel" id="fastCuit" inputmode="numeric" class="w-full input-bg rounded-2xl p-4 text-xl font-black tracking-widest text-center shadow-inner" placeholder="Sin guiones">
+                        </div>
 
-                    <div>
-                        <label class="block text-[10px] font-bold text-muted uppercase ml-1 mb-1">Monto Total (Con IVA)</label>
-                        <div class="relative">
-                            <span class="absolute left-4 top-4 font-black text-muted text-lg">$</span>
-                            <input type="tel" id="fastMonto" inputmode="decimal" class="w-full input-bg rounded-xl p-4 pl-8 text-xl font-black text-right shadow-inner" placeholder="0.00">
+                        <div>
+                            <label class="block text-[10px] font-bold text-muted uppercase ml-1 mb-1">Monto Total (Con IVA)</label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-[18px] font-black text-muted text-xl">$</span>
+                                <input type="tel" id="fastMonto" inputmode="decimal" class="w-full input-bg rounded-2xl p-4 pl-9 text-2xl font-black text-right shadow-inner" placeholder="0.00">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-bold text-muted uppercase ml-1 mb-1">Condición de Venta</label>
+                            <select id="fastCondicion" class="w-full input-bg rounded-2xl p-4 text-sm font-bold appearance-none shadow-sm">
+                                <option value="Transferencia Bancaria">Transferencia Bancaria</option>
+                                <option value="Cuenta Corriente">Cuenta Corriente</option>
+                                <option value="Efectivo">Efectivo</option>
+                                <option value="Cheque">Cheque</option>
+                                <option value="Otros: Para formas de pago no especificadas">Otros: No especificado</option>
+                                <option value="Otros medios de pago electrónicos">Otros medios electrónicos</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-bold text-muted uppercase ml-1 mb-1">Detalle / Artículos</label>
+                            <input type="text" id="fastDesc" class="w-full input-bg rounded-2xl p-4 text-sm font-bold mb-3 shadow-sm" placeholder="Ej: Artículos varios limpieza...">
+                            
+                            <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                                <button onclick="tactileFeedback(this); setDesc('ARTICULOS VARIOS MARCA MAKE DE LIMPIEZA Y BAZAR')" class="pill-btn shrink-0">📦 Make</button>
+                                <button onclick="tactileFeedback(this); setDesc('ARTICULOS VARIOS MARCA ROMIL')" class="pill-btn shrink-0">🧴 Romil</button>
+                                <button onclick="tactileFeedback(this); setDesc('ARTICULOS DE LIMPIEZA VARIOS')" class="pill-btn shrink-0">🧹 Varios</button>
+                                <button onclick="tactileFeedback(this); pedirMarcaManual()" class="pill-btn shrink-0">✏️ Otra...</button>
+                            </div>
                         </div>
                     </div>
+                </div>
 
-                    <div>
-                        <label class="block text-[10px] font-bold text-muted uppercase ml-1 mb-1">Condición de Venta</label>
-                        <select id="fastCondicion" class="w-full input-bg rounded-xl p-4 text-sm font-bold appearance-none shadow-sm">
-                            <option value="Transferencia Bancaria">Transferencia Bancaria</option>
-                            <option value="Cuenta Corriente">Cuenta Corriente</option>
-                            <option value="Efectivo">Efectivo</option>
-                            <option value="Cheque">Cheque</option>
-                            <option value="Otros: Para formas de pago no especificadas">Otros: No especificado</option>
-                            <option value="Otros medios de pago electrónicos">Otros medios electrónicos</option>
-                        </select>
+                <div class="card-bg rounded-3xl p-5 shadow-sm">
+                    <label class="block text-[10px] font-bold text-muted uppercase ml-1 mb-1">Email Destino (Opcional)</label>
+                    <input type="email" id="fastEmail" class="w-full input-bg rounded-2xl p-4 text-sm font-semibold shadow-inner" placeholder="Vacío = Email Distribuidora">
+                    <p class="text-[9px] text-muted mt-2 ml-1">Si queda vacío, se envía por defecto a distribuidoramercadolimpio@gmail.com con formato HTML profesional.</p>
+                </div>
+            </section>
+
+            <section id="tab-capture" class="tab-content tab-hidden space-y-4">
+                <input type="file" id="inputPdf" accept="application/pdf" multiple class="hidden" />
+
+                <div class="card-bg rounded-3xl p-8 text-center flex flex-col justify-center items-center shadow-sm min-h-[400px]">
+                    <div class="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mb-6">
+                        <span class="text-4xl">📄</span>
                     </div>
+                    <h3 class="font-epic text-xl font-black mb-3">Procesar Remito PDF</h3>
+                    <p class="text-sm text-muted mb-8 leading-relaxed px-4">Si recibís el remito por WhatsApp, guardalo en <span class="font-bold text-main">Archivos</span> y tocalo acá.</p>
+                    <button onclick="document.getElementById('inputPdf').click()" class="bg-[var(--accent)] text-[var(--accent-text)] w-full max-w-xs py-5 rounded-2xl font-black tracking-widest uppercase text-sm shadow-lg active:scale-95 transition-transform">
+                        Seleccionar PDF
+                    </button>
+                </div>
+                
+                <div id="loaderUI" class="hidden card-bg rounded-3xl p-6 flex-col items-center justify-center gap-4 border-2 border-[var(--accent)] animate-pulse shadow-xl absolute inset-0 z-10 m-4 h-[400px]">
+                    <div class="w-12 h-12 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin"></div>
+                    <div class="font-epic font-black tracking-widest text-sm text-[var(--accent)] text-center mt-4">Analizando y Consultando Padron AFIP...</div>
+                </div>
+            </section>
 
-                    <div>
-                        <label class="block text-[10px] font-bold text-muted uppercase ml-1 mb-1">Detalle / Artículos</label>
-                        <input type="text" id="fastDesc" class="w-full input-bg rounded-xl p-4 text-sm font-bold mb-3 shadow-sm" placeholder="Ej: Artículos varios limpieza...">
+            <section id="tab-preview" class="tab-content tab-hidden flex flex-col h-full min-h-[500px]">
+                
+                <div class="card-bg p-5 rounded-3xl shrink-0 border-2 border-[var(--accent)] shadow-md mb-3">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <span class="text-[10px] font-black text-muted uppercase tracking-widest block mb-1">Total a Emitir</span>
+                            <span class="text-4xl font-epic font-black tracking-tighter block leading-none" id="txtTotal">$0.00</span>
+                        </div>
+                        <span id="txtDescPct" class="bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-[10px] font-black px-2 py-1 rounded-lg uppercase hidden">Dto 0%</span>
+                    </div>
+                    <div class="text-xs text-muted font-semibold mt-2 truncate" id="txtClientName">Esperando datos AFIP...</div>
+                </div>
+                
+                <div class="flex justify-between items-center px-1 shrink-0">
+                    <div class="flex gap-2">
+                        <button id="btnPrevParte" onclick="cambiarParte(-1)" class="w-10 h-10 rounded-full bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-center text-[var(--text-main)] active:scale-90 transition-transform disabled:opacity-50 font-bold shadow-sm">←</button>
+                        <div class="h-10 px-4 rounded-full bg-[var(--text-main)] text-[var(--bg-app)] flex items-center justify-center text-xs font-black shadow-md transition-colors">
+                            P. <span id="lblParteActual" class="mx-1">1</span>/<span id="lblTotalPartes" class="mx-1">1</span>
+                        </div>
+                        <button id="btnNextParte" onclick="cambiarParte(1)" class="w-10 h-10 rounded-full bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-center text-[var(--text-main)] active:scale-90 transition-transform disabled:opacity-50 font-bold shadow-sm">→</button>
+                    </div>
+                </div>
+
+                <div class="preview-wrapper shadow-inner" id="previewContainer">
+                    <iframe id="previewFrame"></iframe>
+                </div>
+            </section>
+
+            <section id="tab-settings" class="tab-content tab-hidden space-y-4">
+                <div class="card-bg rounded-3xl p-6 shadow-sm">
+                    <h2 class="text-xs font-black text-muted uppercase tracking-widest mb-5">Apariencia</h2>
+                    
+                    <div class="space-y-3">
+                        <button onclick="setTheme('light')" class="w-full flex items-center p-4 rounded-2xl border border-[var(--border-color)] active:scale-95 transition-transform bg-slate-50 text-slate-900 shadow-sm">
+                            <span class="text-xl mr-3">☀️</span> <span class="font-bold">Modo Claro</span>
+                        </button>
                         
-                        <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                            <button onclick="setDesc('ARTICULOS VARIOS MARCA MAKE DE LIMPIEZA Y BAZAR')" class="pill-btn shrink-0">📦 Make</button>
-                            <button onclick="setDesc('ARTICULOS VARIOS MARCA ROMIL')" class="pill-btn shrink-0">🧴 Romil</button>
-                            <button onclick="setDesc('ARTICULOS DE LIMPIEZA VARIOS')" class="pill-btn shrink-0">🧹 Varios</button>
-                            <button onclick="pedirMarcaManual()" class="pill-btn shrink-0">✏️ Otra...</button>
-                        </div>
+                        <button onclick="setTheme('dark')" class="w-full flex items-center p-4 rounded-2xl border border-slate-700 active:scale-95 transition-transform bg-slate-900 text-white shadow-sm">
+                            <span class="text-xl mr-3">🌙</span> <span class="font-bold">Modo Oscuro</span>
+                        </button>
+                        
+                        <button onclick="setTheme('gladiator')" class="w-full flex items-center p-4 rounded-2xl border border-amber-900/50 active:scale-95 transition-transform bg-[#1a0a0a] text-amber-400 shadow-lg">
+                            <span class="text-xl mr-3">⚔️</span> <span class="font-epic font-black tracking-widest">Tema Gladiador</span>
+                        </button>
                     </div>
                 </div>
-            </div>
-
-            <div class="card-bg rounded-3xl p-5">
-                <label class="block text-[10px] font-bold text-muted uppercase ml-1 mb-1">Email Destino (Opcional)</label>
-                <input type="email" id="fastEmail" class="w-full input-bg rounded-xl p-4 text-sm font-semibold shadow-inner" placeholder="cliente@correo.com">
-            </div>
-        </section>
-
-        <section id="tab-capture" class="tab-content tab-hidden space-y-4 h-full flex flex-col">
-            <input type="file" id="inputPdf" accept="application/pdf" multiple class="hidden" />
-
-            <div class="card-bg rounded-3xl p-8 text-center flex-1 flex flex-col justify-center items-center shadow-sm">
-                <div class="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mb-6">
-                    <span class="text-4xl">📄</span>
-                </div>
-                <h3 class="font-epic text-xl font-black mb-3">Procesar Remito PDF</h3>
-                <p class="text-sm text-muted mb-8 leading-relaxed px-4">Si te enviaron el remito por WhatsApp, guardalo en <span class="font-bold text-main">Archivos</span> y tocalo acá para extraer los datos con IA.</p>
-                <button onclick="document.getElementById('inputPdf').click()" class="btn-accent w-full max-w-xs py-5 rounded-2xl font-black tracking-widest uppercase text-sm shadow-lg">
-                    Seleccionar PDF
-                </button>
-            </div>
-            
-            <div id="loaderUI" class="hidden card-bg rounded-3xl p-6 flex flex-col items-center justify-center gap-4 border-2 border-[var(--accent)] animate-pulse shadow-xl">
-                <div class="w-10 h-10 border-4 border-current border-t-transparent rounded-full animate-spin text-[var(--accent)]"></div>
-                <div class="font-epic font-black tracking-widest text-sm text-[var(--accent)]" id="loaderText">Analizando Remito...</div>
-            </div>
-        </section>
-
-        <section id="tab-preview" class="tab-content tab-hidden h-full flex flex-col">
-            
-            <div class="card-bg p-5 rounded-3xl shrink-0 border-2 border-[var(--accent)] shadow-md mb-3">
-                <div class="flex justify-between items-start mb-2">
-                    <div>
-                        <span class="text-[10px] font-black text-muted uppercase tracking-widest block mb-1">Total a Emitir</span>
-                        <span class="text-4xl font-epic font-black tracking-tighter block leading-none" id="txtTotal">$0.00</span>
-                    </div>
-                    <span id="txtDescPct" class="bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-[10px] font-black px-2 py-1 rounded-lg uppercase hidden">Dto 0%</span>
-                </div>
-                <div class="text-xs text-muted font-semibold mt-2 truncate" id="txtClientName">Esperando CUIT...</div>
-            </div>
-            
-            <div class="flex justify-between items-center px-1 shrink-0">
-                <div class="flex gap-2">
-                    <button id="btnPrevParte" onclick="cambiarParte(-1)" class="w-10 h-10 rounded-full bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-center text-[var(--text-main)] active:scale-90 transition disabled:opacity-50 font-bold shadow-sm">←</button>
-                    <div class="h-10 px-4 rounded-full bg-[var(--text-main)] text-[var(--bg-app)] flex items-center justify-center text-xs font-black shadow-md">
-                        P. <span id="lblParteActual" class="mx-1">1</span>/<span id="lblTotalPartes" class="mx-1">1</span>
-                    </div>
-                    <button id="btnNextParte" onclick="cambiarParte(1)" class="w-10 h-10 rounded-full bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-center text-[var(--text-main)] active:scale-90 transition disabled:opacity-50 font-bold shadow-sm">→</button>
-                </div>
-                
-                <button onclick="descargarBorrador()" class="h-10 px-4 rounded-full bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] text-xs font-bold active:scale-95 transition shadow-sm flex items-center gap-1">
-                    <span>⬇️</span> PDF
-                </button>
-            </div>
-
-            <div class="preview-wrapper shadow-inner" id="previewContainer">
-                <iframe id="previewFrame"></iframe>
-            </div>
-        </section>
-
-        <section id="tab-settings" class="tab-content tab-hidden space-y-4">
-            <div class="card-bg rounded-3xl p-6 shadow-sm">
-                <h2 class="text-xs font-black text-muted uppercase tracking-widest mb-5">Apariencia</h2>
-                
-                <div class="space-y-3">
-                    <button onclick="setTheme('light')" class="w-full flex items-center p-4 rounded-2xl border border-[var(--border-color)] active:scale-95 transition bg-slate-50 text-slate-900 shadow-sm">
-                        <span class="text-xl mr-3">☀️</span> <span class="font-bold">Modo Claro</span>
-                    </button>
-                    
-                    <button onclick="setTheme('dark')" class="w-full flex items-center p-4 rounded-2xl border border-slate-700 active:scale-95 transition bg-slate-900 text-white shadow-sm">
-                        <span class="text-xl mr-3">🌙</span> <span class="font-bold">Modo Oscuro</span>
-                    </button>
-                    
-                    <button onclick="setTheme('gladiator')" class="w-full flex items-center p-4 rounded-2xl border border-amber-900/50 active:scale-95 transition bg-[#1a0a0a] text-amber-400 shadow-lg">
-                        <span class="text-xl mr-3">⚔️</span> <span class="font-epic font-black tracking-widest">Tema Gladiador</span>
-                    </button>
-                </div>
-            </div>
-        </section>
-
+            </section>
+        </div>
     </main>
 
     <div id="statusAlert" class="opacity-0 pointer-events-none fixed top-20 left-1/2 transform -translate-x-1/2 -translate-y-4 z-[100] rounded-full px-6 py-4 text-xs font-black shadow-2xl min-w-[85%] text-center transition-all duration-300"></div>
@@ -230,28 +238,28 @@
     <nav class="dock-blur fixed bottom-0 w-full pb-safe pt-3 px-6 flex justify-between items-center z-50 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
         <button onclick="switchTab('fast')" id="nav-fast" class="flex flex-col items-center gap-1 w-14 text-[var(--accent)] transition-colors opacity-100">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-            <span class="text-[9px] font-black uppercase tracking-widest">Manual</span>
+            <span class="text-[9px] font-black uppercase tracking-widest mt-1">Manual</span>
         </button>
         
         <button onclick="switchTab('capture')" id="nav-capture" class="flex flex-col items-center gap-1 w-14 text-muted transition-colors opacity-50">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            <span class="text-[9px] font-black uppercase tracking-widest">PDFs</span>
+            <span class="text-[9px] font-black uppercase tracking-widest mt-1">PDFs</span>
         </button>
 
         <div class="relative -top-8">
-            <button id="btnMainAction" onclick="procesarYPrevisualizar()" class="btn-accent w-[72px] h-[72px] rounded-full flex flex-col items-center justify-center transform transition-all border-[6px] border-[var(--bg-app)] shadow-xl">
-                <svg class="w-7 h-7 mb-0.5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" id="iconMainBtn"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+            <button id="btnMainAction" onclick="procesarYPrevisualizar()" class="btn-main-center bg-[var(--accent)] text-[var(--accent-text)] w-[76px] h-[76px] rounded-full flex flex-col items-center justify-center border-[6px] border-[var(--bg-app)] shadow-xl outline-none">
+                <svg class="w-8 h-8 mb-0.5 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" id="iconMainBtn"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                 <span class="text-[8px] font-black uppercase tracking-widest" id="lblMainBtn">Preview</span>
             </button>
         </div>
 
         <button onclick="switchTab('preview')" id="nav-preview" class="flex flex-col items-center gap-1 w-14 text-muted transition-colors opacity-50 hidden" style="display: flex;">
-            <svg class="w-6 h-6 opacity-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"></svg>
+             <svg class="w-6 h-6 opacity-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"></svg>
         </button>
 
         <button onclick="switchTab('settings')" id="nav-settings" class="flex flex-col items-center gap-1 w-14 text-muted transition-colors opacity-50">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-            <span class="text-[9px] font-black uppercase tracking-widest">Ajustes</span>
+            <span class="text-[9px] font-black uppercase tracking-widest mt-1">Ajustes</span>
         </button>
     </nav>
 
