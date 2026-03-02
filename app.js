@@ -127,27 +127,36 @@ window.cambiarParte = function(dir) {
 };
 
 // ============================================
-// CARGA DE PDF
+// CARGA DE PDF (CORREGIDA PARA PWA MÓVIL)
 // ============================================
 fileInput.addEventListener("change", leerPDF);
 
-async function leerPDF() {
-  if (!fileInput.files.length) return;
+async function leerPDF(event) {
+  // 1. Captura segura de archivos (soluciona el bug de iOS)
+  const files = event?.target?.files || fileInput.files;
+  if (!files || files.length === 0) return;
+  
   haptic();
 
+  // 2. Actualizar el badge de forma segura
   const fileBadge = document.getElementById("file-badge");
-  fileBadge.style.display = "inline-block";
-  fileBadge.textContent = `${fileInput.files.length} archivo(s) listo(s)`;
+  if (fileBadge) {
+    fileBadge.style.display = "inline-block";
+    fileBadge.textContent = `${files.length} archivo(s) listo(s)`;
+  }
 
-  setBtnState('loading', 'Analizando PDF con IA...');
+  setBtnState('loading', 'Analizando PDF...');
 
   const formData = new FormData();
-  for (let i = 0; i < fileInput.files.length; i++) {
-    formData.append("remito", fileInput.files[i]);
+  for (let i = 0; i < files.length; i++) {
+    formData.append("remito", files[i]);
   }
 
   try {
-    const r = await fetch(`${BASE}/leer-remito`, { method: "POST", body: formData });
+    const r = await fetch(`${BASE}/leer-remito`, { 
+        method: "POST", 
+        body: formData 
+    });
     const res = await r.json();
 
     if (!r.ok) throw new Error(res.detail || "Error al leer el PDF.");
@@ -158,11 +167,13 @@ async function leerPDF() {
     descuentoImporteGlobal = Number(res.descuentoImporte || 0);
     totalFinalGlobal = Number(res.total || 0);
 
-    cuitInput.value = res.cuit || "";
-    montoInput.value = res.total ? String(res.total).replace(".", ",") : "";
-    itemsGlobal = Array.isArray(res.items) ? res.items :[];
-
+    // 3. Llenar inputs verificando que existan en el DOM
+    if (cuitInput) cuitInput.value = res.cuit || "";
+    if (montoInput) montoInput.value = res.total ? String(res.total).replace(".", ",") : "";
+    
+    itemsGlobal = Array.isArray(res.items) ? res.items : [];
     parteActual = 1;
+
     let msg = `✅ ${itemsGlobal.length} ítems extraídos.`;
     if (totalFinalGlobal > 0) msg += ` Total: $${formatMoneyAR(totalFinalGlobal)}`;
     
@@ -175,10 +186,9 @@ async function leerPDF() {
   } catch (e) {
     showToast(e.message, 'error');
     setBtnState('ready', 'EMITIR FACTURA');
-    fileBadge.style.display = "none";
+    if (fileBadge) fileBadge.style.display = "none";
   }
 }
-
 // ============================================
 // VISTA PREVIA (Llamada al backend)
 // ============================================
@@ -384,3 +394,4 @@ function showSuccessModal(data) {
 
   modal.classList.add("active");
 }
+
