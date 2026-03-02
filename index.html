@@ -2,7 +2,6 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <!-- Configuración PWA y Viewport para iOS -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -11,7 +10,6 @@
   <link rel="manifest" href="manifest.json">
 
   <style>
-    /* VARIABLES ESTILO NATIVO iOS */
     :root {
       --bg-color: #F2F2F7;
       --card-bg: #FFFFFF;
@@ -25,19 +23,13 @@
       --border-color: #E5E5EA;
       --safe-bottom: env(safe-area-inset-bottom, 20px);
     }
-
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-main);
-      margin: 0;
-      padding: 0;
-      padding-bottom: calc(100px + var(--safe-bottom)); /* Espacio para el fab */
+      background-color: var(--bg-color); color: var(--text-main);
+      margin: 0; padding: 0; padding-bottom: calc(100px + var(--safe-bottom));
       overscroll-behavior-y: none;
     }
-
     /* HEADER */
     header {
       position: sticky; top: 0; z-index: 50;
@@ -50,92 +42,60 @@
     header h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
     header .status-dot { width: 10px; height: 10px; background: var(--success); border-radius: 50%; box-shadow: 0 0 8px var(--success); }
 
-    /* CONTENEDOR PRINCIPAL */
     .container { padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+    .card { background: var(--card-bg); border-radius: 20px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
 
-    /* TARJETAS */
-    .card {
-      background: var(--card-bg);
-      border-radius: 20px;
-      padding: 20px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-    }
-
-    /* UPLOAD ZONE */
+    /* UPLOAD ZONE - FIXED */
     .upload-zone {
-      background: #F2F2F7;
-      border: 2px dashed #C7C7CC;
-      border-radius: 16px;
-      padding: 30px 20px;
-      text-align: center;
-      transition: all 0.2s ease;
-      position: relative;
+      background: #F2F2F7; border: 2px dashed #C7C7CC; border-radius: 16px;
+      padding: 30px 20px; text-align: center; transition: all 0.2s ease; position: relative;
     }
     .upload-zone:active { transform: scale(0.97); border-color: var(--primary); background: #E5F1FF; }
     .upload-zone h3 { margin: 0 0 5px; color: var(--primary); font-size: 17px; }
     .upload-zone p { margin: 0; font-size: 13px; color: var(--text-muted); }
-    .upload-zone input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; }
-    .file-badge {
-      display: none; background: #E5F1FF; color: var(--primary); padding: 8px 16px; border-radius: 20px; font-weight: 700; font-size: 13px; margin-top: 15px;
-    }
+    /* El input cubre todo, así que el click lo recibe él directamente */
+    .upload-zone input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; z-index: 10; }
+    
+    .file-badge { display: none; background: #E5F1FF; color: var(--primary); padding: 8px 16px; border-radius: 20px; font-weight: 700; font-size: 13px; margin-top: 15px; }
 
-    /* FORMULARIOS */
     .form-group { margin-bottom: 16px; }
-    .form-group:last-child { margin-bottom: 0; }
     label { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
     input, select, textarea {
-      width: 100%; padding: 16px; border: 1px solid var(--border-color);
-      border-radius: 14px; font-size: 16px; background: #F8F8F9;
-      color: var(--text-main); font-weight: 500; transition: border 0.2s ease;
-      appearance: none;
+      width: 100%; padding: 16px; border: 1px solid var(--border-color); border-radius: 14px;
+      font-size: 16px; background: #F8F8F9; color: var(--text-main); font-weight: 500; transition: border 0.2s ease; appearance: none;
     }
     input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); background: #FFF; }
     textarea { height: 80px; resize: none; }
 
-    /* BOTONES PRESET */
     .tags-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
-    .tags-scroll::-webkit-scrollbar { display: none; }
-    .tag-btn {
-      white-space: nowrap; padding: 10px 18px; background: #F2F2F7; border: none;
-      border-radius: 20px; font-size: 14px; font-weight: 600; color: var(--text-main);
-      transition: transform 0.1s;
-    }
+    .tag-btn { white-space: nowrap; padding: 10px 18px; background: #F2F2F7; border: none; border-radius: 20px; font-size: 14px; font-weight: 600; color: var(--text-main); transition: transform 0.1s; }
     .tag-btn:active { transform: scale(0.92); background: #E5E5EA; }
 
-    /* BOTÓN PREVIEW EN TARJETA */
     .btn-preview-card {
       width: 100%; padding: 16px; background: #E5F1FF; color: var(--primary); border: none;
       border-radius: 14px; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;
       transition: all 0.2s; margin-top: 10px;
     }
-    .btn-preview-card:active { transform: scale(0.96); opacity: 0.8; }
     .btn-preview-card:disabled { opacity: 0.5; background: #F2F2F7; color: var(--text-muted); }
 
-    /* BOTTOM BAR - STICKY FAB */
     .bottom-bar {
       position: fixed; bottom: 0; left: 0; width: 100%;
       background: rgba(255,255,255,0.9); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      padding: 15px 20px var(--safe-bottom); border-top: 0.5px solid rgba(0,0,0,0.1);
-      z-index: 100;
+      padding: 15px 20px var(--safe-bottom); border-top: 0.5px solid rgba(0,0,0,0.1); z-index: 100;
     }
     .main-btn {
       width: 100%; padding: 18px; background: var(--primary); color: #FFF; border: none;
-      border-radius: 16px; font-size: 18px; font-weight: 800;
-      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      border-radius: 16px; font-size: 18px; font-weight: 800; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
       display: flex; align-items: center; justify-content: center; gap: 10px;
       box-shadow: 0 8px 20px rgba(0, 122, 255, 0.3);
     }
-    .main-btn:active { transform: scale(0.95); }
     .main-btn:disabled { opacity: 0.6; pointer-events: none; }
-    
     .main-btn.btn-success { background: var(--success); box-shadow: 0 8px 20px rgba(52, 199, 89, 0.3); }
     .main-btn.btn-loading { background: var(--text-muted); box-shadow: none; }
-
-    /* SPINNER */
+    
     .spinner { border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid #FFF; border-radius: 50%; width: 22px; height: 22px; animation: spin 0.8s linear infinite; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    /* TOAST NOTIFICACIONES */
     #toast-container { position: fixed; top: 80px; left: 20px; right: 20px; z-index: 2000; pointer-events: none; display: flex; flex-direction: column; gap: 10px; }
     .toast {
       background: rgba(28, 28, 30, 0.95); backdrop-filter: blur(10px); color: #FFF; padding: 16px 20px; border-radius: 14px;
@@ -146,11 +106,9 @@
     .toast.success { border-left: 4px solid var(--success); }
     .toast.error { border-left: 4px solid var(--danger); }
 
-    /* MODAL SLIDE UP (BOTTOM SHEET) */
     .modal-backdrop {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.4); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
-      z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+      background: rgba(0,0,0,0.4); backdrop-filter: blur(3px); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
     }
     .modal-backdrop.active { opacity: 1; pointer-events: auto; }
     
@@ -161,26 +119,16 @@
       display: flex; flex-direction: column; overflow: hidden;
     }
     .bottom-sheet.active { transform: translateY(0); }
-    
-    .sheet-header {
-      padding: 20px; background: #FFF; display: flex; justify-content: space-between; align-items: center;
-      border-bottom: 1px solid var(--border-color);
-    }
+    .sheet-header { padding: 20px; background: #FFF; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
     .sheet-header h2 { margin: 0; font-size: 18px; font-weight: 800; }
     .close-btn { background: #E5E5EA; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; font-weight: bold; color: var(--text-muted); }
-    
-    /* Paginación en Header Modal */
     .pill-parte { background: var(--primary); color: white; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 700; margin-left: 10px; }
     .nav-parts { display: flex; gap: 10px; }
-    .nav-parts button { padding: 8px 15px; border: none; background: #F2F2F7; border-radius: 12px; font-weight: bold; font-size: 18px; transition: 0.2s; }
-    .nav-parts button:active { background: #D1D1D6; transform: scale(0.9); }
-    .nav-parts button:disabled { opacity: 0.4; pointer-events: none; }
-
-    /* CONTENEDOR IFRAME iOS BUG FIX */
+    .nav-parts button { padding: 8px 15px; border: none; background: #F2F2F7; border-radius: 12px; font-weight: bold; font-size: 18px; }
+    .nav-parts button:disabled { opacity: 0.4; }
     .iframe-wrapper { flex: 1; width: 100%; background: #FFF; overflow: auto; -webkit-overflow-scrolling: touch; }
     .iframe-wrapper iframe { width: 1px; min-width: 100%; height: 100%; border: none; background: #FFF; }
 
-    /* MODAL DE ÉXITO FINAL */
     .success-modal {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #FFF; z-index: 2000;
       transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
@@ -191,51 +139,34 @@
     .success-header .icon { font-size: 60px; margin-bottom: 10px; animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     .success-header h2 { margin: 0; font-size: 24px; font-weight: 800; }
     .success-body { padding: 30px 20px; flex: 1; background: var(--bg-color); }
-    
     .action-btn {
       display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 18px;
-      border-radius: 16px; font-size: 16px; font-weight: 800; text-decoration: none; margin-bottom: 15px;
-      transition: transform 0.2s; border: none;
+      border-radius: 16px; font-size: 16px; font-weight: 800; text-decoration: none; margin-bottom: 15px; border: none;
     }
-    .action-btn:active { transform: scale(0.96); }
     .btn-wa { background: #25D366; color: white; box-shadow: 0 8px 20px rgba(37, 211, 102, 0.3); }
     .btn-download { background: #FFF; color: var(--primary); border: 2px solid var(--primary); }
     .btn-close-success { background: var(--text-muted); color: white; margin-top: 30px; }
-
     @keyframes pop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
   </style>
 </head>
 <body>
-
   <header>
     <h1>Mercado Limpio</h1>
     <div class="status-dot"></div>
   </header>
-
   <div id="toast-container"></div>
-
   <main class="container">
-    
-    <!-- CARD DE CARGA PDF -->
     <div class="card">
-      <div class="upload-zone" id="drop-zone" onclick="document.getElementById('fileRemito').click()">
+      <div class="upload-zone" id="drop-zone">
         <h3>📄 Tocar para subir PDF</h3>
         <p>Arrastrá o selecciona remitos</p>
         <input type="file" id="fileRemito" accept="application/pdf" multiple />
         <div id="file-badge" class="file-badge"></div>
       </div>
     </div>
-
-    <!-- CARD DE DATOS MANUALES / AJUSTES -->
     <div class="card">
-      <div class="form-group">
-        <label>CUIT Cliente (11 números)</label>
-        <input type="tel" id="cuit" placeholder="Ej: 30112233445" inputmode="numeric" />
-      </div>
-      <div class="form-group">
-        <label>Monto a Facturar ($)</label>
-        <input type="tel" id="monto" placeholder="Ej: 150000" inputmode="decimal" />
-      </div>
+      <div class="form-group"><label>CUIT Cliente</label><input type="tel" id="cuit" placeholder="Ej: 30112233445" inputmode="numeric" /></div>
+      <div class="form-group"><label>Monto a Facturar</label><input type="tel" id="monto" placeholder="Ej: 150000" inputmode="decimal" /></div>
       <div class="form-group">
         <label>Condición de Venta</label>
         <select id="condicionVenta">
@@ -244,73 +175,36 @@
           <option value="Cheque">Cheque</option>
         </select>
       </div>
+      <div class="form-group"><label>Email de destino</label><input type="email" id="email" placeholder="Opcional" /></div>
       <div class="form-group">
-        <label>Email de destino</label>
-        <input type="email" id="email" placeholder="Opcional (Usa el de la distribuidora por def.)" />
-      </div>
-      
-      <div class="form-group">
-        <label>Etiquetas Rápidas</label>
+        <label>Etiquetas</label>
         <div class="tags-scroll">
           <button class="tag-btn" onclick="presetDetalle('Artículos Make')">🏷 Make</button>
           <button class="tag-btn" onclick="presetDetalle('Artículos Romil')">🏷 Romil</button>
           <button class="tag-btn" onclick="presetDetalle('Artículos de limpieza varios')">🏷 Varios</button>
         </div>
       </div>
-      
-      <div class="form-group">
-        <label>Detalle Manual</label>
-        <textarea id="detalle" placeholder="Escribir aquí si no subiste PDF..."></textarea>
-      </div>
+      <div class="form-group"><label>Detalle Manual</label><textarea id="detalle" placeholder="Escribir aquí..."></textarea></div>
     </div>
-
-    <!-- CARD PREVIEW -->
     <div class="card" style="padding: 10px;">
-      <button class="btn-preview-card" id="btnOpenPreview" disabled>
-        👁️ Ver Vista Previa del PDF
-      </button>
+      <button class="btn-preview-card" id="btnOpenPreview" disabled>👁️ Ver Vista Previa del PDF</button>
     </div>
-
   </main>
+  <div class="bottom-bar"><button id="btnEmitir" class="main-btn" onclick="emitir()">EMITIR FACTURA</button></div>
 
-  <!-- BOTTOM BAR / STICKY BUTTON -->
-  <div class="bottom-bar">
-    <button id="btnEmitir" class="main-btn" onclick="emitir()">EMITIR FACTURA</button>
-  </div>
-
-
-  <!-- MODAL VISTA PREVIA (BOTTOM SHEET) -->
   <div class="modal-backdrop" id="previewBackdrop" onclick="closePreview()"></div>
   <div class="bottom-sheet" id="previewSheet">
     <div class="sheet-header">
-      <div style="display: flex; align-items: center;">
-        <h2>Vista Previa</h2>
-        <span class="pill-parte" id="pillParte">1/1</span>
-      </div>
-      <div class="nav-parts">
-        <button id="btnPrev" onclick="cambiarParte(-1)">⬅️</button>
-        <button id="btnNext" onclick="cambiarParte(1)">➡️</button>
-      </div>
+      <div style="display:flex;align-items:center;"><h2>Vista Previa</h2><span class="pill-parte" id="pillParte">1/1</span></div>
+      <div class="nav-parts"><button id="btnPrev" onclick="cambiarParte(-1)">⬅️</button><button id="btnNext" onclick="cambiarParte(1)">➡️</button></div>
       <button class="close-btn" onclick="closePreview()">✕</button>
     </div>
-    <div class="iframe-wrapper">
-      <iframe id="previewFrame"></iframe>
-    </div>
+    <div class="iframe-wrapper"><iframe id="previewFrame"></iframe></div>
   </div>
-
-
-  <!-- MODAL ÉXITO FINAL (FULLSCREEN) -->
   <div class="success-modal" id="successModal">
-    <div class="success-header">
-      <div class="icon">✅</div>
-      <h2>¡Factura Autorizada!</h2>
-      <p style="opacity: 0.9; margin-top: 5px; font-size: 14px;" id="successMsgText">AFIP procesó tu factura con éxito.</p>
-    </div>
-    <div class="success-body" id="successActions">
-      <!-- Inyectado via JS: WhatsApp + Descargas PDF -->
-    </div>
+    <div class="success-header"><div class="icon">✅</div><h2>¡Factura Autorizada!</h2><p style="opacity:0.9;margin-top:5px;font-size:14px;" id="successMsgText">Procesada con éxito.</p></div>
+    <div class="success-body" id="successActions"></div>
   </div>
-
   <script src="app.js"></script>
 </body>
 </html>
