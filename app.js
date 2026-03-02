@@ -47,6 +47,7 @@ const parseMontoInput = () => {
 // Toast Notifications
 function showToast(msg, type = 'success') {
   const container = document.getElementById('toast-container');
+  if (!container) return; // Validación por si falta el contenedor
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
   toast.innerText = msg;
@@ -89,7 +90,11 @@ window.presetDetalle = function(txt) {
 
 // ============================================
 // EVENTOS INPUTS -> VISTA PREVIA
-// ============================================[cuitInput, montoInput, detalleInput, document.getElementById('condicionVenta')].forEach(el => {
+// ============================================
+
+// CORRECCIÓN 1: Se agregó el corchete de apertura '['
+[cuitInput, montoInput, detalleInput, document.getElementById('condicionVenta')].forEach(el => {
+  if(!el) return; // Validación extra
   el.addEventListener('input', () => {
     clearTimeout(previewTimer);
     previewTimer = setTimeout(generarVistaPrevia, 1200);
@@ -333,6 +338,8 @@ window.emitir = async function() {
 // ============================================
 // PANTALLA DE ÉXITO (WHATSAPP + DOWNLOADS)
 // ============================================
+
+// CORRECCIÓN 3: Se agregó la función faltante
 function showSuccessModal(data) {
   const modal = document.getElementById("successModal");
   const actionsBox = document.getElementById("successActions");
