@@ -8,23 +8,21 @@
   <meta name="theme-color" content="#F2F2F7">
   <title>Mercado Limpio</title>
   <link rel="manifest" href="manifest.json">
-
   <style>
     :root {
-      --bg:       #F2F2F7;
-      --card:     #FFFFFF;
-      --primary:  #007AFF;
-      --success:  #34C759;
-      --danger:   #FF3B30;
-      --warn:     #FF9500;
-      --text:     #1C1C1E;
-      --muted:    #8E8E93;
-      --border:   #E5E5EA;
-      --safe-b:   env(safe-area-inset-bottom, 20px);
-      --safe-t:   env(safe-area-inset-top, 20px);
+      --bg:     #F2F2F7;
+      --card:   #FFFFFF;
+      --blue:   #007AFF;
+      --green:  #34C759;
+      --red:    #FF3B30;
+      --warn:   #FF9500;
+      --text:   #1C1C1E;
+      --muted:  #8E8E93;
+      --border: #E5E5EA;
+      --safe-b: env(safe-area-inset-bottom, 20px);
+      --safe-t: env(safe-area-inset-top,    20px);
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
-
     body {
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
       background: var(--bg); color: var(--text);
@@ -32,358 +30,348 @@
       overscroll-behavior-y: none;
     }
 
-    /* ── Header ── */
+    /* ── Header ──────────────────────────────────────── */
     header {
       position: sticky; top: 0; z-index: 50;
-      background: rgba(242,242,247,0.88);
+      background: rgba(242,242,247,0.9);
       backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-      padding: calc(var(--safe-t) + 12px) 20px 12px;
+      padding: calc(var(--safe-t) + 10px) 18px 10px;
       border-bottom: 0.5px solid rgba(0,0,0,0.1);
       display: flex; justify-content: space-between; align-items: center;
     }
-    header h1 { font-size: 21px; font-weight: 800; letter-spacing: -0.5px; }
-    .server-status {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 12px; font-weight: 600; color: var(--muted);
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    header h1 { font-size: 20px; font-weight: 800; letter-spacing: -0.4px; }
+    .btn-resumen-header {
+      background: #1C1C1E; color: #FFF;
+      border: none; border-radius: 20px;
+      padding: 7px 14px; font-size: 13px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; gap: 5px;
+      transition: transform 0.15s;
     }
-    .status-dot {
-      width: 9px; height: 9px; border-radius: 50%;
-      background: var(--warn); /* naranja mientras desconocido */
-      transition: background 0.5s;
-    }
-    .status-dot.online  { background: var(--success); box-shadow: 0 0 7px var(--success); }
-    .status-dot.offline { background: var(--danger); }
-    .status-dot.waking  { background: var(--warn); animation: pulse-dot 1s infinite; }
-    @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .btn-resumen-header:active { transform: scale(0.93); }
+    .server-status { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--muted); }
+    .status-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--warn); transition: background 0.4s; }
+    .status-dot.online  { background: var(--green); box-shadow: 0 0 7px var(--green); }
+    .status-dot.offline { background: var(--red); }
+    .status-dot.waking  { background: var(--warn); animation: blink 1s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
 
-    /* ── Layout ── */
-    .container { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+    /* ── Layout ─────────────────────────────────────── */
+    .container { padding: 14px; display: flex; flex-direction: column; gap: 14px; }
     .card { background: var(--card); border-radius: 20px; padding: 18px; box-shadow: 0 2px 14px rgba(0,0,0,0.05); }
 
-    /* ── Upload Zone ── */
+    /* ── Upload ─────────────────────────────────────── */
     .upload-zone {
       background: #F2F2F7; border: 2px dashed #C7C7CC; border-radius: 16px;
-      padding: 28px 20px; text-align: center; transition: all 0.2s; position: relative;
+      padding: 26px 20px; text-align: center; position: relative; transition: all 0.2s;
     }
-    .upload-zone:active { transform: scale(0.97); border-color: var(--primary); background: #EFF6FF; }
-    .upload-zone h3 { color: var(--primary); font-size: 16px; margin-bottom: 4px; }
+    .upload-zone:active { transform: scale(0.97); border-color: var(--blue); background: #EFF6FF; }
+    .upload-zone h3 { color: var(--blue); font-size: 16px; margin-bottom: 4px; }
     .upload-zone p  { font-size: 13px; color: var(--muted); }
-    .upload-zone input[type="file"] {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; z-index: 10;
-    }
-    /* Badge de archivo seleccionado */
+    .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; z-index: 10; }
     #file-badge {
-      display: none; margin-top: 12px; padding: 8px 14px;
-      background: #DCFCE7; color: #15803D; border-radius: 10px;
-      font-size: 13px; font-weight: 700;
+      display: none; margin-top: 10px; padding: 8px 14px;
+      background: #DCFCE7; color: #15803D;
+      border-radius: 10px; font-size: 13px; font-weight: 700;
     }
-
-    /* ── Resumen extracción ── */
     .summary-box {
       display: none; margin-top: 14px; padding: 14px;
       background: #EFF6FF; border: 1px solid #BFDBFE;
-      border-radius: 14px; font-size: 13px; color: #1E40AF; line-height: 1.6;
+      border-radius: 14px; font-size: 13px; color: #1E40AF; line-height: 1.65;
     }
-    .summary-box .summary-total {
-      margin-top: 8px; padding-top: 8px; border-top: 1px dashed #93C5FD;
-      font-weight: 800; font-size: 15px; color: #1D4ED8;
-    }
-    .summary-box .domicilio-pdf { margin-top: 6px; font-style: italic; color: #3B82F6; }
+    .summary-total { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #93C5FD; font-weight: 800; font-size: 15px; color: #1D4ED8; }
+    .domicilio-pdf { margin-top: 5px; font-style: italic; color: #3B82F6; font-size: 12px; }
 
-    /* ── Forms ── */
+    /* ── Forms ──────────────────────────────────────── */
     .form-group { margin-bottom: 14px; }
-    label {
-      display: block; font-size: 11px; font-weight: 700; color: var(--muted);
-      margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.6px;
-    }
+    .form-group:last-child { margin-bottom: 0; }
+    label { display: block; font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.6px; }
     input, select, textarea {
-      width: 100%; padding: 15px 14px;
-      border: 1.5px solid var(--border); border-radius: 14px;
-      font-size: 16px; background: #F8F8F9; color: var(--text);
-      font-weight: 500; appearance: none; transition: border 0.2s, background 0.2s;
+      width: 100%; padding: 14px; border: 1.5px solid var(--border); border-radius: 14px;
+      font-size: 16px; background: #F8F8F9; color: var(--text); font-weight: 500;
+      appearance: none; transition: border 0.2s, background 0.2s;
     }
-    input:focus, select:focus, textarea:focus {
-      outline: none; border-color: var(--primary); background: #FFF;
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--blue); background: #FFF; }
+    textarea { height: 74px; resize: none; font-size: 15px; }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='%238E8E93' d='M0 0l6 8 6-8z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
     }
-    textarea { height: 76px; resize: none; font-size: 15px; }
-    select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='%238E8E93' d='M0 0l6 8 6-8z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
-
-    /* ── Tags ── */
-    .tags-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+    .tags-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 3px; scrollbar-width: none; }
     .tags-scroll::-webkit-scrollbar { display: none; }
     .tag-btn {
-      white-space: nowrap; padding: 9px 16px;
-      background: #F2F2F7; border: none; border-radius: 20px;
-      font-size: 13px; font-weight: 600; color: var(--text);
-      transition: transform 0.1s, background 0.15s;
-      cursor: pointer;
+      white-space: nowrap; padding: 9px 16px; background: #F2F2F7;
+      border: none; border-radius: 20px; font-size: 13px; font-weight: 600;
+      color: var(--text); cursor: pointer; transition: transform 0.1s;
     }
     .tag-btn:active { transform: scale(0.91); background: #E5E5EA; }
 
-    /* ── Botón preview ── */
+    /* ── Botón preview ──────────────────────────────── */
     .btn-preview-card {
-      width: 100%; padding: 15px; background: #EFF6FF; color: var(--primary);
+      width: 100%; padding: 14px; background: #EFF6FF; color: var(--blue);
       border: none; border-radius: 14px; font-size: 15px; font-weight: 700;
-      display: flex; align-items: center; justify-content: center; gap: 7px;
-      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;
     }
-    .btn-preview-card:disabled { opacity: 0.45; background: #F2F2F7; color: var(--muted); }
+    .btn-preview-card:disabled { opacity: .45; background: #F2F2F7; color: var(--muted); }
 
-    /* ── Bottom bar ── */
+    /* ── Bottom bar ─────────────────────────────────── */
     .bottom-bar {
       position: fixed; bottom: 0; left: 0; width: 100%;
       background: rgba(255,255,255,0.92);
       backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-      padding: 12px 18px var(--safe-b);
-      border-top: 0.5px solid rgba(0,0,0,0.1); z-index: 100;
+      padding: 10px 16px var(--safe-b);
+      border-top: 0.5px solid rgba(0,0,0,0.08); z-index: 100;
     }
     .main-btn {
-      width: 100%; padding: 17px; background: var(--primary); color: #FFF;
-      border: none; border-radius: 16px; font-size: 17px; font-weight: 800;
+      width: 100%; padding: 17px; background: var(--blue); color: #FFF;
+      border: none; border-radius: 16px; font-size: 16px; font-weight: 800;
       display: flex; align-items: center; justify-content: center; gap: 9px;
-      box-shadow: 0 6px 18px rgba(0,122,255,0.3);
-      transition: transform 0.15s, box-shadow 0.15s; cursor: pointer;
+      box-shadow: 0 6px 18px rgba(0,122,255,0.28); cursor: pointer;
+      transition: transform 0.15s; min-height: 58px;
     }
-    .main-btn:active:not(:disabled) { transform: scale(0.96); box-shadow: 0 3px 10px rgba(0,122,255,0.2); }
-    .main-btn:disabled { opacity: 0.65; pointer-events: none; }
-    .main-btn.btn-success { background: var(--success); box-shadow: 0 6px 18px rgba(52,199,89,0.3); }
+    .main-btn:active:not(:disabled) { transform: scale(0.96); }
+    .main-btn:disabled { opacity: .65; pointer-events: none; }
+    .main-btn.btn-success { background: var(--green); box-shadow: 0 6px 18px rgba(52,199,89,0.28); }
     .main-btn.btn-loading { background: #636366; box-shadow: none; }
-
     .spinner {
       border: 2.5px solid rgba(255,255,255,0.3); border-top: 2.5px solid #FFF;
-      border-radius: 50%; width: 20px; height: 20px;
+      border-radius: 50%; width: 20px; height: 20px; flex-shrink: 0;
       animation: spin 0.7s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── Toast ── */
+    /* ── Toast ──────────────────────────────────────── */
     #toast-container {
-      position: fixed; top: calc(var(--safe-t) + 70px);
-      left: 16px; right: 16px; z-index: 2000; pointer-events: none;
+      position: fixed; top: calc(var(--safe-t) + 68px);
+      left: 14px; right: 14px; z-index: 2000; pointer-events: none;
       display: flex; flex-direction: column; gap: 8px;
     }
     .toast {
       background: rgba(28,28,30,0.94); backdrop-filter: blur(10px);
-      color: #FFF; padding: 14px 18px; border-radius: 14px;
+      color: #FFF; padding: 13px 18px; border-radius: 14px;
       font-size: 14px; font-weight: 600;
-      transform: translateY(-16px); opacity: 0; transition: all 0.25s;
-      text-align: center;
+      transform: translateY(-14px); opacity: 0; transition: all 0.25s; text-align: center;
     }
     .toast.show { transform: translateY(0); opacity: 1; }
-    .toast.success { border-left: 4px solid var(--success); }
-    .toast.error   { border-left: 4px solid var(--danger); }
+    .toast.success { border-left: 4px solid var(--green); }
+    .toast.error   { border-left: 4px solid var(--red); }
 
-    /* ── Modal preview ── */
-    .modal-backdrop {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.42);
-      backdrop-filter: blur(3px); z-index: 1000;
-      opacity: 0; pointer-events: none; transition: opacity 0.25s;
-    }
+    /* ── Modal preview ──────────────────────────────── */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(3px); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
     .modal-backdrop.active { opacity: 1; pointer-events: auto; }
-    .bottom-sheet {
-      position: fixed; bottom: 0; left: 0; width: 100%; height: 91vh;
-      background: #F2F2F7; border-radius: 24px 24px 0 0;
-      z-index: 1001; transform: translateY(100%);
-      transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
-      display: flex; flex-direction: column; overflow: hidden;
-    }
+    .bottom-sheet { position: fixed; bottom: 0; left: 0; width: 100%; height: 91vh; background: #F2F2F7; border-radius: 24px 24px 0 0; z-index: 1001; transform: translateY(100%); transition: transform 0.38s cubic-bezier(0.32,0.72,0,1); display: flex; flex-direction: column; overflow: hidden; }
     .bottom-sheet.active { transform: translateY(0); }
-    .sheet-header {
-      padding: 16px 18px; background: #FFF;
-      display: flex; justify-content: space-between; align-items: center;
-      border-bottom: 1px solid var(--border);
-    }
+    .sheet-header { padding: 14px 18px; background: #FFF; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
     .sheet-header h2 { font-size: 17px; font-weight: 800; }
-    .close-btn {
-      background: #E5E5EA; border: none;
-      width: 30px; height: 30px; border-radius: 50%;
-      font-size: 15px; font-weight: bold; color: var(--muted); cursor: pointer;
-    }
-    .pill-parte {
-      background: var(--primary); color: white;
-      padding: 3px 9px; border-radius: 11px;
-      font-size: 12px; font-weight: 700; margin-left: 8px;
-    }
+    .close-btn { background: #E5E5EA; border: none; width: 30px; height: 30px; border-radius: 50%; font-size: 15px; font-weight: bold; color: var(--muted); cursor: pointer; }
+    .pill-parte { background: var(--blue); color: white; padding: 3px 9px; border-radius: 11px; font-size: 12px; font-weight: 700; margin-left: 8px; }
     .nav-parts { display: flex; gap: 8px; }
-    .nav-parts button {
-      padding: 7px 13px; border: none; background: #F2F2F7;
-      border-radius: 11px; font-weight: bold; font-size: 17px; cursor: pointer;
-    }
-    .iframe-wrapper { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; background: #FFF; }
+    .nav-parts button { padding: 7px 12px; border: none; background: #F2F2F7; border-radius: 11px; font-weight: bold; font-size: 17px; cursor: pointer; }
+    .iframe-wrapper { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; }
     .iframe-wrapper iframe { width: 1px; min-width: 100%; height: 100%; border: none; }
 
-    /* ── Modal éxito ── */
-    .success-modal {
-      position: fixed; inset: 0; background: #FFF; z-index: 2000;
-      transform: translateY(100%); transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
-      display: flex; flex-direction: column; overflow-y: auto;
+    /* ── Modal Resumen Mensual ───────────────────────── */
+    .resumen-modal {
+      position: fixed; inset: 0; background: var(--bg); z-index: 2000;
+      transform: translateY(100%); transition: transform 0.38s cubic-bezier(0.32,0.72,0,1);
+      display: flex; flex-direction: column; overflow: hidden;
     }
-    .success-modal.active { transform: translateY(0); }
-    .success-header {
-      background: linear-gradient(160deg, #34C759 0%, #248A3D 100%);
-      color: white; padding: calc(var(--safe-t) + 30px) 20px 32px; text-align: center;
+    .resumen-modal.active { transform: translateY(0); }
+    .resumen-header {
+      background: #1C1C1E; color: #FFF;
+      padding: calc(var(--safe-t) + 16px) 20px 18px;
+      display: flex; justify-content: space-between; align-items: flex-end;
+      flex-shrink: 0;
     }
-    .success-header .icon { font-size: 58px; display: block; margin-bottom: 10px; }
-    .success-header h2 { font-size: 23px; font-weight: 800; }
-    .success-header p  { opacity: 0.88; margin-top: 5px; font-size: 14px; }
-    .success-body { padding: 26px 18px; flex: 1; background: var(--bg); }
+    .resumen-header h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.4px; }
+    .resumen-header .mes-label { font-size: 13px; opacity: 0.6; margin-top: 3px; }
+    .resumen-close { background: rgba(255,255,255,0.15); border: none; width: 34px; height: 34px; border-radius: 50%; font-size: 16px; color: #FFF; font-weight: bold; cursor: pointer; }
+    .resumen-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 18px; padding-bottom: calc(30px + var(--safe-b)); }
 
-    .action-btn {
-      display: flex; align-items: center; justify-content: center; gap: 9px;
-      width: 100%; padding: 17px; border-radius: 16px;
-      font-size: 15px; font-weight: 800; text-decoration: none;
-      margin-bottom: 12px; border: none; cursor: pointer;
+    .kpi-grid { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 10px; margin-bottom: 20px; }
+    .kpi-card { background: var(--card); border-radius: 16px; padding: 14px 10px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .kpi-card.kpi-green { background: linear-gradient(135deg, #34C759, #248A3D); }
+    .kpi-num { font-size: 24px; font-weight: 900; color: var(--text); line-height: 1; }
+    .kpi-num-sm { font-size: 15px; font-weight: 900; color: #FFF; line-height: 1.2; }
+    .kpi-card.kpi-green .kpi-label { color: rgba(255,255,255,0.8); }
+    .kpi-label { font-size: 11px; color: var(--muted); font-weight: 600; margin-top: 5px; text-transform: uppercase; letter-spacing: 0.4px; }
+
+    .section-label { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px; }
+
+    .fact-row {
+      display: flex; align-items: flex-start; padding: 14px;
+      background: var(--card); border-radius: 14px; margin-bottom: 9px;
+      box-shadow: 0 1px 8px rgba(0,0,0,0.04);
     }
-    .btn-wa       { background: #25D366; color: white; box-shadow: 0 6px 18px rgba(37,211,102,0.28); }
-    .btn-download { background: #FFF; color: var(--primary); border: 2px solid var(--primary); }
-    .btn-close-success { background: #636366; color: white; margin-top: 20px; }
+
+    /* ── Modal éxito ────────────────────────────────── */
+    .success-modal { position: fixed; inset: 0; background: #FFF; z-index: 2001; transform: translateY(100%); transition: transform 0.38s cubic-bezier(0.32,0.72,0,1); display: flex; flex-direction: column; overflow-y: auto; }
+    .success-modal.active { transform: translateY(0); }
+    .success-header { background: linear-gradient(160deg, #34C759, #248A3D); color: white; padding: calc(var(--safe-t) + 30px) 20px 30px; text-align: center; }
+    .success-header .icon { font-size: 56px; display: block; margin-bottom: 10px; }
+    .success-header h2 { font-size: 22px; font-weight: 800; }
+    .success-header p  { opacity: .88; margin-top: 5px; font-size: 14px; }
+    .success-body { padding: 24px 18px; flex: 1; background: var(--bg); }
+    .action-btn { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; padding: 16px; border-radius: 16px; font-size: 15px; font-weight: 800; text-decoration: none; margin-bottom: 11px; border: none; cursor: pointer; }
+    .btn-wa           { background: #25D366; color: white; box-shadow: 0 5px 16px rgba(37,211,102,0.25); }
+    .btn-download     { background: #FFF; color: var(--blue); border: 2px solid var(--blue); }
+    .btn-close-success{ background: #636366; color: white; margin-top: 18px; }
   </style>
 </head>
 <body>
 
-  <header>
+<header>
+  <div class="header-left">
     <h1>🧾 Mercado Limpio</h1>
-    <div class="server-status">
-      <div class="status-dot waking" id="statusDot"></div>
-      <span id="statusLabel">Conectando...</span>
+    <button class="btn-resumen-header" onclick="abrirResumen()">📊 Resumen</button>
+  </div>
+  <div class="server-status">
+    <div class="status-dot waking" id="statusDot"></div>
+    <span id="statusLabel">Conectando</span>
+  </div>
+</header>
+
+<div id="toast-container"></div>
+
+<main class="container">
+
+  <div class="card">
+    <div class="upload-zone">
+      <h3>📄 Subir Remito PDF</h3>
+      <p>Tocá para seleccionar uno o varios archivos</p>
+      <input type="file" id="fileRemito" accept="application/pdf" multiple />
     </div>
-  </header>
+    <div id="file-badge"></div>
+    <div id="resumenExtraccion" class="summary-box"></div>
+  </div>
 
-  <div id="toast-container"></div>
-
-  <main class="container">
-
-    <!-- Subir PDF -->
-    <div class="card">
-      <div class="upload-zone" id="drop-zone">
-        <h3>📄 Subir Remito PDF</h3>
-        <p>Tocá para seleccionar uno o varios archivos</p>
-        <input type="file" id="fileRemito" accept="application/pdf" multiple />
-      </div>
-      <div id="file-badge"></div>
-      <div id="resumenExtraccion" class="summary-box"></div>
+  <div class="card">
+    <div class="form-group">
+      <label>CUIT Cliente</label>
+      <input type="tel" id="cuit" placeholder="30112233445" inputmode="numeric" maxlength="11" />
     </div>
-
-    <!-- Datos -->
-    <div class="card">
-      <div class="form-group">
-        <label>CUIT Cliente</label>
-        <input type="tel" id="cuit" placeholder="30112233445" inputmode="numeric" maxlength="11" />
-      </div>
-      <div class="form-group">
-        <label>Monto Total a Facturar</label>
-        <input type="tel" id="monto" placeholder="Ej: 150000,00" inputmode="decimal" />
-      </div>
-      <div class="form-group">
-        <label>Condición de Venta</label>
-        <select id="condicionVenta">
-          <option value="Transferencia Bancaria">Transferencia Bancaria</option>
-          <option value="Efectivo">Efectivo</option>
-          <option value="Cheque">Cheque</option>
-          <option value="Cuenta Corriente">Cuenta Corriente</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Email destinatario</label>
-        <input type="email" id="email" placeholder="Opcional — se envía por Gmail" />
-      </div>
-      <div class="form-group">
-        <label>Atajos Rápidos</label>
-        <div class="tags-scroll">
-          <button class="tag-btn" onclick="presetDetalle('Artículos Make')">🏷 Make</button>
-          <button class="tag-btn" onclick="presetDetalle('Artículos Romil')">🏷 Romil</button>
-          <button class="tag-btn" onclick="presetDetalle('Artículos de limpieza varios')">🏷 Varios</button>
-          <button class="tag-btn" onclick="presetDetalle('Productos de higiene')">🏷 Higiene</button>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Descripción Manual</label>
-        <textarea id="detalle" placeholder="Opcional si no subís PDF..."></textarea>
+    <div class="form-group">
+      <label>Monto Total a Facturar</label>
+      <input type="tel" id="monto" placeholder="150000,00" inputmode="decimal" />
+    </div>
+    <div class="form-group">
+      <label>Condición de Venta</label>
+      <select id="condicionVenta">
+        <option value="Transferencia Bancaria">Transferencia Bancaria</option>
+        <option value="Efectivo">Efectivo</option>
+        <option value="Cheque">Cheque</option>
+        <option value="Cuenta Corriente">Cuenta Corriente</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Email destinatario</label>
+      <input type="email" id="email" placeholder="Opcional" />
+    </div>
+    <div class="form-group">
+      <label>Atajos Rápidos</label>
+      <div class="tags-scroll">
+        <button class="tag-btn" onclick="presetDetalle('Artículos Make')">🏷 Make</button>
+        <button class="tag-btn" onclick="presetDetalle('Artículos Romil')">🏷 Romil</button>
+        <button class="tag-btn" onclick="presetDetalle('Artículos de limpieza varios')">🏷 Varios</button>
+        <button class="tag-btn" onclick="presetDetalle('Productos de higiene')">🏷 Higiene</button>
       </div>
     </div>
-
-    <!-- Botón preview -->
-    <div class="card" style="padding: 8px;">
-      <button class="btn-preview-card" id="btnOpenPreview" disabled>
-        👁️ Ver Vista Previa del PDF
-      </button>
+    <div class="form-group">
+      <label>Descripción Manual</label>
+      <textarea id="detalle" placeholder="Opcional si subís PDF..."></textarea>
     </div>
+  </div>
 
-  </main>
-
-  <!-- Botón emitir fijo abajo -->
-  <div class="bottom-bar">
-    <button id="btnEmitir" class="main-btn" onclick="emitir()">
-      ⚡ EMITIR FACTURA
+  <div class="card" style="padding: 8px;">
+    <button class="btn-preview-card" id="btnOpenPreview" disabled>
+      👁️ Ver Vista Previa del PDF
     </button>
   </div>
 
-  <!-- Modal preview -->
-  <div class="modal-backdrop" id="previewBackdrop" onclick="closePreview()"></div>
-  <div class="bottom-sheet" id="previewSheet">
-    <div class="sheet-header">
-      <div style="display:flex;align-items:center;">
-        <h2>Vista Previa</h2>
-        <span class="pill-parte" id="pillParte">1/1</span>
-      </div>
-      <div class="nav-parts">
-        <button id="btnPrev" onclick="cambiarParte(-1)">⬅️</button>
-        <button id="btnNext" onclick="cambiarParte(1)">➡️</button>
-      </div>
-      <button class="close-btn" onclick="closePreview()">✕</button>
+</main>
+
+<div class="bottom-bar">
+  <button id="btnEmitir" class="main-btn" onclick="emitir()">
+    ⚡ EMITIR FACTURA
+  </button>
+</div>
+
+<!-- Modal Preview -->
+<div class="modal-backdrop" id="previewBackdrop" onclick="closePreview()"></div>
+<div class="bottom-sheet" id="previewSheet">
+  <div class="sheet-header">
+    <div style="display:flex;align-items:center;">
+      <h2>Vista Previa</h2>
+      <span class="pill-parte" id="pillParte">1/1</span>
     </div>
-    <div class="iframe-wrapper">
-      <iframe id="previewFrame"></iframe>
+    <div class="nav-parts">
+      <button id="btnPrev" onclick="cambiarParte(-1)">⬅️</button>
+      <button id="btnNext" onclick="cambiarParte(1)">➡️</button>
     </div>
+    <button class="close-btn" onclick="closePreview()">✕</button>
   </div>
-
-  <!-- Modal éxito -->
-  <div class="success-modal" id="successModal">
-    <div class="success-header">
-      <span class="icon">✅</span>
-      <h2>¡Factura Autorizada!</h2>
-      <p id="successMsgText">Procesada con éxito.</p>
-    </div>
-    <div class="success-body" id="successActions"></div>
+  <div class="iframe-wrapper">
+    <iframe id="previewFrame"></iframe>
   </div>
+</div>
 
-  <!-- Registro Service Worker + status del servidor -->
-  <script>
-    // Registrar SW
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("./sw.js").catch(() => {});
-    }
+<!-- ══ MODAL RESUMEN MENSUAL ══════════════════════════════ -->
+<div class="resumen-modal" id="resumenModal">
+  <div class="resumen-header">
+    <div>
+      <div id="resumenMesLabel" class="mes-label">Cargando...</div>
+      <h2>Resumen del Mes</h2>
+    </div>
+    <button class="resumen-close" onclick="cerrarResumen()">✕</button>
+  </div>
+  <div class="resumen-body" id="resumenContenido">
+    <!-- se rellena con JS -->
+  </div>
+</div>
 
-    // Mostrar estado del servidor en el header
+<!-- Modal Éxito -->
+<div class="success-modal" id="successModal">
+  <div class="success-header">
+    <span class="icon">✅</span>
+    <h2>¡Factura Autorizada!</h2>
+    <p id="successMsgText">Procesada con éxito.</p>
+  </div>
+  <div class="success-body" id="successActions"></div>
+</div>
+
+<script>
+  // Service Worker
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  }
+
+  // Nombre del mes en el resumen
+  (function() {
+    const MESES = ["","Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+    const h = new Date();
+    const lbl = document.getElementById("resumenMesLabel");
+    if (lbl) lbl.textContent = `${MESES[h.getMonth() + 1]} ${h.getFullYear()}`;
+  })();
+
+  // Estado servidor
+  async function checkServer() {
     const dot   = document.getElementById("statusDot");
     const label = document.getElementById("statusLabel");
-
-    async function checkServerStatus() {
-      try {
-        dot.className   = "status-dot waking";
-        label.textContent = "Conectando...";
-
-        const r = await fetch("https://api-mercadolimpio.onrender.com/health", {
-          signal: AbortSignal.timeout(15000)
-        });
-
-        if (r.ok) {
-          dot.className     = "status-dot online";
-          label.textContent = "Servidor activo";
-        } else {
-          dot.className     = "status-dot offline";
-          label.textContent = "Error servidor";
-        }
-      } catch {
-        dot.className     = "status-dot offline";
-        label.textContent = "Sin conexión";
-      }
+    try {
+      dot.className = "status-dot waking";
+      label.textContent = "Conectando";
+      const r = await fetch("https://api-mercadolimpio.onrender.com/health", { signal: AbortSignal.timeout(12000) });
+      if (r.ok) { dot.className = "status-dot online"; label.textContent = "Activo"; }
+      else throw new Error();
+    } catch {
+      dot.className = "status-dot offline";
+      label.textContent = "Sin conexión";
     }
+  }
+  checkServer();
+  setInterval(checkServer, 9 * 60 * 1000);
+</script>
 
-    checkServerStatus();
-    setInterval(checkServerStatus, 9 * 60 * 1000);
-  </script>
-
-  <script src="app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
