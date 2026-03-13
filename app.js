@@ -370,15 +370,24 @@ window.emitir = async function () {
       { maxRetries: 1, timeoutMs: 180000 }  // 3 minutos — AFIP puede tardar
     );
     const j = await r.json();
-    if (!r.ok) throw new Error(j.message || "Error al facturar");
-    if (!j.ok) throw new Error(j.message || "Respuesta inválida");
+if (!r.ok) throw new Error(j.message || "Error al facturar");
+if (!j.ok) throw new Error(j.message || "Respuesta inválida");
 
-    try { localStorage.removeItem("ml_pending_emission"); } catch {}
-    haptic("success");
-    stopEmisionProgress();
-    setBtnState("success", "¡Factura Autorizada por ARCA!");
-    guardarEnHistorialLocal(j, payload);
-    showSuccessModal(j);
+// ✅ Guardar resultado exitoso inmediatamente
+try {
+  localStorage.setItem("ml_last_result", JSON.stringify({
+    result: j,
+    payload,
+    ts: Date.now()
+  }));
+} catch {}
+
+try { localStorage.removeItem("ml_pending_emission"); } catch {}
+haptic("success");
+stopEmisionProgress();
+setBtnState("success", "¡Factura Autorizada por ARCA!");
+guardarEnHistorialLocal(j, payload);
+showSuccessModal(j);
 
   } catch (e) {
     stopEmisionProgress();
@@ -629,3 +638,4 @@ function showSuccessModal(data) {
 
   modal.classList.add("active");
 }
+
