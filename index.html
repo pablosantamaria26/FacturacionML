@@ -430,7 +430,7 @@
 </div>
 
   <!-- Modal Anular Comprobante -->
-<div class="modal-center-backdrop" id="anularModal">
+<div class="modal-center-backdrop" id="anularModal" onclick="if(event.target===this) cerrarModalAnular()">
   <div class="modal-center-card">
     <h3>🧾 Anular comprobante</h3>
     <p id="anularTextoInfo">
@@ -485,4 +485,5 @@
 <script src="app.js"></script>
 </body>
 </html>
+
 
