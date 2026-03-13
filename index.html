@@ -216,6 +216,96 @@
     .btn-wa           { background: #25D366; color: white; box-shadow: 0 5px 16px rgba(37,211,102,0.25); }
     .btn-download     { background: #FFF; color: var(--blue); border: 2px solid var(--blue); }
     .btn-close-success{ background: #636366; color: white; margin-top: 18px; }
+
+    /* ── Modal anulación ───────────────────────────── */
+.danger-btn {
+  background: var(--red);
+  color: #FFF;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ghost-btn {
+  background: #FFF;
+  color: var(--text);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.modal-center-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.38);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  z-index: 3000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+.modal-center-backdrop.active {
+  display: flex;
+}
+.modal-center-card {
+  width: 100%;
+  max-width: 460px;
+  background: #FFF;
+  border-radius: 22px;
+  padding: 18px;
+  box-shadow: 0 18px 45px rgba(0,0,0,0.18);
+}
+.modal-center-card h3 {
+  font-size: 19px;
+  font-weight: 900;
+  margin-bottom: 6px;
+}
+.modal-center-card p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+.modal-center-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+.modal-center-actions button {
+  flex: 1;
+}
+
+.fact-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.fact-mini-btn {
+  border: none;
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.fact-mini-btn.pdf {
+  background: #EFF6FF;
+  color: var(--blue);
+}
+.fact-mini-btn.anular {
+  background: #FFF1F0;
+  color: var(--red);
+}
+    
   </style>
 </head>
 <body>
@@ -339,6 +429,26 @@
   <div class="success-body" id="successActions"></div>
 </div>
 
+  <!-- Modal Anular Comprobante -->
+<div class="modal-center-backdrop" id="anularModal">
+  <div class="modal-center-card">
+    <h3>🧾 Anular comprobante</h3>
+    <p id="anularTextoInfo">
+      Se emitirá una Nota de Crédito asociada para neutralizar la factura.
+    </p>
+
+    <div class="form-group" style="margin-bottom:0;">
+      <label>Motivo</label>
+      <textarea id="anularMotivo" placeholder="Ej: Factura duplicada / emitida por error"></textarea>
+    </div>
+
+    <div class="modal-center-actions">
+      <button class="ghost-btn" onclick="cerrarModalAnular()">Cancelar</button>
+      <button class="danger-btn" id="btnConfirmarAnular" onclick="confirmarAnulacion()">Anular</button>
+    </div>
+  </div>
+</div>
+
 <script>
   // Service Worker
   if ("serviceWorker" in navigator) {
@@ -375,3 +485,4 @@
 <script src="app.js"></script>
 </body>
 </html>
+
