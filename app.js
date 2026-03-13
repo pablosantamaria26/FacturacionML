@@ -73,7 +73,7 @@ function startEmisionProgress() {
   _pasoActual = 0;
   _pasoTs = Date.now();
   renderPaso(0);
-  // El polling real lo hace pollJob(). Este interval es solo fallback visual.
+  // Animación visual del botón durante la emisión
   _pasoInterval = setInterval(() => {
     const s = (Date.now() - _pasoTs) / 1000;
     if (s > 5  && _pasoActual < 1) renderPaso(1);
@@ -118,44 +118,7 @@ function renderPasoFromText(progressText) {
   else if (t.includes("factura autorizada") || t.includes("listo")) renderPaso(6);
 }
 
-// Polling: consulta /job/:id cada 3 segundos hasta que termine
-async function pollJob(jobId, payload, onSuccess, onError) {
-  const MAX_WAIT_MS = 5 * 60 * 1000; // 5 minutos máximo
-  const INTERVAL_MS = 3000;
-  const started = Date.now();
-
-  return new Promise((resolve) => {
-    const timer = setInterval(async () => {
-      try {
-        if (Date.now() - started > MAX_WAIT_MS) {
-          clearInterval(timer);
-          onError(new Error("Tiempo máximo de espera agotado (5 min). Verificá en AFIP si se emitió."));
-          return resolve();
-        }
-
-        const r = await fetch(`${BASE}/job/${jobId}`, { signal: AbortSignal.timeout(10000) });
-        if (!r.ok) return; // red intermitente, reintenta en 3s
-
-        const job = await r.json();
-        renderPasoFromText(job.progress);
-
-        if (job.status === "done") {
-          clearInterval(timer);
-          onSuccess(job.result);
-          resolve();
-        } else if (job.status === "error") {
-          clearInterval(timer);
-          onError(new Error(job.error || "Error desconocido en el servidor"));
-          resolve();
-        }
-        // si status === "pending" → sigue esperando
-      } catch (pollErr) {
-        // error de red temporal, reintenta en 3s
-        console.warn("[poll] error temporal:", pollErr.message);
-      }
-    }, INTERVAL_MS);
-  });
-}
+// (pollJob eliminado — arquitectura sincrónica)
 
 function setBtnState(state, text) {
   stopEmisionProgress();
@@ -399,42 +362,29 @@ window.emitir = async function () {
   startEmisionProgress();
 
   try {
-    // Paso 1: enviar al servidor — responde en < 1 segundo con un jobId
+    // Fetch directo — el servidor responde cuando AFIP autoriza + PDF listo
+    // El email se manda en background del servidor DESPUÉS de responder
     const r = await fetchWithRetry(
       `${BASE}/facturar`,
       { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) },
-      { maxRetries: 2, timeoutMs: 70000 }  // 70s para obtener el jobId (Render Free puede tardar ~50s en despertar)
+      { maxRetries: 1, timeoutMs: 180000 }  // 3 minutos — AFIP puede tardar
     );
     const j = await r.json();
     if (!r.ok) throw new Error(j.message || "Error al facturar");
-    if (!j.jobId) throw new Error("El servidor no devolvió un jobId");
+    if (!j.ok) throw new Error(j.message || "Respuesta inválida");
 
-    // Paso 2: polling hasta que el job termine (sin límite de 120s)
-    await pollJob(
-      j.jobId,
-      payload,
-      // onSuccess
-      (result) => {
-        try { localStorage.removeItem("ml_pending_emission"); } catch {}
-        haptic("success");
-        stopEmisionProgress();
-        setBtnState("success", "¡Factura Autorizada por ARCA!");
-        guardarEnHistorialLocal(result, payload);
-        showSuccessModal(result);
-      },
-      // onError
-      (err) => {
-        stopEmisionProgress();
-        setBtnState("ready", "🔄 REINTENTAR EMISIÓN");
-        showToast("❌ " + (err.message || "Error"), "error");
-      }
-    );
+    try { localStorage.removeItem("ml_pending_emission"); } catch {}
+    haptic("success");
+    stopEmisionProgress();
+    setBtnState("success", "¡Factura Autorizada por ARCA!");
+    guardarEnHistorialLocal(j, payload);
+    showSuccessModal(j);
 
   } catch (e) {
     stopEmisionProgress();
     setBtnState("ready", "🔄 REINTENTAR EMISIÓN");
     const msg = e.name === "AbortError"
-      ? "⏱ El servidor tardó mucho en responder. Render puede estar iniciando. Esperá 30s y reintentá."
+      ? "⏱ Timeout — AFIP tardó demasiado. Verificá en ARCA si se generó la factura antes de reintentar."
       : "❌ " + (e.message || "Error de conexión");
     showToast(msg, "error");
   }
@@ -447,31 +397,31 @@ window.emitir = async function () {
     if (!raw) return;
     const { payload, ts } = JSON.parse(raw);
     if (Date.now() - ts > 10 * 60 * 1000) { localStorage.removeItem("ml_pending_emission"); return; }
-    const ok = confirm(`⚠️ Emisión pendiente (CUIT: ${payload.cuitCliente})\n¿Reintentar ahora?`);
+    const ok = confirm(`⚠️ Emisión pendiente (CUIT: ${payload.cuitCliente})\n¿Reintentar ahora?\n\n⚠️ Si la factura YA se emitió, tocá Cancelar para no duplicar.`);
     if (!ok) { localStorage.removeItem("ml_pending_emission"); return; }
     btnEmitir.disabled = true;
     btnEmitir.className = "main-btn btn-loading";
     startEmisionProgress();
-    const r = await fetchWithRetry(`${BASE}/facturar`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }, { maxRetries: 2, timeoutMs: 70000 });
+    const r = await fetchWithRetry(
+      `${BASE}/facturar`,
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) },
+      { maxRetries: 1, timeoutMs: 180000 }
+    );
     const j = await r.json();
     if (!r.ok) throw new Error(j.message || "Error");
-    if (!j.jobId) throw new Error("Sin jobId");
-    await pollJob(
-      j.jobId, payload,
-      (result) => {
-        localStorage.removeItem("ml_pending_emission");
-        stopEmisionProgress();
-        setBtnState("success", "¡Factura Autorizada!");
-        guardarEnHistorialLocal(result, payload);
-        showSuccessModal(result);
-      },
-      (err) => { stopEmisionProgress(); setBtnState("ready", "⚡ EMITIR FACTURA"); showToast("❌ " + err.message, "error"); }
-    );
+    if (!j.ok) throw new Error(j.message || "Respuesta inválida");
+    localStorage.removeItem("ml_pending_emission");
+    stopEmisionProgress();
+    setBtnState("success", "¡Factura Autorizada!");
+    guardarEnHistorialLocal(j, payload);
+    showSuccessModal(j);
   } catch (e) {
     stopEmisionProgress();
     setBtnState("ready", "⚡ EMITIR FACTURA");
+    showToast("❌ " + (e.message || "Error"), "error");
   }
 })();
+
 
 // ═══════════════════════════════════════════════════════════════
 // HISTORIAL LOCAL
