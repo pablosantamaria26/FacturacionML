@@ -65,16 +65,65 @@ window.confirmarAnulacion = async function() {
     const j = await r.json();
     if (!r.ok || !j.ok) throw new Error(j.message || "No se pudo anular");
 
-    cerrarModalAnular();
-    showToast("✅ Comprobante anulado con Nota de Crédito", "success");
+   // Marcar factura original como anulada y agregar la NC al historial local
+try {
+  const raw = localStorage.getItem("ml_historial") || "{}";
+  const hist = JSON.parse(raw);
+  const mesKey = getMesKey();
 
-    if (j.notaCredito?.pdfUrl) {
-      setTimeout(() => {
-        window.open(j.notaCredito.pdfUrl, "_blank");
-      }, 350);
+  if (!hist[mesKey]) hist[mesKey] = [];
+
+  hist[mesKey] = hist[mesKey].map(x => {
+    if (String(x.comprobante || "") === String(facturaAAnular.comprobante || "")) {
+      return {
+        ...x,
+        anulado: true
+      };
     }
+    return x;
+  });
 
-    await renderResumen();
+  if (j.notaCredito) {
+    const nc = j.notaCredito;
+    const compNC = nc.comprobante || `NC-${String(nc.puntoVenta || 0).padStart(5, "0")}-${String(nc.nroFactura || 0).padStart(8, "0")}`;
+
+    const yaExisteNC = hist[mesKey].some(x =>
+      String(x.comprobante || "") === String(compNC)
+    );
+
+    if (!yaExisteNC) {
+      hist[mesKey].push({
+        fecha: nc.fecha || new Date().toISOString().split("T")[0],
+        comprobante: compNC,
+        tipoCbte: "NC",
+        puntoVenta: Number(nc.puntoVenta || 0),
+        nroFactura: Number(nc.nroFactura || 0),
+        nro: Number(nc.nroFactura || 0),
+        cae: nc.cae || "",
+        cuit: facturaAAnular.cuit || "",
+        nombre: facturaAAnular.nombre || "Sin nombre",
+        total: Number(nc.total || 0) * -1,
+        pdfUrl: nc.pdfUrl || "",
+      });
+    }
+  }
+
+  localStorage.setItem("ml_historial", JSON.stringify(hist));
+} catch (e) {
+  console.warn("No pude actualizar historial local tras anulación:", e?.message || e);
+}
+
+cerrarModalAnular();
+showToast("✅ Comprobante anulado con Nota de Crédito", "success");
+
+if (j.notaCredito?.pdfUrl) {
+  setTimeout(() => {
+    window.open(j.notaCredito.pdfUrl, "_blank");
+  }, 350);
+}
+
+renderResumen();
+    
   } catch (e) {
     showToast("❌ " + (e.message || "Error al anular"), "error");
   } finally {
@@ -583,24 +632,44 @@ showSuccessModal(j);
 function guardarEnHistorialLocal(responseData, payload) {
   try {
     const facturas = Array.isArray(responseData.facturas) ? responseData.facturas : [];
-    const hoy    = new Date();
+    const hoy = new Date();
     const mesKey = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}`;
-    const raw    = localStorage.getItem("ml_historial") || "{}";
-    const hist   = JSON.parse(raw);
+    const raw = localStorage.getItem("ml_historial") || "{}";
+    const hist = JSON.parse(raw);
+
     if (!hist[mesKey]) hist[mesKey] = [];
+
     for (const f of facturas) {
+      const puntoVenta = Number(f.puntoVenta || f.pv || extraerPVDesdeComprobante(f.comprobante));
+      const nroFactura = Number(f.nroFactura || f.nro || extraerNroDesdeComprobante(f.comprobante));
+      const comprobante = f.comprobante || `A-${String(puntoVenta).padStart(5, "0")}-${String(nroFactura).padStart(8, "0")}`;
+      const tipoCbte = f.tipoCbte || (String(comprobante).startsWith("NC-") ? "NC" : "FA");
+
+      const yaExiste = hist[mesKey].some(x =>
+        String(x.comprobante || "") === String(comprobante)
+      );
+
+      if (yaExiste) continue;
+
       hist[mesKey].push({
-        fecha:  hoy.toISOString().split("T")[0],
-        nro:    f.nroFactura,
-        cae:    f.cae,
-        cuit:   payload.cuitCliente,
-        nombre: responseData.receptor?.nombre || `CUIT ${payload.cuitCliente}`,
-        total:  f.total,
+        fecha: f.fecha || hoy.toISOString().split("T")[0],
+        comprobante,
+        tipoCbte,
+        puntoVenta,
+        nroFactura,
+        nro: nroFactura,
+        cae: f.cae || "",
+        cuit: payload?.cuitCliente || responseData?.receptor?.cuit || "",
+        nombre: responseData?.receptor?.nombre || `CUIT ${payload?.cuitCliente || ""}`,
+        total: Number(f.total || 0),
         pdfUrl: f.pdfUrl || "",
       });
     }
+
     localStorage.setItem("ml_historial", JSON.stringify(hist));
-  } catch {}
+  } catch (e) {
+    console.warn("guardarEnHistorialLocal:", e?.message || e);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -676,7 +745,8 @@ function renderResumen() {
 
     for (const f of [...facturas].reverse()) {
     const comprobante = f.comprobante || `A-${String(f.puntoVenta || "").padStart(5,"0")}-${String(f.nro || "").padStart(8,"0")}`;
-    const esNC = String(comprobante).startsWith("NC-");
+    const esNC = String(f.tipoCbte || "").toUpperCase() === "NC" || String(comprobante).startsWith("NC-");
+    const estaAnulado = !!f.anulado;
     const totalNum = Number(f.total || 0);
 
     html += `
@@ -693,7 +763,7 @@ function renderResumen() {
           </div>
           <div class="fact-actions">
             ${f.pdfUrl ? `<button class="fact-mini-btn pdf" onclick="window.open('${f.pdfUrl}','_blank')">📄 PDF</button>` : ""}
-            ${!esNC && totalNum > 0 ? `<button class="fact-mini-btn anular" onclick='abrirModalAnular(${JSON.stringify({
+            ${!esNC && !estaAnulado && totalNum > 0 ? `<button class="fact-mini-btn anular" onclick='abrirModalAnular(${JSON.stringify({
               comprobante,
               nombre: f.nombre,
               total: f.total,
@@ -805,6 +875,7 @@ function showSuccessModal(data) {
 
   modal.classList.add("active");
 }
+
 
 
 
