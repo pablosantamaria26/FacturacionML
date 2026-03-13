@@ -122,7 +122,7 @@ if (j.notaCredito?.pdfUrl) {
   }, 350);
 }
 
-renderResumen();
+await renderResumen();
     
   } catch (e) {
     showToast("❌ " + (e.message || "Error al anular"), "error");
@@ -677,10 +677,10 @@ function guardarEnHistorialLocal(responseData, payload) {
 // ═══════════════════════════════════════════════════════════════
 const MESES = ["","Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
-window.abrirResumen = function () {
+window.abrirResumen = async function () {
   haptic();
   document.getElementById("resumenModal").classList.add("active");
-  renderResumen();
+  await renderResumen();
 };
 window.cerrarResumen = function () {
   haptic();
@@ -692,113 +692,180 @@ function getMesKey() {
   return `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, "0")}`;
 }
 
-function renderResumen() {
+async function renderResumen() {
   const contenido = document.getElementById("resumenContenido");
   if (!contenido) return;
 
-  let hist = {};
-  try { hist = JSON.parse(localStorage.getItem("ml_historial") || "{}"); } catch {}
+  contenido.innerHTML = `
+    <div style="text-align:center;padding:60px 20px;color:#8E8E93;">
+      <div style="font-size:42px;margin-bottom:14px;">⏳</div>
+      <div style="font-size:16px;font-weight:700;color:#1C1C1E;">Cargando resumen...</div>
+    </div>`;
 
-  const mesKey  = getMesKey();
-  const [anio, mesNum] = mesKey.split("-").map(Number);
-  const facturas = hist[mesKey] || [];
-  const totalMes = round2(facturas.reduce((a, f) => a + Number(f.total || 0), 0));
-  const cuitsSet = new Set(facturas.map(f => f.cuit));
+  try {
+    const mesKey = getMesKey();
+    const [anio, mesNum] = mesKey.split("-").map(Number);
 
-  // Agrupar por cliente
-  const porCliente = {};
-  for (const f of facturas) {
-    if (!porCliente[f.cuit]) porCliente[f.cuit] = { nombre: f.nombre, cuit: f.cuit, total: 0, cant: 0 };
-    porCliente[f.cuit].total = round2(porCliente[f.cuit].total + Number(f.total || 0));
-    porCliente[f.cuit].cant++;
-  }
-  const clientes = Object.values(porCliente).sort((a, b) => b.total - a.total);
+    const r = await fetchWithRetry(
+      `${BASE}/admin/facturas-mes?anio=${anio}&mes=${mesNum}`,
+      { method: "GET" },
+      { maxRetries: 1, timeoutMs: 30000 }
+    );
 
-  if (facturas.length === 0) {
-    contenido.innerHTML = `
-      <div style="text-align:center;padding:60px 20px;color:#8E8E93;">
-        <div style="font-size:52px;margin-bottom:14px;">📋</div>
-        <div style="font-size:17px;font-weight:700;color:#1C1C1E;">Sin facturas este mes</div>
-        <div style="font-size:14px;margin-top:6px;">Las facturas que emitas aparecerán aquí automáticamente</div>
-      </div>`;
-    return;
-  }
+    const j = await r.json();
+    if (!r.ok || !j.ok) throw new Error(j.message || "No se pudo cargar el resumen");
 
-  let html = `
-    <div class="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-num">${facturas.length}</div>
-        <div class="kpi-label">Facturas</div>
+    const facturas = Array.isArray(j.facturas) ? j.facturas : [];
+    const totalMes = round2(facturas.reduce((a, f) => a + Number(f.total || 0), 0));
+    const cuitsSet = new Set(facturas.map(f => f.cuit || f.cuitCliente || ""));
+
+    const porCliente = {};
+    for (const f of facturas) {
+      const cuit = f.cuit || f.cuitCliente || "";
+      if (!porCliente[cuit]) {
+        porCliente[cuit] = {
+          nombre: f.nombre || f.nombreCliente || "Sin nombre",
+          cuit,
+          total: 0,
+          cant: 0
+        };
+      }
+      porCliente[cuit].total = round2(porCliente[cuit].total + Number(f.total || 0));
+      porCliente[cuit].cant++;
+    }
+
+    const clientes = Object.values(porCliente).sort((a, b) => b.total - a.total);
+
+    // Sin facturas: limpiar cache local del mes y mostrar vacío
+    if (facturas.length === 0) {
+      try {
+        const raw = localStorage.getItem("ml_historial") || "{}";
+        const hist = JSON.parse(raw);
+        hist[mesKey] = [];
+        localStorage.setItem("ml_historial", JSON.stringify(hist));
+      } catch {}
+
+      contenido.innerHTML = `
+        <div style="text-align:center;padding:60px 20px;color:#8E8E93;">
+          <div style="font-size:52px;margin-bottom:14px;">📋</div>
+          <div style="font-size:17px;font-weight:700;color:#1C1C1E;">Sin facturas este mes</div>
+          <div style="font-size:14px;margin-top:6px;">Las facturas que emitas aparecerán aquí automáticamente</div>
+        </div>`;
+      return;
+    }
+
+    // Refrescar cache local con datos reales del backend
+    try {
+      const raw = localStorage.getItem("ml_historial") || "{}";
+      const hist = JSON.parse(raw);
+      hist[mesKey] = facturas.map(f => ({
+        fecha: f.fecha || "",
+        comprobante: f.comprobante || `A-${String(f.puntoVenta || f.punto_venta || 0).padStart(5, "0")}-${String(f.nroFactura || f.nro_factura || 0).padStart(8, "0")}`,
+        tipoCbte: f.tipoCbte || f.tipo_cbte || (String(f.comprobante || "").startsWith("NC-") ? "NC" : "FA"),
+        puntoVenta: Number(f.puntoVenta || f.punto_venta || 0),
+        nroFactura: Number(f.nroFactura || f.nro_factura || 0),
+        nro: Number(f.nroFactura || f.nro_factura || 0),
+        cae: f.cae || "",
+        cuit: f.cuit || f.cuitCliente || f.cuit_cliente || "",
+        nombre: f.nombre || f.nombreCliente || f.nombre_cliente || "Sin nombre",
+        total: Number(f.total || 0),
+        pdfUrl: f.pdfUrl || f.pdf_url || "",
+        anulado: !!(f.anulado || f.estado === "anulado")
+      }));
+      localStorage.setItem("ml_historial", JSON.stringify(hist));
+    } catch {}
+
+    let html = `
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-num">${facturas.length}</div>
+          <div class="kpi-label">Facturas</div>
+        </div>
+        <div class="kpi-card kpi-green">
+          <div class="kpi-num kpi-num-sm">$${formatMoneyAR(totalMes)}</div>
+          <div class="kpi-label">Total del mes</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-num">${cuitsSet.size}</div>
+          <div class="kpi-label">Clientes</div>
+        </div>
       </div>
-      <div class="kpi-card kpi-green">
-        <div class="kpi-num kpi-num-sm">$${formatMoneyAR(totalMes)}</div>
-        <div class="kpi-label">Total del mes</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-num">${cuitsSet.size}</div>
-        <div class="kpi-label">Clientes</div>
-      </div>
-    </div>
 
-    <div class="section-label">Comprobantes emitidos</div>
-  `;
+      <div class="section-label">Comprobantes emitidos</div>
+    `;
 
     for (const f of [...facturas].reverse()) {
-    const comprobante = f.comprobante || `A-${String(f.puntoVenta || "").padStart(5,"0")}-${String(f.nro || "").padStart(8,"0")}`;
-    const esNC = String(f.tipoCbte || "").toUpperCase() === "NC" || String(comprobante).startsWith("NC-");
-    const estaAnulado = !!f.anulado;
-    const totalNum = Number(f.total || 0);
+      const puntoVenta = Number(f.puntoVenta || f.punto_venta || 0);
+      const nroFactura = Number(f.nroFactura || f.nro_factura || 0);
+      const comprobante = f.comprobante || `A-${String(puntoVenta).padStart(5, "0")}-${String(nroFactura).padStart(8, "0")}`;
+      const esNC = String(f.tipoCbte || f.tipo_cbte || "").toUpperCase() === "NC" || String(comprobante).startsWith("NC-");
+      const estaAnulado = !!(f.anulado || f.estado === "anulado");
+      const totalNum = Number(f.total || 0);
+      const pdfUrl = f.pdfUrl || f.pdf_url || "";
+      const nombre = f.nombre || f.nombreCliente || f.nombre_cliente || "Sin nombre";
+      const cuit = f.cuit || f.cuitCliente || f.cuit_cliente || "";
 
-    html += `
-      <div class="fact-row">
-        <div style="flex:1;min-width:0;">
-          <div style="font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-            ${f.nombre}
-          </div>
-          <div style="font-size:12px;color:#8E8E93;margin-top:2px;">
-            ${f.fecha} · ${comprobante}
-          </div>
-          <div style="font-size:11px;color:#A0AEC0;font-family:monospace;margin-top:1px;">
-            CAE: ${f.cae || "—"}
-          </div>
-          <div class="fact-actions">
-            ${f.pdfUrl ? `<button class="fact-mini-btn pdf" onclick="window.open('${f.pdfUrl}','_blank')">📄 PDF</button>` : ""}
-            ${!esNC && !estaAnulado && totalNum > 0 ? `<button class="fact-mini-btn anular" onclick='abrirModalAnular(${JSON.stringify({
-              comprobante,
-              nombre: f.nombre,
-              total: f.total,
-              nro: f.nro,
-              puntoVenta: f.puntoVenta || extraerPVDesdeComprobante(comprobante)
-            }).replace(/'/g, "&apos;")})'>⛔ Anular</button>` : ""}
-          </div>
-        </div>
-        <div style="text-align:right;flex-shrink:0;margin-left:12px;">
-          <div style="font-weight:900;font-size:15px;color:${totalNum < 0 ? "#FF3B30" : "#1C1C1E"};">
-            ${totalNum < 0 ? "-" : ""}$${formatMoneyAR(Math.abs(totalNum))}
-          </div>
-        </div>
-      </div>`;
-  }
-
-  if (clientes.length > 1) {
-    html += `<div class="section-label" style="margin-top:20px;">Por cliente</div>`;
-    for (const c of clientes) {
-      const pct = totalMes > 0 ? Math.round((c.total / totalMes) * 100) : 0;
       html += `
-        <div style="margin-bottom:14px;">
-          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
-            <span style="font-weight:700;font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.nombre}</span>
-            <span style="font-weight:900;font-size:13px;margin-left:8px;flex-shrink:0;">$${formatMoneyAR(c.total)}</span>
+        <div class="fact-row" style="${estaAnulado ? "opacity:.72;" : ""}">
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              ${nombre}
+              ${estaAnulado ? `<span style="margin-left:6px;font-size:11px;font-weight:800;color:#FF3B30;background:#FFF1F0;padding:3px 7px;border-radius:999px;">ANULADA</span>` : ""}
+            </div>
+            <div style="font-size:12px;color:#8E8E93;margin-top:2px;">
+              ${f.fecha || ""} · ${comprobante}
+            </div>
+            <div style="font-size:11px;color:#A0AEC0;font-family:monospace;margin-top:1px;">
+              CAE: ${f.cae || "—"}
+            </div>
+            <div class="fact-actions">
+              ${pdfUrl ? `<button class="fact-mini-btn pdf" onclick="window.open('${pdfUrl}','_blank')">📄 PDF</button>` : ""}
+              ${!esNC && !estaAnulado && totalNum > 0 ? `<button class="fact-mini-btn anular" onclick='abrirModalAnular(${JSON.stringify({
+                comprobante,
+                nombre,
+                total: totalNum,
+                nro: nroFactura,
+                puntoVenta,
+                cuit
+              }).replace(/'/g, "&apos;")})'>⛔ Anular</button>` : ""}
+            </div>
           </div>
-          <div style="background:#F2F2F7;border-radius:6px;height:7px;overflow:hidden;">
-            <div style="background:linear-gradient(90deg,#007AFF,#5856D6);height:100%;width:${pct}%;border-radius:6px;transition:width 0.8s cubic-bezier(.4,0,.2,1);"></div>
+          <div style="text-align:right;flex-shrink:0;margin-left:12px;">
+            <div style="font-weight:900;font-size:15px;color:${totalNum < 0 ? "#FF3B30" : "#1C1C1E"};">
+              ${totalNum < 0 ? "-" : ""}$${formatMoneyAR(Math.abs(totalNum))}
+            </div>
           </div>
-          <div style="font-size:11px;color:#8E8E93;margin-top:3px;">${c.cant} factura(s) · ${pct}% del total</div>
         </div>`;
     }
-  }
 
-  contenido.innerHTML = html;
+    if (clientes.length > 1) {
+      html += `<div class="section-label" style="margin-top:20px;">Por cliente</div>`;
+      for (const c of clientes) {
+        const pct = totalMes > 0 ? Math.round((c.total / totalMes) * 100) : 0;
+        html += `
+          <div style="margin-bottom:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
+              <span style="font-weight:700;font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.nombre}</span>
+              <span style="font-weight:900;font-size:13px;margin-left:8px;flex-shrink:0;">$${formatMoneyAR(c.total)}</span>
+            </div>
+            <div style="background:#F2F2F7;border-radius:6px;height:7px;overflow:hidden;">
+              <div style="background:linear-gradient(90deg,#007AFF,#5856D6);height:100%;width:${pct}%;border-radius:6px;transition:width 0.8s cubic-bezier(.4,0,.2,1);"></div>
+            </div>
+            <div style="font-size:11px;color:#8E8E93;margin-top:3px;">${c.cant} factura(s) · ${pct}% del total</div>
+          </div>`;
+      }
+    }
+
+    contenido.innerHTML = html;
+
+  } catch (e) {
+    contenido.innerHTML = `
+      <div style="text-align:center;padding:60px 20px;color:#8E8E93;">
+        <div style="font-size:52px;margin-bottom:14px;">⚠️</div>
+        <div style="font-size:17px;font-weight:700;color:#1C1C1E;">No pude cargar el resumen</div>
+        <div style="font-size:14px;margin-top:6px;">${e.message || "Error de conexión"}</div>
+      </div>`;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -875,6 +942,7 @@ function showSuccessModal(data) {
 
   modal.classList.add("active");
 }
+
 
 
 
