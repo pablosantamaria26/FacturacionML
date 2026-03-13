@@ -404,26 +404,58 @@ showSuccessModal(j);
   try {
     const raw = localStorage.getItem("ml_pending_emission");
     if (!raw) return;
+
     const { payload, ts } = JSON.parse(raw);
-    if (Date.now() - ts > 10 * 60 * 1000) { localStorage.removeItem("ml_pending_emission"); return; }
-    const ok = confirm(`⚠️ Emisión pendiente (CUIT: ${payload.cuitCliente})\n¿Reintentar ahora?\n\n⚠️ Si la factura YA se emitió, tocá Cancelar para no duplicar.`);
-    if (!ok) { localStorage.removeItem("ml_pending_emission"); return; }
+
+    if (Date.now() - ts > 10 * 60 * 1000) {
+      localStorage.removeItem("ml_pending_emission");
+      return;
+    }
+
+    const ok = confirm(
+      `⚠️ Emisión pendiente (CUIT: ${payload.cuitCliente})\n` +
+      `¿Reintentar ahora?\n\n` +
+      `⚠️ Si la factura YA se emitió, tocá Cancelar para no duplicar.`
+    );
+
+    if (!ok) {
+      localStorage.removeItem("ml_pending_emission");
+      return;
+    }
+
     btnEmitir.disabled = true;
     btnEmitir.className = "main-btn btn-loading";
     startEmisionProgress();
+
     const r = await fetchWithRetry(
       `${BASE}/facturar`,
-      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) },
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      },
       { maxRetries: 1, timeoutMs: 180000 }
     );
+
     const j = await r.json();
     if (!r.ok) throw new Error(j.message || "Error");
     if (!j.ok) throw new Error(j.message || "Respuesta inválida");
+
+    // ✅ Guardar también el último resultado exitoso
+    try {
+      localStorage.setItem("ml_last_result", JSON.stringify({
+        result: j,
+        payload,
+        ts: Date.now()
+      }));
+    } catch {}
+
     localStorage.removeItem("ml_pending_emission");
     stopEmisionProgress();
     setBtnState("success", "¡Factura Autorizada!");
     guardarEnHistorialLocal(j, payload);
     showSuccessModal(j);
+
   } catch (e) {
     stopEmisionProgress();
     setBtnState("ready", "⚡ EMITIR FACTURA");
@@ -431,6 +463,42 @@ showSuccessModal(j);
   }
 })();
 
+// ── Recuperar último resultado exitoso ────────────────────────
+// Si la factura salió pero la app se cerró o hubo corte visual,
+// se puede volver a mostrar el resultado y descargar el PDF.
+(function checkLastResult() {
+  try {
+    const raw = localStorage.getItem("ml_last_result");
+    if (!raw) return;
+
+    const { result, payload, ts } = JSON.parse(raw);
+
+    // vence en 30 minutos
+    if (Date.now() - ts > 30 * 60 * 1000) {
+      localStorage.removeItem("ml_last_result");
+      return;
+    }
+
+    const modal = document.getElementById("successModal");
+    if (modal && !modal.classList.contains("active")) {
+      const ok = confirm(
+        `✅ Hay una factura emitida recientemente.\n` +
+        `CUIT: ${payload?.cuitCliente || "?"}\n\n` +
+        `¿Querés volver a ver el resultado y descargar el PDF?`
+      );
+
+      if (ok) {
+        guardarEnHistorialLocal(result, payload);
+        showSuccessModal(result);
+        setBtnState("success", "¡Factura Recuperada!");
+      }
+
+      localStorage.removeItem("ml_last_result");
+    }
+  } catch {
+    try { localStorage.removeItem("ml_last_result"); } catch {}
+  }
+})();
 
 // ═══════════════════════════════════════════════════════════════
 // HISTORIAL LOCAL
@@ -571,7 +639,8 @@ function renderResumen() {
 function showSuccessModal(data) {
   const modal      = document.getElementById("successModal");
   const actionsBox = document.getElementById("successActions");
-  document.getElementById("successMsgText").innerText = data.mensaje || "Generada correctamente.";
+  document.getElementById("successMsgText").innerText =
+  data.mensaje || "Factura emitida correctamente. Podés descargar el PDF aunque el email falle.";
   actionsBox.innerHTML = "";
 
   const facturas = Array.isArray(data.facturas) ? data.facturas : [];
@@ -638,4 +707,5 @@ function showSuccessModal(data) {
 
   modal.classList.add("active");
 }
+
 
