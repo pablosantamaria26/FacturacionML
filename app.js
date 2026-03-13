@@ -16,6 +16,83 @@ let parteActual = 1;
 let totalPartes = 1;
 let serverAwake = false;
 
+let facturaAAnular = null;
+
+window.abrirModalAnular = function(factura) {
+  haptic();
+  facturaAAnular = factura;
+  document.getElementById("anularMotivo").value = "Factura emitida por error";
+  document.getElementById("anularTextoInfo").innerHTML =
+    `Se va a anular el comprobante <strong>${factura.comprobante || `A-${String(factura.puntoVenta || "").padStart(5,"0")}-${String(factura.nro || "").padStart(8,"0")}`}</strong><br>` +
+    `Cliente: <strong>${factura.nombre || "Sin nombre"}</strong><br>` +
+    `Total: <strong>$${formatMoneyAR(factura.total || 0)}</strong>`;
+  document.getElementById("anularModal").classList.add("active");
+};
+
+window.cerrarModalAnular = function() {
+  haptic();
+  facturaAAnular = null;
+  document.getElementById("anularModal").classList.remove("active");
+};
+
+window.confirmarAnulacion = async function() {
+  if (!facturaAAnular) return;
+
+  const motivo = document.getElementById("anularMotivo").value.trim() || "Factura emitida por error";
+  const btn = document.getElementById("btnConfirmarAnular");
+
+  btn.disabled = true;
+  btn.textContent = "Anulando...";
+
+  try {
+    const payload = {
+      comprobante: facturaAAnular.comprobante,
+      puntoVenta: facturaAAnular.puntoVenta || extraerPVDesdeComprobante(facturaAAnular.comprobante),
+      nroFactura: facturaAAnular.nro || facturaAAnular.nroFactura || extraerNroDesdeComprobante(facturaAAnular.comprobante),
+      motivo
+    };
+
+    const r = await fetchWithRetry(
+      `${BASE}/anular-comprobante`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      },
+      { maxRetries: 1, timeoutMs: 180000 }
+    );
+
+    const j = await r.json();
+    if (!r.ok || !j.ok) throw new Error(j.message || "No se pudo anular");
+
+    cerrarModalAnular();
+    showToast("✅ Comprobante anulado con Nota de Crédito", "success");
+
+    if (j.notaCredito?.pdfUrl) {
+      setTimeout(() => {
+        window.open(j.notaCredito.pdfUrl, "_blank");
+      }, 350);
+    }
+
+    await renderResumen();
+  } catch (e) {
+    showToast("❌ " + (e.message || "Error al anular"), "error");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Anular";
+  }
+};
+
+function extraerPVDesdeComprobante(comp) {
+  const m = String(comp || "").match(/-(\d{5})-(\d{8})$/);
+  return m ? Number(m[1]) : 0;
+}
+
+function extraerNroDesdeComprobante(comp) {
+  const m = String(comp || "").match(/-(\d{5})-(\d{8})$/);
+  return m ? Number(m[2]) : 0;
+}
+
 const fileInput      = document.getElementById("fileRemito");
 const cuitInput      = document.getElementById("cuit");
 const montoInput     = document.getElementById("monto");
@@ -597,17 +674,38 @@ function renderResumen() {
     <div class="section-label">Comprobantes emitidos</div>
   `;
 
-  for (const f of [...facturas].reverse()) {
+    for (const f of [...facturas].reverse()) {
+    const comprobante = f.comprobante || `A-${String(f.puntoVenta || "").padStart(5,"0")}-${String(f.nro || "").padStart(8,"0")}`;
+    const esNC = String(comprobante).startsWith("NC-");
+    const totalNum = Number(f.total || 0);
+
     html += `
       <div class="fact-row">
         <div style="flex:1;min-width:0;">
-          <div style="font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${f.nombre}</div>
-          <div style="font-size:12px;color:#8E8E93;margin-top:2px;">${f.fecha} · FA Nro ${String(f.nro||"").padStart(8,"0")}</div>
-          <div style="font-size:11px;color:#A0AEC0;font-family:monospace;margin-top:1px;">CAE: ${f.cae || "—"}</div>
+          <div style="font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            ${f.nombre}
+          </div>
+          <div style="font-size:12px;color:#8E8E93;margin-top:2px;">
+            ${f.fecha} · ${comprobante}
+          </div>
+          <div style="font-size:11px;color:#A0AEC0;font-family:monospace;margin-top:1px;">
+            CAE: ${f.cae || "—"}
+          </div>
+          <div class="fact-actions">
+            ${f.pdfUrl ? `<button class="fact-mini-btn pdf" onclick="window.open('${f.pdfUrl}','_blank')">📄 PDF</button>` : ""}
+            ${!esNC && totalNum > 0 ? `<button class="fact-mini-btn anular" onclick='abrirModalAnular(${JSON.stringify({
+              comprobante,
+              nombre: f.nombre,
+              total: f.total,
+              nro: f.nro,
+              puntoVenta: f.puntoVenta || extraerPVDesdeComprobante(comprobante)
+            }).replace(/'/g, "&apos;")})'>⛔ Anular</button>` : ""}
+          </div>
         </div>
         <div style="text-align:right;flex-shrink:0;margin-left:12px;">
-          <div style="font-weight:900;font-size:15px;color:#1C1C1E;">$${formatMoneyAR(f.total)}</div>
-          ${f.pdfUrl ? `<a href="${f.pdfUrl}" target="_blank" style="font-size:12px;color:#007AFF;font-weight:700;text-decoration:none;display:block;margin-top:3px;">📄 Ver PDF</a>` : ""}
+          <div style="font-weight:900;font-size:15px;color:${totalNum < 0 ? "#FF3B30" : "#1C1C1E"};">
+            ${totalNum < 0 ? "-" : ""}$${formatMoneyAR(Math.abs(totalNum))}
+          </div>
         </div>
       </div>`;
   }
@@ -707,5 +805,6 @@ function showSuccessModal(data) {
 
   modal.classList.add("active");
 }
+
 
 
