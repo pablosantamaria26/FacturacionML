@@ -702,10 +702,13 @@ async function renderResumen() {
       <div style="font-size:16px;font-weight:700;color:#1C1C1E;">Cargando resumen...</div>
     </div>`;
 
-  try {
-    const mesKey = getMesKey();
-    const [anio, mesNum] = mesKey.split("-").map(Number);
+  const mesKey = getMesKey();
+  const [anio, mesNum] = mesKey.split("-").map(Number);
 
+  let facturas = [];
+  let origen = "server";
+
+  try {
     const r = await fetchWithRetry(
       `${BASE}/admin/facturas-mes?anio=${anio}&mes=${mesNum}`,
       { method: "GET" },
@@ -715,157 +718,180 @@ async function renderResumen() {
     const j = await r.json();
     if (!r.ok || !j.ok) throw new Error(j.message || "No se pudo cargar el resumen");
 
-    const facturas = Array.isArray(j.facturas) ? j.facturas : [];
-    const totalMes = round2(facturas.reduce((a, f) => a + Number(f.total || 0), 0));
-    const cuitsSet = new Set(facturas.map(f => f.cuit || f.cuitCliente || ""));
-
-    const porCliente = {};
-    for (const f of facturas) {
-      const cuit = f.cuit || f.cuitCliente || "";
-      if (!porCliente[cuit]) {
-        porCliente[cuit] = {
-          nombre: f.nombre || f.nombreCliente || "Sin nombre",
-          cuit,
-          total: 0,
-          cant: 0
-        };
-      }
-      porCliente[cuit].total = round2(porCliente[cuit].total + Number(f.total || 0));
-      porCliente[cuit].cant++;
-    }
-
-    const clientes = Object.values(porCliente).sort((a, b) => b.total - a.total);
-
-    // Sin facturas: limpiar cache local del mes y mostrar vacío
-    if (facturas.length === 0) {
-      try {
-        const raw = localStorage.getItem("ml_historial") || "{}";
-        const hist = JSON.parse(raw);
-        hist[mesKey] = [];
-        localStorage.setItem("ml_historial", JSON.stringify(hist));
-      } catch {}
-
-      contenido.innerHTML = `
-        <div style="text-align:center;padding:60px 20px;color:#8E8E93;">
-          <div style="font-size:52px;margin-bottom:14px;">📋</div>
-          <div style="font-size:17px;font-weight:700;color:#1C1C1E;">Sin facturas este mes</div>
-          <div style="font-size:14px;margin-top:6px;">Las facturas que emitas aparecerán aquí automáticamente</div>
-        </div>`;
-      return;
-    }
+    facturas = Array.isArray(j.facturas) ? j.facturas : [];
 
     // Refrescar cache local con datos reales del backend
     try {
       const raw = localStorage.getItem("ml_historial") || "{}";
       const hist = JSON.parse(raw);
-      hist[mesKey] = facturas.map(f => ({
-        fecha: f.fecha || "",
-        comprobante: f.comprobante || `A-${String(f.puntoVenta || f.punto_venta || 0).padStart(5, "0")}-${String(f.nroFactura || f.nro_factura || 0).padStart(8, "0")}`,
-        tipoCbte: f.tipoCbte || f.tipo_cbte || (String(f.comprobante || "").startsWith("NC-") ? "NC" : "FA"),
-        puntoVenta: Number(f.puntoVenta || f.punto_venta || 0),
-        nroFactura: Number(f.nroFactura || f.nro_factura || 0),
-        nro: Number(f.nroFactura || f.nro_factura || 0),
-        cae: f.cae || "",
-        cuit: f.cuit || f.cuitCliente || f.cuit_cliente || "",
-        nombre: f.nombre || f.nombreCliente || f.nombre_cliente || "Sin nombre",
-        total: Number(f.total || 0),
-        pdfUrl: f.pdfUrl || f.pdf_url || "",
-        anulado: !!(f.anulado || f.estado === "anulado")
-      }));
+
+      hist[mesKey] = facturas.map(f => {
+        const puntoVenta = Number(f.puntoVenta || f.punto_venta || 0);
+        const nroFactura = Number(f.nroFactura || f.nro_factura || 0);
+        const comprobante = f.comprobante || `A-${String(puntoVenta).padStart(5, "0")}-${String(nroFactura).padStart(8, "0")}`;
+        const tipoCbte = f.tipoCbte || f.tipo_cbte || (String(comprobante).startsWith("NC-") ? "NC" : "FA");
+
+        return {
+          fecha: f.fecha || "",
+          comprobante,
+          tipoCbte,
+          puntoVenta,
+          nroFactura,
+          nro: nroFactura,
+          cae: f.cae || "",
+          cuit: f.cuit || f.cuitCliente || f.cuit_cliente || "",
+          nombre: f.nombre || f.nombreCliente || f.nombre_cliente || "Sin nombre",
+          total: Number(f.total || 0),
+          pdfUrl: f.pdfUrl || f.pdf_url || "",
+          anulado: !!(f.anulado || f.estado === "anulado")
+        };
+      });
+
       localStorage.setItem("ml_historial", JSON.stringify(hist));
-    } catch {}
-
-    let html = `
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <div class="kpi-num">${facturas.length}</div>
-          <div class="kpi-label">Facturas</div>
-        </div>
-        <div class="kpi-card kpi-green">
-          <div class="kpi-num kpi-num-sm">$${formatMoneyAR(totalMes)}</div>
-          <div class="kpi-label">Total del mes</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-num">${cuitsSet.size}</div>
-          <div class="kpi-label">Clientes</div>
-        </div>
-      </div>
-
-      <div class="section-label">Comprobantes emitidos</div>
-    `;
-
-    for (const f of [...facturas].reverse()) {
-      const puntoVenta = Number(f.puntoVenta || f.punto_venta || 0);
-      const nroFactura = Number(f.nroFactura || f.nro_factura || 0);
-      const comprobante = f.comprobante || `A-${String(puntoVenta).padStart(5, "0")}-${String(nroFactura).padStart(8, "0")}`;
-      const esNC = String(f.tipoCbte || f.tipo_cbte || "").toUpperCase() === "NC" || String(comprobante).startsWith("NC-");
-      const estaAnulado = !!(f.anulado || f.estado === "anulado");
-      const totalNum = Number(f.total || 0);
-      const pdfUrl = f.pdfUrl || f.pdf_url || "";
-      const nombre = f.nombre || f.nombreCliente || f.nombre_cliente || "Sin nombre";
-      const cuit = f.cuit || f.cuitCliente || f.cuit_cliente || "";
-
-      html += `
-        <div class="fact-row" style="${estaAnulado ? "opacity:.72;" : ""}">
-          <div style="flex:1;min-width:0;">
-            <div style="font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-              ${nombre}
-              ${estaAnulado ? `<span style="margin-left:6px;font-size:11px;font-weight:800;color:#FF3B30;background:#FFF1F0;padding:3px 7px;border-radius:999px;">ANULADA</span>` : ""}
-            </div>
-            <div style="font-size:12px;color:#8E8E93;margin-top:2px;">
-              ${f.fecha || ""} · ${comprobante}
-            </div>
-            <div style="font-size:11px;color:#A0AEC0;font-family:monospace;margin-top:1px;">
-              CAE: ${f.cae || "—"}
-            </div>
-            <div class="fact-actions">
-              ${pdfUrl ? `<button class="fact-mini-btn pdf" onclick="window.open('${pdfUrl}','_blank')">📄 PDF</button>` : ""}
-              ${!esNC && !estaAnulado && totalNum > 0 ? `<button class="fact-mini-btn anular" onclick='abrirModalAnular(${JSON.stringify({
-                comprobante,
-                nombre,
-                total: totalNum,
-                nro: nroFactura,
-                puntoVenta,
-                cuit
-              }).replace(/'/g, "&apos;")})'>⛔ Anular</button>` : ""}
-            </div>
-          </div>
-          <div style="text-align:right;flex-shrink:0;margin-left:12px;">
-            <div style="font-weight:900;font-size:15px;color:${totalNum < 0 ? "#FF3B30" : "#1C1C1E"};">
-              ${totalNum < 0 ? "-" : ""}$${formatMoneyAR(Math.abs(totalNum))}
-            </div>
-          </div>
-        </div>`;
+    } catch (e) {
+      console.warn("No pude refrescar cache local del resumen:", e?.message || e);
     }
-
-    if (clientes.length > 1) {
-      html += `<div class="section-label" style="margin-top:20px;">Por cliente</div>`;
-      for (const c of clientes) {
-        const pct = totalMes > 0 ? Math.round((c.total / totalMes) * 100) : 0;
-        html += `
-          <div style="margin-bottom:14px;">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
-              <span style="font-weight:700;font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.nombre}</span>
-              <span style="font-weight:900;font-size:13px;margin-left:8px;flex-shrink:0;">$${formatMoneyAR(c.total)}</span>
-            </div>
-            <div style="background:#F2F2F7;border-radius:6px;height:7px;overflow:hidden;">
-              <div style="background:linear-gradient(90deg,#007AFF,#5856D6);height:100%;width:${pct}%;border-radius:6px;transition:width 0.8s cubic-bezier(.4,0,.2,1);"></div>
-            </div>
-            <div style="font-size:11px;color:#8E8E93;margin-top:3px;">${c.cant} factura(s) · ${pct}% del total</div>
-          </div>`;
-      }
-    }
-
-    contenido.innerHTML = html;
 
   } catch (e) {
+    console.warn("Resumen servidor no disponible, uso localStorage:", e?.message || e);
+    origen = "local";
+
+    try {
+      const raw = localStorage.getItem("ml_historial") || "{}";
+      const hist = JSON.parse(raw);
+      facturas = Array.isArray(hist[mesKey]) ? hist[mesKey] : [];
+    } catch {
+      facturas = [];
+    }
+  }
+
+  const totalMes = round2(facturas.reduce((a, f) => a + Number(f.total || 0), 0));
+  const cuitsSet = new Set(
+    facturas
+      .map(f => f.cuit || f.cuitCliente || f.cuit_cliente || "")
+      .filter(Boolean)
+  );
+
+  const porCliente = {};
+  for (const f of facturas) {
+    const cuit = f.cuit || f.cuitCliente || f.cuit_cliente || "";
+    const nombre = f.nombre || f.nombreCliente || f.nombre_cliente || "Sin nombre";
+    const key = cuit || nombre;
+
+    if (!porCliente[key]) {
+      porCliente[key] = {
+        nombre,
+        cuit,
+        total: 0,
+        cant: 0
+      };
+    }
+
+    porCliente[key].total = round2(porCliente[key].total + Number(f.total || 0));
+    porCliente[key].cant++;
+  }
+
+  const clientes = Object.values(porCliente).sort((a, b) => b.total - a.total);
+
+  if (facturas.length === 0) {
     contenido.innerHTML = `
       <div style="text-align:center;padding:60px 20px;color:#8E8E93;">
-        <div style="font-size:52px;margin-bottom:14px;">⚠️</div>
-        <div style="font-size:17px;font-weight:700;color:#1C1C1E;">No pude cargar el resumen</div>
-        <div style="font-size:14px;margin-top:6px;">${e.message || "Error de conexión"}</div>
+        <div style="font-size:52px;margin-bottom:14px;">📋</div>
+        <div style="font-size:17px;font-weight:700;color:#1C1C1E;">Sin facturas este mes</div>
+        <div style="font-size:14px;margin-top:6px;">
+          ${origen === "local" ? "No encontré datos ni en servidor ni en este dispositivo" : "Las facturas que emitas aparecerán aquí automáticamente"}
+        </div>
+      </div>`;
+    return;
+  }
+
+  let html = `
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-num">${facturas.length}</div>
+        <div class="kpi-label">Facturas</div>
+      </div>
+      <div class="kpi-card kpi-green">
+        <div class="kpi-num kpi-num-sm">$${formatMoneyAR(totalMes)}</div>
+        <div class="kpi-label">Total del mes</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-num">${cuitsSet.size}</div>
+        <div class="kpi-label">Clientes</div>
+      </div>
+    </div>
+
+    <div class="section-label">
+      Comprobantes emitidos ${origen === "server" ? "· sincronizado" : "· cache local"}
+    </div>
+  `;
+
+  for (const f of [...facturas].reverse()) {
+    const puntoVenta = Number(f.puntoVenta || f.punto_venta || 0);
+    const nroFactura = Number(f.nroFactura || f.nro_factura || f.nro || 0);
+    const comprobante = f.comprobante || `A-${String(puntoVenta).padStart(5, "0")}-${String(nroFactura).padStart(8, "0")}`;
+    const esNC = String(f.tipoCbte || f.tipo_cbte || "").toUpperCase() === "NC" || String(comprobante).startsWith("NC-");
+    const estaAnulado = !!(f.anulado || f.estado === "anulado");
+    const totalNum = Number(f.total || 0);
+    const pdfUrl = f.pdfUrl || f.pdf_url || "";
+    const nombre = f.nombre || f.nombreCliente || f.nombre_cliente || "Sin nombre";
+    const cuit = f.cuit || f.cuitCliente || f.cuit_cliente || "";
+
+    html += `
+      <div class="fact-row" style="${estaAnulado ? "opacity:.72;" : ""}">
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            ${nombre}
+            ${estaAnulado ? `<span style="margin-left:6px;font-size:11px;font-weight:800;color:#FF3B30;background:#FFF1F0;padding:3px 7px;border-radius:999px;">ANULADA</span>` : ""}
+          </div>
+          <div style="font-size:12px;color:#8E8E93;margin-top:2px;">
+            ${f.fecha || ""} · ${comprobante}
+          </div>
+          <div style="font-size:11px;color:#A0AEC0;font-family:monospace;margin-top:1px;">
+            CAE: ${f.cae || "—"}
+          </div>
+          <div class="fact-actions">
+            ${pdfUrl ? `<button class="fact-mini-btn pdf" onclick="window.open('${pdfUrl}','_blank')">📄 PDF</button>` : ""}
+            ${!esNC && !estaAnulado && totalNum > 0 ? `<button class="fact-mini-btn anular" onclick='abrirModalAnular(${JSON.stringify({
+              comprobante,
+              nombre,
+              total: totalNum,
+              nro: nroFactura,
+              nroFactura,
+              puntoVenta,
+              cuit
+            }).replace(/'/g, "&apos;")})'>⛔ Anular</button>` : ""}
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;margin-left:12px;">
+          <div style="font-weight:900;font-size:15px;color:${totalNum < 0 ? "#FF3B30" : "#1C1C1E"};">
+            ${totalNum < 0 ? "-" : ""}$${formatMoneyAR(Math.abs(totalNum))}
+          </div>
+        </div>
       </div>`;
   }
+
+  if (clientes.length > 1) {
+    html += `<div class="section-label" style="margin-top:20px;">Por cliente</div>`;
+
+    for (const c of clientes) {
+      const pct = totalMes > 0 ? Math.round((c.total / totalMes) * 100) : 0;
+
+      html += `
+        <div style="margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
+            <span style="font-weight:700;font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.nombre}</span>
+            <span style="font-weight:900;font-size:13px;margin-left:8px;flex-shrink:0;">$${formatMoneyAR(c.total)}</span>
+          </div>
+          <div style="background:#F2F2F7;border-radius:6px;height:7px;overflow:hidden;">
+            <div style="background:linear-gradient(90deg,#007AFF,#5856D6);height:100%;width:${pct}%;border-radius:6px;transition:width 0.8s cubic-bezier(.4,0,.2,1);"></div>
+          </div>
+          <div style="font-size:11px;color:#8E8E93;margin-top:3px;">${c.cant} factura(s) · ${pct}% del total</div>
+        </div>`;
+    }
+  }
+
+  contenido.innerHTML = html;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -942,6 +968,7 @@ function showSuccessModal(data) {
 
   modal.classList.add("active");
 }
+
 
 
 
