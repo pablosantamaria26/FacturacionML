@@ -403,7 +403,7 @@ window.emitir = async function () {
     const r = await fetchWithRetry(
       `${BASE}/facturar`,
       { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) },
-      { maxRetries: 2, timeoutMs: 15000 }  // solo 15s para obtener el jobId
+      { maxRetries: 2, timeoutMs: 70000 }  // 70s para obtener el jobId (Render Free puede tardar ~50s en despertar)
     );
     const j = await r.json();
     if (!r.ok) throw new Error(j.message || "Error al facturar");
@@ -433,7 +433,10 @@ window.emitir = async function () {
   } catch (e) {
     stopEmisionProgress();
     setBtnState("ready", "🔄 REINTENTAR EMISIÓN");
-    showToast("❌ " + (e.message || "Error de conexión"), "error");
+    const msg = e.name === "AbortError"
+      ? "⏱ El servidor tardó mucho en responder. Render puede estar iniciando. Esperá 30s y reintentá."
+      : "❌ " + (e.message || "Error de conexión");
+    showToast(msg, "error");
   }
 };
 
@@ -449,7 +452,7 @@ window.emitir = async function () {
     btnEmitir.disabled = true;
     btnEmitir.className = "main-btn btn-loading";
     startEmisionProgress();
-    const r = await fetchWithRetry(`${BASE}/facturar`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }, { maxRetries: 2, timeoutMs: 15000 });
+    const r = await fetchWithRetry(`${BASE}/facturar`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }, { maxRetries: 2, timeoutMs: 70000 });
     const j = await r.json();
     if (!r.ok) throw new Error(j.message || "Error");
     if (!j.jobId) throw new Error("Sin jobId");
