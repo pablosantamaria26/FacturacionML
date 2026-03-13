@@ -1,4 +1,4 @@
-const CACHE_NAME = "mercadolimpio-v17";
+const CACHE_NAME = "mercadolimpio-v18";
 const BASE = "https://api-mercadolimpio.onrender.com";
 const STATIC = ["./", "./index.html", "./app.js", "./manifest.json"];
 
@@ -28,5 +28,6 @@ function schedulePing() {
   }, 8 * 60 * 1000);
 }
 schedulePing();
+
 
 
