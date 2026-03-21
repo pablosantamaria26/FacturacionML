@@ -17,6 +17,22 @@ let totalPartes = 1;
 let serverAwake = false;
 
 let facturaAAnular = null;
+// ============================================
+// DESPERTADOR SILENCIOSO PARA RENDER (API + WORKER)
+// ============================================
+setTimeout(() => {
+  const urlsRender = [
+    'https://api-mercadolimpio.onrender.com/health',
+    'https://afip-worker.onrender.com/health'
+  ];
+
+  urlsRender.forEach(url => {
+    fetch(url, { method: 'GET', mode: 'no-cors' })
+      .then(() => console.log(`[WakeUp] Señal enviada a: ${url}`))
+      .catch(() => {}); // Si falla o tarda mucho, no hace ruido ni tira error
+  });
+}, 50); // Un mínimo delay de 50ms para no trabar el dibujado inicial de la app
+// ============================================
 
 window.abrirModalAnular = function(factura) {
   haptic();
