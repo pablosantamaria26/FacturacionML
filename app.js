@@ -29,6 +29,19 @@ setTimeout(() => {
   urlsRender.forEach(url => {
     fetch(url, { method: 'GET', mode: 'no-cors' })
       .then(() => console.log(`[WakeUp] Señal enviada a: ${url}`))
+      .catch(() => {});
+  });
+
+  // Supabase keep-alive — previene pausa por inactividad (7 días free tier)
+  fetch('https://gjeyvbidomxzofcdycya.supabase.co/rest/v1/', {
+    method: 'HEAD',
+    mode: 'no-cors'
+  }).then(() => console.log('[WakeUp] Supabase keep-alive OK')).catch(() => {});
+}, 50);
+
+  urlsRender.forEach(url => {
+    fetch(url, { method: 'GET', mode: 'no-cors' })
+      .then(() => console.log(`[WakeUp] Señal enviada a: ${url}`))
       .catch(() => {}); // Si falla o tarda mucho, no hace ruido ni tira error
   });
 }, 50); // Un mínimo delay de 50ms para no trabar el dibujado inicial de la app
