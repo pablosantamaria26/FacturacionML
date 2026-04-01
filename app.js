@@ -998,7 +998,9 @@ function showSuccessModal(data) {
 
 window.abrirAnulacionManual = function() {
   haptic();
-  document.getElementById("manualNro").value = ""; // Limpiar input
+  document.getElementById("manualNro").value = ""; 
+  // Opcional: poner por defecto la fecha de hoy en el calendario
+  document.getElementById("fechaNC").valueAsDate = new Date(); 
   document.getElementById("anularManualModal").classList.add("active");
 };
 
@@ -1010,13 +1012,14 @@ window.cerrarAnulacionManual = function() {
 window.confirmarAnulacionManual = async function() {
   const pv = document.getElementById("manualPV").value;
   const nro = document.getElementById("manualNro").value;
+  const fechaElegida = document.getElementById("fechaNC").value; // 👈 CAPTURAMOS LA FECHA
   const motivo = document.getElementById("manualMotivo").value.trim() || "Factura emitida por error";
 
   if(!pv || !nro) return showToast("⚠️ Ingresá el Punto de Venta y el Número", "error");
 
   const btn = document.getElementById("btnConfirmarManual");
   btn.disabled = true;
-  btn.textContent = "Buscando en AFIP...";
+  btn.textContent = "Procesando en ARCA...";
 
   try {
     const r = await fetchWithRetry(
@@ -1024,7 +1027,12 @@ window.confirmarAnulacionManual = async function() {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ puntoVenta: Number(pv), nroFactura: Number(nro), motivo })
+        body: JSON.stringify({ 
+          puntoVenta: Number(pv), 
+          nroFactura: Number(nro), 
+          fechaNC: fechaElegida, // 👈 ENVIAMOS LA FECHA AL BACKEND
+          motivo 
+        })
       },
       { maxRetries: 1, timeoutMs: 180000 }
     );
@@ -1041,6 +1049,10 @@ window.confirmarAnulacionManual = async function() {
         window.open(j.notaCredito.pdfUrl, "_blank");
       }, 500);
     }
+    
+    // Refrescar el resumen para que aparezca la NC
+    if (typeof renderResumen === "function") renderResumen();
+
   } catch (e) {
     showToast("❌ " + (e.message || "Error al anular"), "error");
   } finally {
