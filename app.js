@@ -999,7 +999,9 @@ function showSuccessModal(data) {
 window.abrirAnulacionManual = function() {
   haptic();
   document.getElementById("manualNro").value = ""; 
-  // Opcional: poner por defecto la fecha de hoy en el calendario
+  document.getElementById("manualCUIT").value = ""; 
+  document.getElementById("manualMonto").value = ""; 
+  // Pone por defecto la fecha de hoy en el calendario
   document.getElementById("fechaNC").valueAsDate = new Date(); 
   document.getElementById("anularManualModal").classList.add("active");
 };
@@ -1012,10 +1014,15 @@ window.cerrarAnulacionManual = function() {
 window.confirmarAnulacionManual = async function() {
   const pv = document.getElementById("manualPV").value;
   const nro = document.getElementById("manualNro").value;
-  const fechaElegida = document.getElementById("fechaNC").value; // 👈 CAPTURAMOS LA FECHA
+  const cuit = document.getElementById("manualCUIT").value.trim();
+  const monto = document.getElementById("manualMonto").value.trim().replace(',', '.');
+  const fechaElegida = document.getElementById("fechaNC").value;
   const motivo = document.getElementById("manualMotivo").value.trim() || "Factura emitida por error";
 
-  if(!pv || !nro) return showToast("⚠️ Ingresá el Punto de Venta y el Número", "error");
+  // Validación: Ahora pedimos CUIT y Monto obligatoriamente
+  if(!pv || !nro || !monto || !cuit) {
+    return showToast("⚠️ Completá CUIT, Nro y Monto para anular", "error");
+  }
 
   const btn = document.getElementById("btnConfirmarManual");
   btn.disabled = true;
@@ -1030,7 +1037,9 @@ window.confirmarAnulacionManual = async function() {
         body: JSON.stringify({ 
           puntoVenta: Number(pv), 
           nroFactura: Number(nro), 
-          fechaNC: fechaElegida, // 👈 ENVIAMOS LA FECHA AL BACKEND
+          cuitCliente: cuit,
+          montoTotal: Number(monto),
+          fechaNC: fechaElegida,
           motivo 
         })
       },
@@ -1038,7 +1047,7 @@ window.confirmarAnulacionManual = async function() {
     );
 
     const j = await r.json();
-    if (!r.ok || !j.ok) throw new Error(j.message || "No se pudo encontrar o anular");
+    if (!r.ok || !j.ok) throw new Error(j.message || "No se pudo anular");
 
     cerrarAnulacionManual();
     showToast("✅ Nota de Crédito generada con éxito", "success");
@@ -1050,7 +1059,7 @@ window.confirmarAnulacionManual = async function() {
       }, 500);
     }
     
-    // Refrescar el resumen para que aparezca la NC
+    // Refrescar el resumen para que aparezca la NC en el panel
     if (typeof renderResumen === "function") renderResumen();
 
   } catch (e) {
@@ -1060,7 +1069,6 @@ window.confirmarAnulacionManual = async function() {
     btn.textContent = "Buscar y Anular";
   }
 };
-
 
 
 
