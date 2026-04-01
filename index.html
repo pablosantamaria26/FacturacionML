@@ -495,30 +495,49 @@
   </div>
 </div>
 
-  <div class="modal-center-backdrop" id="anularManualModal" onclick="if(event.target===this) cerrarAnulacionManual()">
-  <div class="modal-center-card">
-    <h3>⛔ Anular Factura Antigua</h3>
-    <p>Ingresá los datos exactos de la factura que querés anular. El sistema la buscará en la base de datos.</p>
-    
-    <div style="display:flex; gap:10px; margin-bottom:14px;">
-      <div class="form-group" style="flex:1; margin-bottom:0;">
-        <label>Punto Venta</label>
-        <input type="number" id="manualPV" placeholder="Ej: 5" value="5" />
+<div class="modal-center-backdrop" id="anularManualModal" onclick="if(event.target===this) cerrarAnulacionManual()">
+    <div class="modal-center-card">
+      <h3>⛔ Anular Factura Antigua</h3>
+      <p>Ingresá los datos exactos para generar la Nota de Crédito. Al no estar en la base, necesitamos CUIT y Monto.</p>
+      
+      <div style="display:flex; gap:10px; margin-bottom:14px;">
+        <div class="form-group" style="flex:1; margin-bottom:0;">
+          <label>Punto Venta</label>
+          <input type="number" id="manualPV" placeholder="Ej: 5" value="5" />
+        </div>
+        <div class="form-group" style="flex:2; margin-bottom:0;">
+          <label>Nro Factura</label>
+          <input type="number" id="manualNro" placeholder="Ej: 1234" />
+        </div>
       </div>
-      <div class="form-group" style="flex:2; margin-bottom:0;">
-        <label>Nro Factura</label>
-        <input type="number" id="manualNro" placeholder="Ej: 1234" />
+
+      <div style="display:flex; gap:10px; margin-bottom:14px;">
+        <div class="form-group" style="flex:1; margin-bottom:0;">
+          <label>CUIT Cliente</label>
+          <input type="tel" id="manualCUIT" placeholder="30112233445" maxlength="11" />
+        </div>
+        <div class="form-group" style="flex:1; margin-bottom:0;">
+          <label>Monto Total</label>
+          <input type="tel" id="manualMonto" placeholder="Ej: 152487.01" />
+        </div>
       </div>
-    <div style="display:flex; gap:10px; margin-bottom:14px;">
-  <div class="form-group" style="flex:1; margin-bottom:0;">
-    <label>CUIT Cliente</label>
-    <input type="tel" id="manualCUIT" placeholder="30112233445" maxlength="11" />
+
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>Fecha de la NC (Retroactivo máx 5 días)</label>
+        <input type="date" id="fechaNC" style="background: #FFFBEB; border-color: #F59E0B;" />
+      </div>
+
+      <div class="form-group" style="margin-bottom:0;">
+        <label>Motivo</label>
+        <textarea id="manualMotivo" placeholder="Ej: Factura emitida por error">Factura emitida por error</textarea>
+      </div>
+
+      <div class="modal-center-actions">
+        <button class="ghost-btn" onclick="cerrarAnulacionManual()">Cancelar</button>
+        <button class="danger-btn" id="btnConfirmarManual" onclick="confirmarAnulacionManual()">Buscar y Anular</button>
+      </div>
+    </div>
   </div>
-  <div class="form-group" style="flex:1; margin-bottom:0;">
-    <label>Monto Total Factura</label>
-    <input type="tel" id="manualMonto" placeholder="1500.50" />
-  </div>
-</div>
 
 <div class="form-group" style="margin-bottom:14px;">
   <label>Fecha de la Nota de Crédito (Máx 5 días atrás)</label>
