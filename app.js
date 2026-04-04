@@ -949,3 +949,277 @@ window.confirmarAnulacionManual = async function() {
     showToast("❌ " + (e.message || "Error al anular"), "error");
   }
 };
+
+// ============================================
+// TAB NAVIGATION
+// ============================================
+window.switchTab = function(tab) {
+  haptic();
+  const isFacturar = tab === "facturar";
+  document.getElementById("tabFacturar").style.display    = isFacturar ? "block" : "none";
+  document.getElementById("tabExtracto").style.display    = isFacturar ? "none"  : "flex";
+  document.getElementById("bottomBarFacturar").style.display = isFacturar ? "block" : "none";
+  document.getElementById("bottomBarExtracto").style.display = isFacturar ? "none"  : "block";
+  document.getElementById("tabBtnFacturar").classList.toggle("active", isFacturar);
+  document.getElementById("tabBtnExtracto").classList.toggle("active", !isFacturar);
+};
+
+// ============================================
+// MÓDULO EXTRACTO BANCARIO
+// ============================================
+let extTransferencias = []; // transferencias detectadas con estado
+
+// ── Archivo seleccionado ──────────────────────────────────────
+document.getElementById("extFileInput").addEventListener("change", function() {
+  const f = this.files[0];
+  if (!f) return;
+  haptic();
+  const badge = document.getElementById("extFileBadge");
+  badge.style.display = "block";
+  badge.textContent = `📎 ${f.name} (${(f.size / 1024).toFixed(0)} KB)`;
+  document.getElementById("extBtnProcesar").disabled = false;
+  document.getElementById("extBtnProcesar").style.opacity = "1";
+});
+
+// ── Paso 1: Analizar con Gemini ───────────────────────────────
+window.extProcesar = async function() {
+  const file = document.getElementById("extFileInput").files[0];
+  if (!file) return showToast("Seleccioná un archivo primero", "error");
+
+  haptic();
+  const btn = document.getElementById("extBtnProcesar");
+  btn.disabled = true;
+  btn.innerHTML = `<div class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:#fff;width:18px;height:18px;"></div> Analizando con Gemini...`;
+
+  try {
+    const formData = new FormData();
+    formData.append("extracto", file);
+
+    const r = await fetchWithRetry(
+      `${BASE}/procesar-extracto`,
+      { method: "POST", body: formData },
+      { maxRetries: 2, timeoutMs: 90000 }
+    );
+    const j = await r.json();
+    if (!r.ok || !j.ok) throw new Error(j.message || "Error al procesar");
+
+    if (j.detectados === 0) {
+      showToast(`Se encontraron ${j.total} movimientos pero ninguno de cliente chino`, "error");
+      btn.disabled = false;
+      btn.innerHTML = "🔍 ANALIZAR CON IA";
+      return;
+    }
+
+    extTransferencias = j.transferencias.map((t, i) => ({
+      ...t,
+      id: i,
+      incluida: true,
+      cuitEdit: t.cuit || ""
+    }));
+
+    haptic("success");
+    showToast(`✅ ${j.detectados} transferencias detectadas`, "success");
+    extRenderStep2();
+
+  } catch (e) {
+    showToast("❌ " + (e.message || "Error"), "error");
+    btn.disabled = false;
+    btn.innerHTML = "🔍 ANALIZAR CON IA";
+  }
+};
+
+// ── Renderizar paso 2: lista de transferencias ────────────────
+function extRenderStep2() {
+  document.getElementById("extStep1").classList.remove("active");
+  document.getElementById("extStep2").classList.add("active");
+  extRenderList();
+}
+
+function extRenderList() {
+  const list = document.getElementById("extTransferList");
+  list.innerHTML = "";
+
+  const incluidas = extTransferencias.filter(t => t.incluida);
+  const total = incluidas.reduce((s, t) => s + t.monto, 0);
+
+  document.getElementById("extCountLabel").textContent = incluidas.length;
+  document.getElementById("extTotalLabel").textContent = `$${formatMoneyAR(total)}`;
+
+  const extBtn = document.getElementById("extBtnFacturar");
+  extBtn.disabled = incluidas.length === 0 || incluidas.some(t => t.incluida && !t.cuitEdit);
+  extBtn.style.opacity = extBtn.disabled ? "0.55" : "1";
+
+  extTransferencias.forEach(t => {
+    const div = document.createElement("div");
+    const sinCuit = !t.cuitEdit;
+    div.className = `transfer-card${sinCuit ? " sin-cuit" : ""}${!t.incluida ? " excluida" : ""}`;
+
+    div.innerHTML = `
+      <div class="transfer-nombre">${t.nombre}</div>
+      <div class="transfer-meta">${t.fecha || "Sin fecha"} · ${t.descripcion || ""}</div>
+      <div class="transfer-monto">$${formatMoneyAR(t.monto)}</div>
+      <div class="transfer-cuit-row">
+        <input class="transfer-cuit-input" type="tel" inputmode="numeric" maxlength="11"
+          placeholder="CUIT (11 dígitos)" value="${t.cuitEdit}"
+          onchange="extUpdateCuit(${t.id}, this.value)"
+          oninput="extUpdateCuit(${t.id}, this.value)" />
+        <button class="transfer-toggle${t.incluida ? " incluida" : ""}"
+          onclick="extToggleTransfer(${t.id})">
+          ${t.incluida ? "✓ Incluida" : "Excluida"}
+        </button>
+      </div>
+      ${sinCuit ? `<div style="font-size:11px;color:var(--warn);font-weight:700;margin-top:6px;">⚠️ Ingresá el CUIT para incluir</div>` : ""}
+    `;
+    list.appendChild(div);
+  });
+}
+
+window.extUpdateCuit = function(id, val) {
+  const t = extTransferencias.find(x => x.id === id);
+  if (t) {
+    t.cuitEdit = val.replace(/\D/g, "").slice(0, 11);
+    // Re-evaluar estado del botón
+    const incluidas = extTransferencias.filter(x => x.incluida);
+    const btn = document.getElementById("extBtnFacturar");
+    btn.disabled = incluidas.length === 0 || incluidas.some(x => x.incluida && x.cuitEdit.length !== 11);
+    btn.style.opacity = btn.disabled ? "0.55" : "1";
+    // Actualizar badge de sin-cuit en la card
+    const cards = document.querySelectorAll(".transfer-card");
+    cards.forEach((card, i) => {
+      if (extTransferencias[i]?.id === id) {
+        card.classList.toggle("sin-cuit", t.cuitEdit.length !== 11);
+      }
+    });
+  }
+};
+
+window.extToggleTransfer = function(id) {
+  haptic();
+  const t = extTransferencias.find(x => x.id === id);
+  if (t) { t.incluida = !t.incluida; extRenderList(); }
+};
+
+window.extVolver = function() {
+  haptic();
+  extTransferencias = [];
+  document.getElementById("extStep2").classList.remove("active");
+  document.getElementById("extStep1").classList.add("active");
+  document.getElementById("extFileBadge").style.display = "none";
+  document.getElementById("extFileInput").value = "";
+  const btn = document.getElementById("extBtnProcesar");
+  btn.disabled = true;
+  btn.innerHTML = "🔍 ANALIZAR CON IA";
+};
+
+// ── Paso 3: Facturar ──────────────────────────────────────────
+window.extFacturar = async function() {
+  const incluidas = extTransferencias.filter(t => t.incluida && t.cuitEdit.length === 11 && t.monto > 0);
+  if (incluidas.length === 0) return showToast("No hay transferencias válidas para facturar", "error");
+
+  haptic();
+  const btn = document.getElementById("extBtnFacturar");
+  btn.disabled = true;
+  btn.innerHTML = `<div class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:#fff;width:18px;height:18px;"></div> Facturando ${incluidas.length}...`;
+
+  showNcLoading(
+    `Emitiendo ${incluidas.length} factura${incluidas.length > 1 ? "s" : ""}...`,
+    "Comunicando con ARCA · este proceso puede tomar hasta 2 min"
+  );
+
+  try {
+    const payload = {
+      transferencias: incluidas.map(t => ({
+        cuit: t.cuitEdit,
+        monto: t.monto,
+        nombre: t.nombre
+      })),
+      condicionVenta: "Transferencia Bancaria"
+    };
+
+    const r = await fetchWithRetry(
+      `${BASE}/facturar-extracto`,
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) },
+      { maxRetries: 1, timeoutMs: 300000 } // 5 min para batch
+    );
+    const j = await r.json();
+    if (!r.ok || !j.ok) throw new Error(j.message || "Error al facturar");
+
+    hideNcLoading();
+    haptic("success");
+    extRenderResultados(j);
+
+  } catch (e) {
+    hideNcLoading();
+    showToast("❌ " + (e.message || "Error"), "error");
+    btn.disabled = false;
+    btn.innerHTML = `⚡ FACTURAR SELECCIONADAS`;
+  }
+};
+
+function extRenderResultados(data) {
+  document.getElementById("extStep2").classList.remove("active");
+  document.getElementById("extStep3").classList.add("active");
+
+  const container = document.getElementById("extResultados");
+  const ok = (data.resultados || []).filter(r => r.ok);
+  const err = (data.resultados || []).filter(r => !r.ok);
+
+  let html = `
+    <div class="ext-summary-bar" style="margin-bottom:16px;">
+      <div><div class="lbl">Facturas emitidas</div><div class="val">${data.facturasEmitidas || 0}</div></div>
+      <div style="text-align:right;"><div class="lbl">Total facturado</div><div class="val">$${formatMoneyAR(data.totalFacturado || 0)}</div></div>
+    </div>
+    <div style="font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:10px;">Comprobantes emitidos</div>
+  `;
+
+  ok.forEach(r => {
+    html += `
+      <div class="ext-result-card">
+        <div style="font-weight:800;font-size:14px;">${r.nombre}</div>
+        <div style="font-size:12px;color:#8E8E93;margin-top:2px;">${r.comprobante} · CAE: ${r.cae}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+          <span style="font-weight:900;font-size:16px;color:var(--green);">$${formatMoneyAR(r.total)}</span>
+          ${r.pdfUrl ? `<button class="fact-mini-btn pdf" onclick="window.open('${r.pdfUrl}','_blank')">📄 PDF</button>` : ""}
+        </div>
+      </div>`;
+  });
+
+  if (err.length > 0) {
+    html += `<div style="font-size:12px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:0.6px;margin:16px 0 8px;">Errores (${err.length})</div>`;
+    err.forEach(r => {
+      html += `
+        <div class="ext-result-card error">
+          <div style="font-weight:800;font-size:14px;">${r.nombre}</div>
+          <div style="font-size:12px;color:#8E8E93;margin-top:2px;">CUIT: ${r.cuit}</div>
+          <div style="font-size:12px;color:var(--red);margin-top:6px;">❌ ${r.error}</div>
+        </div>`;
+    });
+  }
+
+  html += `<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:12px;padding:12px 16px;margin-top:16px;font-size:13px;color:#15803D;font-weight:600;">
+    📧 Se envió el reporte consolidado por email.
+  </div>`;
+
+  container.innerHTML = html;
+
+  // Ocultar botón de facturar
+  document.getElementById("extBtnFacturar").style.display = "none";
+}
+
+window.extReset = function() {
+  haptic();
+  extTransferencias = [];
+  document.getElementById("extStep3").classList.remove("active");
+  document.getElementById("extStep2").classList.remove("active");
+  document.getElementById("extStep1").classList.add("active");
+  document.getElementById("extFileBadge").style.display = "none";
+  document.getElementById("extFileInput").value = "";
+  document.getElementById("extResultados").innerHTML = "";
+  const btn = document.getElementById("extBtnFacturar");
+  btn.disabled = true;
+  btn.style.display = "flex";
+  btn.innerHTML = "⚡ FACTURAR SELECCIONADAS";
+  const procBtn = document.getElementById("extBtnProcesar");
+  procBtn.disabled = true;
+  procBtn.innerHTML = "🔍 ANALIZAR CON IA";
+};

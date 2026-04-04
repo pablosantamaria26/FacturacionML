@@ -168,14 +168,33 @@
     .danger-btn:active { transform: scale(0.96); opacity: 0.82; }
     .danger-btn:disabled { opacity: 0.55; }
 
-    /* ── Bottom bar ─────────────────────────────────── */
-    .bottom-bar {
+    /* ── Tab bar ─────────────────────────────────────── */
+    .tab-bar {
       position: fixed; bottom: 0; left: 0; width: 100%;
-      background: rgba(255,255,255,0.92);
+      background: rgba(255,255,255,0.94);
       backdrop-filter: blur(20px) saturate(180%);
       -webkit-backdrop-filter: blur(20px) saturate(180%);
-      padding: 10px 16px var(--safe-b);
-      border-top: 0.5px solid rgba(0,0,0,0.08); z-index: 100;
+      border-top: 0.5px solid rgba(0,0,0,0.10);
+      z-index: 100;
+      display: flex; flex-direction: column;
+      padding-bottom: var(--safe-b);
+    }
+    .tab-buttons {
+      display: flex; border-bottom: 0.5px solid rgba(0,0,0,0.08);
+    }
+    .tab-btn {
+      flex: 1; padding: 10px 8px 8px; border: none; background: none;
+      font-size: 10px; font-weight: 700; color: var(--muted);
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      cursor: pointer; transition: color 0.15s;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .tab-btn .tab-icon { font-size: 22px; line-height: 1; }
+    .tab-btn.active { color: var(--blue); }
+
+    /* ── Bottom bar (dentro del tab de facturar) ───── */
+    .bottom-bar {
+      padding: 10px 16px 8px;
     }
     .main-btn {
       width: 100%; padding: 17px; background: var(--blue); color: #FFF;
@@ -436,6 +455,72 @@
 
     #anularMotivo { min-height: 88px; }
 
+    /* ── Módulo Extracto ─────────────────────────────── */
+    #tabExtracto { display: none; }
+    #tabFacturar { display: block; }
+
+    .ext-upload-zone {
+      background: #F2F2F7; border: 2px dashed #C7C7CC; border-radius: 18px;
+      padding: 32px 20px; text-align: center; position: relative; transition: all 0.18s;
+      cursor: pointer;
+    }
+    .ext-upload-zone:active { transform: scale(0.97); border-color: var(--blue); }
+    .ext-upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; z-index: 10; cursor: pointer; }
+    .ext-upload-icon { font-size: 48px; margin-bottom: 10px; }
+    .ext-upload-zone h3 { color: var(--text); font-size: 17px; font-weight: 800; margin-bottom: 4px; }
+    .ext-upload-zone p  { font-size: 13px; color: var(--muted); }
+
+    .transfer-card {
+      background: var(--card); border-radius: 16px;
+      padding: 14px 16px; margin-bottom: 10px;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.03), 0 2px 8px rgba(0,0,0,0.05);
+      border-left: 4px solid var(--green);
+    }
+    .transfer-card.sin-cuit { border-left-color: var(--warn); }
+    .transfer-card.excluida { border-left-color: #E5E5EA; opacity: 0.55; }
+    .transfer-nombre { font-weight: 800; font-size: 15px; margin-bottom: 4px; }
+    .transfer-meta { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+    .transfer-monto { font-size: 20px; font-weight: 900; color: var(--green); margin-bottom: 10px; }
+    .transfer-cuit-row { display: flex; gap: 8px; align-items: center; }
+    .transfer-cuit-input {
+      flex: 1; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 11px;
+      font-size: 15px; font-weight: 600; background: #F8F8F9; font-family: monospace;
+      color: var(--text);
+    }
+    .transfer-cuit-input:focus { outline: none; border-color: var(--blue); background: #fff; }
+    .transfer-toggle {
+      padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 11px;
+      background: #F8F8F9; font-size: 13px; font-weight: 700; cursor: pointer; color: var(--muted);
+      transition: all 0.12s; white-space: nowrap;
+    }
+    .transfer-toggle.incluida { background: #DCFCE7; border-color: #86EFAC; color: #15803D; }
+
+    .ext-summary-bar {
+      background: #1C1C1E; border-radius: 16px; padding: 16px 18px;
+      margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .ext-summary-bar .lbl { font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 700; text-transform: uppercase; }
+    .ext-summary-bar .val { font-size: 18px; font-weight: 900; color: #fff; }
+
+    .ext-result-card {
+      background: var(--card); border-radius: 14px; padding: 14px 16px;
+      margin-bottom: 9px; border-left: 4px solid var(--green);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.03), 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .ext-result-card.error { border-left-color: var(--red); }
+
+    #extBtnFacturar {
+      width: 100%; padding: 17px; background: var(--green); color: #FFF;
+      border: none; border-radius: 16px; font-size: 16px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; gap: 9px;
+      box-shadow: 0 6px 20px rgba(52,199,89,0.32); cursor: pointer;
+      transition: transform 0.12s, opacity 0.12s; min-height: 56px;
+    }
+    .ext-step {
+      display: none; flex-direction: column; gap: 14px;
+    }
+    .ext-step.active { display: flex; }
+
   </style>
 </head>
 <body>
@@ -520,10 +605,85 @@
 
 </main>
 
-<div class="bottom-bar">
-  <button id="btnEmitir" class="main-btn" onclick="emitir()">
-    ⚡ EMITIR FACTURA
-  </button>
+<!-- ══ TAB EXTRACTO BANCARIO ══════════════════════════════════ -->
+<div id="tabExtracto" style="display:none; padding: 14px; padding-bottom: calc(130px + var(--safe-b)); display: none; flex-direction: column; gap: 14px;">
+
+  <!-- Paso 1: subir archivo -->
+  <div class="ext-step active" id="extStep1">
+    <div class="card">
+      <div style="margin-bottom: 14px;">
+        <p style="font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px;">Módulo Extracto Bancario</p>
+        <p style="font-size: 14px; color: var(--text); line-height: 1.5;">Subí el extracto o captura de pantalla del banco. Gemini detectará automáticamente las transferencias de clientes chinos.</p>
+      </div>
+      <div class="ext-upload-zone" id="extUploadZone">
+        <div class="ext-upload-icon">🏦</div>
+        <h3>Subir extracto bancario</h3>
+        <p>PDF, imagen JPG/PNG de la app del banco</p>
+        <input type="file" id="extFileInput" accept="application/pdf,image/jpeg,image/png,image/webp" />
+      </div>
+      <div id="extFileBadge" style="display:none; margin-top:10px; padding:8px 14px; background:#DCFCE7; color:#15803D; border-radius:10px; font-size:13px; font-weight:700;"></div>
+      <button class="main-btn" id="extBtnProcesar" disabled style="margin-top:14px; background: #5856D6; box-shadow: 0 6px 18px rgba(88,86,214,0.28);" onclick="extProcesar()">
+        🔍 ANALIZAR CON IA
+      </button>
+    </div>
+    <div class="card" style="background: #FFF8F0; border: 1px solid #FED7AA;">
+      <p style="font-size: 13px; font-weight: 700; color: #92400E; margin-bottom: 6px;">⚡ Cómo funciona</p>
+      <p style="font-size: 13px; color: #78350F; line-height: 1.6;">
+        1. Subís el extracto bancario<br>
+        2. Gemini detecta transferencias de clientes chinos<br>
+        3. Revisás y confirmás los CUITs<br>
+        4. Se emiten todas las facturas automáticamente<br>
+        5. Recibís un reporte por email
+      </p>
+    </div>
+  </div>
+
+  <!-- Paso 2: revisar transferencias detectadas -->
+  <div class="ext-step" id="extStep2">
+    <div class="ext-summary-bar" id="extSummaryBar">
+      <div><div class="lbl">Transferencias</div><div class="val" id="extCountLabel">0</div></div>
+      <div style="text-align:right;"><div class="lbl">Total a facturar</div><div class="val" id="extTotalLabel">$0</div></div>
+    </div>
+    <div style="font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:6px;">
+      Transferencias detectadas — confirmá o editá cada CUIT
+    </div>
+    <div id="extTransferList"></div>
+    <button class="ghost-btn" style="border: 1px dashed #5856D6; color:#5856D6;" onclick="extVolver()">
+      ← Subir otro extracto
+    </button>
+  </div>
+
+  <!-- Paso 3: resultados -->
+  <div class="ext-step" id="extStep3">
+    <div id="extResultados"></div>
+    <button class="ghost-btn" style="margin-top: 4px;" onclick="extReset()">
+      🔄 Procesar otro extracto
+    </button>
+  </div>
+
+</div>
+
+<div class="tab-bar">
+  <div class="tab-buttons">
+    <button class="tab-btn active" id="tabBtnFacturar" onclick="switchTab('facturar')">
+      <span class="tab-icon">🧾</span>Facturar
+    </button>
+    <button class="tab-btn" id="tabBtnExtracto" onclick="switchTab('extracto')">
+      <span class="tab-icon">🏦</span>Extracto
+    </button>
+  </div>
+  <!-- Bottom bar: Facturar -->
+  <div class="bottom-bar" id="bottomBarFacturar">
+    <button id="btnEmitir" class="main-btn" onclick="emitir()">
+      ⚡ EMITIR FACTURA
+    </button>
+  </div>
+  <!-- Bottom bar: Extracto -->
+  <div class="bottom-bar" id="bottomBarExtracto" style="display:none;">
+    <button id="extBtnFacturar" onclick="extFacturar()" disabled>
+      ⚡ FACTURAR SELECCIONADAS
+    </button>
+  </div>
 </div>
 
 <!-- Modal Preview -->
