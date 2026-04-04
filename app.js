@@ -1,6 +1,6 @@
 // ============================================
-// MERCADO LIMPIO - MOTOR PWA v3
-// Progreso real en botón + Panel resumen mensual
+// MERCADO LIMPIO - PWA v4
+// Navegación de meses · Overlay NC · iPhone 14 Pro
 // ============================================
 
 const BASE = "https://api-mercadolimpio.onrender.com";
@@ -15,172 +15,37 @@ let previewTimer = null;
 let parteActual = 1;
 let totalPartes = 1;
 let serverAwake = false;
-
 let facturaAAnular = null;
+
+// Estado del mes seleccionado en el panel resumen
+let resumenAnio = new Date().getFullYear();
+let resumenMes  = new Date().getMonth() + 1; // 1-12
+
 // ============================================
-// DESPERTADOR SILENCIOSO PARA RENDER (API + WORKER)
+// DESPERTADOR SILENCIOSO
 // ============================================
 setTimeout(() => {
-  const urlsRender = [
-    'https://api-mercadolimpio.onrender.com/health',
-    'https://afip-worker.onrender.com/health'
-  ];
-
-  urlsRender.forEach(url => {
-    fetch(url, { method: 'GET', mode: 'no-cors' })
-      .then(() => console.log(`[WakeUp] Señal enviada a: ${url}`))
-      .catch(() => {});
-  });
-
-  // Supabase keep-alive — previene pausa por inactividad (7 días free tier)
-  fetch('https://gjeyvbidomxzofcdycya.supabase.co/rest/v1/', {
-    method: 'HEAD',
-    mode: 'no-cors'
-  }).then(() => console.log('[WakeUp] Supabase keep-alive OK')).catch(() => {});
+  ['https://api-mercadolimpio.onrender.com/health', 'https://afip-worker.onrender.com/health']
+    .forEach(url => fetch(url, { method: 'GET', mode: 'no-cors' }).catch(() => {}));
+  fetch('https://gjeyvbidomxzofcdycya.supabase.co/rest/v1/', { method: 'HEAD', mode: 'no-cors' }).catch(() => {});
 }, 50);
+
 // ============================================
-
-window.abrirModalAnular = function(factura) {
-  haptic();
-  facturaAAnular = factura;
-  document.getElementById("anularMotivo").value = "Factura emitida por error";
-  document.getElementById("anularTextoInfo").innerHTML =
-    `Se va a anular el comprobante <strong>${factura.comprobante || `A-${String(factura.puntoVenta || "").padStart(5,"0")}-${String(factura.nro || "").padStart(8,"0")}`}</strong><br>` +
-    `Cliente: <strong>${factura.nombre || "Sin nombre"}</strong><br>` +
-    `Total: <strong>$${formatMoneyAR(factura.total || 0)}</strong>`;
-  document.getElementById("anularModal").classList.add("active");
-};
-
-window.cerrarModalAnular = function() {
-  haptic();
-  facturaAAnular = null;
-  document.getElementById("anularModal").classList.remove("active");
-};
-
-window.confirmarAnulacion = async function() {
-  if (!facturaAAnular) return;
-
-  const motivo = document.getElementById("anularMotivo").value.trim() || "Factura emitida por error";
-  const btn = document.getElementById("btnConfirmarAnular");
-
-  btn.disabled = true;
-  btn.textContent = "Anulando...";
-
-  try {
-    const payload = {
-      comprobante: facturaAAnular.comprobante,
-      puntoVenta: facturaAAnular.puntoVenta || extraerPVDesdeComprobante(facturaAAnular.comprobante),
-      nroFactura: facturaAAnular.nro || facturaAAnular.nroFactura || extraerNroDesdeComprobante(facturaAAnular.comprobante),
-      motivo
-    };
-
-    const r = await fetchWithRetry(
-      `${BASE}/anular-comprobante`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      },
-      { maxRetries: 1, timeoutMs: 180000 }
-    );
-
-    const j = await r.json();
-    if (!r.ok || !j.ok) throw new Error(j.message || "No se pudo anular");
-
-   // Marcar factura original como anulada y agregar la NC al historial local
-try {
-  const raw = localStorage.getItem("ml_historial") || "{}";
-  const hist = JSON.parse(raw);
-  const mesKey = getMesKey();
-
-  if (!hist[mesKey]) hist[mesKey] = [];
-
-  hist[mesKey] = hist[mesKey].map(x => {
-    if (String(x.comprobante || "") === String(facturaAAnular.comprobante || "")) {
-      return {
-        ...x,
-        anulado: true
-      };
-    }
-    return x;
-  });
-
-  if (j.notaCredito) {
-    const nc = j.notaCredito;
-    const compNC = nc.comprobante || `NC-${String(nc.puntoVenta || 0).padStart(5, "0")}-${String(nc.nroFactura || 0).padStart(8, "0")}`;
-
-    const yaExisteNC = hist[mesKey].some(x =>
-      String(x.comprobante || "") === String(compNC)
-    );
-
-    if (!yaExisteNC) {
-      hist[mesKey].push({
-        fecha: nc.fecha || new Date().toISOString().split("T")[0],
-        comprobante: compNC,
-        tipoCbte: "NC",
-        puntoVenta: Number(nc.puntoVenta || 0),
-        nroFactura: Number(nc.nroFactura || 0),
-        nro: Number(nc.nroFactura || 0),
-        cae: nc.cae || "",
-        cuit: facturaAAnular.cuit || "",
-        nombre: facturaAAnular.nombre || "Sin nombre",
-        total: Number(nc.total || 0) * -1,
-        pdfUrl: nc.pdfUrl || "",
-      });
-    }
-  }
-
-  localStorage.setItem("ml_historial", JSON.stringify(hist));
-} catch (e) {
-  console.warn("No pude actualizar historial local tras anulación:", e?.message || e);
-}
-
-cerrarModalAnular();
-showToast("✅ Comprobante anulado con Nota de Crédito", "success");
-
-if (j.notaCredito?.pdfUrl) {
-  setTimeout(() => {
-    window.open(j.notaCredito.pdfUrl, "_blank");
-  }, 350);
-}
-
-await renderResumen();
-    
-  } catch (e) {
-    showToast("❌ " + (e.message || "Error al anular"), "error");
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Anular";
-  }
-};
-
-function extraerPVDesdeComprobante(comp) {
-  const m = String(comp || "").match(/-(\d{5})-(\d{8})$/);
-  return m ? Number(m[1]) : 0;
-}
-
-function extraerNroDesdeComprobante(comp) {
-  const m = String(comp || "").match(/-(\d{5})-(\d{8})$/);
-  return m ? Number(m[2]) : 0;
-}
-
-const fileInput      = document.getElementById("fileRemito");
-const cuitInput      = document.getElementById("cuit");
-const montoInput     = document.getElementById("monto");
-const detalleInput   = document.getElementById("detalle");
-const btnEmitir      = document.getElementById("btnEmitir");
-const btnOpenPreview = document.getElementById("btnOpenPreview");
-
+// UTILIDADES
+// ============================================
 const round2 = (n) => Math.round((Number(n || 0) + Number.EPSILON) * 100) / 100;
+
 const formatMoneyAR = (n) => {
   try { return new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(n || 0)); }
   catch { return String(n); }
 };
+
 const parseMontoInput = () => {
   const s = String(montoInput.value).trim().replace(/\./g, "").replace(",", ".");
   const m = Number(s);
   return (Number.isFinite(m) && m > 0) ? round2(m) : 0;
 };
+
 const haptic = (type = "light") => {
   if (!navigator.vibrate) return;
   if (type === "light")   navigator.vibrate(15);
@@ -188,6 +53,26 @@ const haptic = (type = "light") => {
   if (type === "error")   navigator.vibrate([50, 50, 50]);
 };
 
+const MESES = ["","Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+function getMesKey(anio, mes) {
+  const a = anio ?? new Date().getFullYear();
+  const m = mes  ?? (new Date().getMonth() + 1);
+  return `${a}-${String(m).padStart(2, "0")}`;
+}
+
+function extraerPVDesdeComprobante(comp) {
+  const match = String(comp || "").match(/-(\d{5})-(\d{8})$/);
+  return match ? Number(match[1]) : 0;
+}
+function extraerNroDesdeComprobante(comp) {
+  const match = String(comp || "").match(/-(\d{5})-(\d{8})$/);
+  return match ? Number(match[2]) : 0;
+}
+
+// ============================================
+// TOAST
+// ============================================
 function showToast(msg, type = "success") {
   const container = document.getElementById("toast-container");
   if (!container) return;
@@ -200,31 +85,95 @@ function showToast(msg, type = "success") {
   type === "error" ? haptic("error") : haptic("light");
 }
 
-// ═══════════════════════════════════════════════════════════════
-// PASOS DE PROGRESO — animación narrativa durante la emisión
-// ═══════════════════════════════════════════════════════════════
+// ============================================
+// NC LOADING OVERLAY
+// ============================================
+function showNcLoading(text, sub) {
+  document.getElementById("ncLoadingText").textContent    = text || "Emitiendo Nota de Crédito...";
+  document.getElementById("ncLoadingSubtext").textContent = sub  || "Comunicando con ARCA · no cierres la app";
+  document.getElementById("ncLoadingOverlay").classList.add("active");
+}
+function hideNcLoading() {
+  document.getElementById("ncLoadingOverlay").classList.remove("active");
+}
+
+// ============================================
+// FETCH CON RETRY
+// ============================================
+async function fetchWithRetry(url, options = {}, { maxRetries = 3, timeoutMs = 90000, onRetry } = {}) {
+  let lastErr;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const ctrl  = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+      const r     = await fetch(url, { ...options, signal: ctrl.signal });
+      clearTimeout(timer);
+      return r;
+    } catch (e) {
+      lastErr = e;
+      if (attempt < maxRetries) {
+        if (onRetry) onRetry(attempt);
+        await new Promise(res => setTimeout(res, attempt * 4000));
+      }
+    }
+  }
+  throw lastErr;
+}
+
+// ============================================
+// KEEP-ALIVE
+// ============================================
+async function pingServer() {
+  const dot   = document.getElementById("statusDot");
+  const label = document.getElementById("statusLabel");
+  try {
+    const r = await fetch(`${BASE}/health`, { signal: AbortSignal.timeout(8000) });
+    if (r.ok) {
+      serverAwake = true;
+      if (dot)   dot.className     = "status-dot online";
+      if (label) label.textContent = "Servidor activo";
+    } else throw new Error();
+  } catch {
+    if (dot)   dot.className     = "status-dot offline";
+    if (label) label.textContent = "Sin conexión";
+  }
+}
+pingServer();
+setInterval(pingServer, 9 * 60 * 1000);
+
+// ============================================
+// REFERENCIAS AL DOM
+// ============================================
+const fileInput      = document.getElementById("fileRemito");
+const cuitInput      = document.getElementById("cuit");
+const montoInput     = document.getElementById("monto");
+const detalleInput   = document.getElementById("detalle");
+const btnEmitir      = document.getElementById("btnEmitir");
+const btnOpenPreview = document.getElementById("btnOpenPreview");
+
+// ============================================
+// PASOS DE PROGRESO — animación durante emisión
+// ============================================
 const PASOS = [
-  { icon: "📡", text: "Conectando con el servidor",    sub: "Verificando disponibilidad...", color: "#636366" },
-  { icon: "📋", text: "Preparando el comprobante",     sub: "Validando ítems y totales...",  color: "#007AFF" },
-  { icon: "🏛️", text: "Enviando a AFIP / ARCA",       sub: "Transmitiendo datos fiscales...", color: "#5856D6" },
+  { icon: "📡", text: "Conectando con el servidor",    sub: "Verificando disponibilidad...",    color: "#636366" },
+  { icon: "📋", text: "Preparando el comprobante",     sub: "Validando ítems y totales...",      color: "#007AFF" },
+  { icon: "🏛️", text: "Enviando a AFIP / ARCA",       sub: "Transmitiendo datos fiscales...",   color: "#5856D6" },
   { icon: "⚙️", text: "ARCA está procesando",         sub: "Esto puede tomar unos segundos...", color: "#FF9500" },
-  { icon: "🔐", text: "Solicitando autorización CAE", sub: "Esperando firma digital...",     color: "#FF6B00" },
-  { icon: "📄", text: "Generando PDF oficial",         sub: "Creando el comprobante...",     color: "#34C759" },
-  { icon: "📬", text: "Enviando por email",            sub: "Casi listo...",                 color: "#30B0C7" },
+  { icon: "🔐", text: "Solicitando autorización CAE", sub: "Esperando firma digital...",         color: "#FF6B00" },
+  { icon: "📄", text: "Generando PDF oficial",         sub: "Creando el comprobante...",         color: "#34C759" },
+  { icon: "📬", text: "Enviando por email",            sub: "Casi listo...",                     color: "#30B0C7" },
 ];
 
 let _pasoInterval = null;
-let _pasoActual = 0;
-let _pasoTs = 0;
+let _pasoActual   = 0;
+let _pasoTs       = 0;
 
 function startEmisionProgress() {
-  _pasoActual = 0;
-  _pasoTs = Date.now();
+  _pasoActual = 0; _pasoTs = Date.now();
   renderPaso(0);
-  // Animación visual del botón durante la emisión
   _pasoInterval = setInterval(() => {
     const s = (Date.now() - _pasoTs) / 1000;
-    if (s > 5  && _pasoActual < 1) renderPaso(1);
+    if (s >  5 && _pasoActual < 1) renderPaso(1);
     if (s > 12 && _pasoActual < 2) renderPaso(2);
     if (s > 22 && _pasoActual < 3) renderPaso(3);
     if (s > 35 && _pasoActual < 4) renderPaso(4);
@@ -248,25 +197,10 @@ function renderPaso(idx) {
 }
 
 function stopEmisionProgress() {
-  clearInterval(_pasoInterval);
-  _pasoInterval = null;
+  clearInterval(_pasoInterval); _pasoInterval = null;
   btnEmitir.style.background = "";
   btnEmitir.style.boxShadow  = "";
 }
-
-// Mapea el texto de progreso del servidor a un paso visual
-function renderPasoFromText(progressText) {
-  const t = String(progressText || "").toLowerCase();
-  if (t.includes("punto de venta") || t.includes("iniciando"))      renderPaso(0);
-  else if (t.includes("padrón") || t.includes("padron"))            renderPaso(1);
-  else if (t.includes("autorizando") || t.includes("voucher"))      renderPaso(2);
-  else if (t.includes("cae obtenido") || t.includes("generando pdf")) renderPaso(3);
-  else if (t.includes("pdf generado") || t.includes("guardando"))   renderPaso(4);
-  else if (t.includes("email") || t.includes("enviando"))           renderPaso(5);
-  else if (t.includes("factura autorizada") || t.includes("listo")) renderPaso(6);
-}
-
-// (pollJob eliminado — arquitectura sincrónica)
 
 function setBtnState(state, text) {
   stopEmisionProgress();
@@ -289,49 +223,9 @@ function setBtnState(state, text) {
 
 window.presetDetalle = function (txt) { haptic(); detalleInput.value = txt; triggerPreviewNow(); };
 
-// ── Keep-alive ─────────────────────────────────────────────────
-async function pingServer() {
-  try {
-    const r = await fetch(`${BASE}/health`, { signal: AbortSignal.timeout(8000) });
-    const dot   = document.getElementById("statusDot");
-    const label = document.getElementById("statusLabel");
-    if (r.ok) {
-      serverAwake = true;
-      if (dot)   dot.className     = "status-dot online";
-      if (label) label.textContent = "Servidor activo";
-    } else throw new Error();
-  } catch {
-    const dot   = document.getElementById("statusDot");
-    const label = document.getElementById("statusLabel");
-    if (dot)   dot.className     = "status-dot offline";
-    if (label) label.textContent = "Sin conexión";
-  }
-}
-pingServer();
-setInterval(pingServer, 9 * 60 * 1000);
-
-// ── Fetch con retry ────────────────────────────────────────────
-async function fetchWithRetry(url, options = {}, { maxRetries = 3, timeoutMs = 90000, onRetry } = {}) {
-  let lastErr;
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const ctrl  = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-      const r     = await fetch(url, { ...options, signal: ctrl.signal });
-      clearTimeout(timer);
-      return r;
-    } catch (e) {
-      lastErr = e;
-      if (attempt < maxRetries) {
-        if (onRetry) onRetry(attempt);
-        await new Promise(res => setTimeout(res, attempt * 4000));
-      }
-    }
-  }
-  throw lastErr;
-}
-
-// ── Inputs → preview ──────────────────────────────────────────
+// ============================================
+// INPUTS → PREVIEW
+// ============================================
 [cuitInput, montoInput, detalleInput, document.getElementById("condicionVenta")].forEach(el => {
   if (!el) return;
   el.addEventListener("input", () => { clearTimeout(previewTimer); previewTimer = setTimeout(generarVistaPrevia, 1500); });
@@ -353,11 +247,13 @@ function computeTotalPartes() {
 window.cambiarParte = function (dir) {
   haptic();
   if (dir === -1 && parteActual > 1) parteActual--;
-  if (dir === 1 && parteActual < totalPartes) parteActual++;
+  if (dir ===  1 && parteActual < totalPartes) parteActual++;
   triggerPreviewNow();
 };
 
-// ── Carga PDF ──────────────────────────────────────────────────
+// ============================================
+// CARGA PDF
+// ============================================
 fileInput.addEventListener("change", leerPDF);
 async function leerPDF(event) {
   const files = event?.target?.files || fileInput.files;
@@ -411,7 +307,9 @@ function mostrarResumenExtraccion(res) {
   box.style.display = "block";
 }
 
-// ── Vista previa ───────────────────────────────────────────────
+// ============================================
+// VISTA PREVIA
+// ============================================
 async function generarVistaPrevia() {
   const cuit = cuitInput.value.trim();
   const detalleManual = detalleInput.value.trim();
@@ -465,11 +363,11 @@ window.closePreview = function () {
   document.getElementById("previewBackdrop").classList.remove("active");
   document.getElementById("previewSheet").classList.remove("active");
 };
-btnOpenPreview.addEventListener("click", openPreview);
+btnOpenPreview.addEventListener("click", window.openPreview);
 
-// ═══════════════════════════════════════════════════════════════
+// ============================================
 // EMISIÓN ARCA
-// ═══════════════════════════════════════════════════════════════
+// ============================================
 window.emitir = async function () {
   haptic();
   const cuit = cuitInput.value.trim();
@@ -510,32 +408,23 @@ window.emitir = async function () {
   startEmisionProgress();
 
   try {
-    // Fetch directo — el servidor responde cuando AFIP autoriza + PDF listo
-    // El email se manda en background del servidor DESPUÉS de responder
     const r = await fetchWithRetry(
       `${BASE}/facturar`,
       { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) },
-      { maxRetries: 1, timeoutMs: 180000 }  // 3 minutos — AFIP puede tardar
+      { maxRetries: 1, timeoutMs: 180000 }
     );
     const j = await r.json();
-if (!r.ok) throw new Error(j.message || "Error al facturar");
-if (!j.ok) throw new Error(j.message || "Respuesta inválida");
+    if (!r.ok) throw new Error(j.message || "Error al facturar");
+    if (!j.ok)  throw new Error(j.message || "Respuesta inválida");
 
-// ✅ Guardar resultado exitoso inmediatamente
-try {
-  localStorage.setItem("ml_last_result", JSON.stringify({
-    result: j,
-    payload,
-    ts: Date.now()
-  }));
-} catch {}
+    try { localStorage.setItem("ml_last_result", JSON.stringify({ result: j, payload, ts: Date.now() })); } catch {}
+    try { localStorage.removeItem("ml_pending_emission"); } catch {}
 
-try { localStorage.removeItem("ml_pending_emission"); } catch {}
-haptic("success");
-stopEmisionProgress();
-setBtnState("success", "¡Factura Autorizada por ARCA!");
-guardarEnHistorialLocal(j, payload);
-showSuccessModal(j);
+    haptic("success");
+    stopEmisionProgress();
+    setBtnState("success", "¡Factura Autorizada por ARCA!");
+    guardarEnHistorialLocal(j, payload);
+    showSuccessModal(j);
 
   } catch (e) {
     stopEmisionProgress();
@@ -547,29 +436,20 @@ showSuccessModal(j);
   }
 };
 
-// ── Recuperar emisión pendiente ────────────────────────────────
+// ============================================
+// RECUPERAR EMISIÓN PENDIENTE
+// ============================================
 (async function checkPending() {
   try {
     const raw = localStorage.getItem("ml_pending_emission");
     if (!raw) return;
-
     const { payload, ts } = JSON.parse(raw);
-
-    if (Date.now() - ts > 10 * 60 * 1000) {
-      localStorage.removeItem("ml_pending_emission");
-      return;
-    }
+    if (Date.now() - ts > 10 * 60 * 1000) { localStorage.removeItem("ml_pending_emission"); return; }
 
     const ok = confirm(
-      `⚠️ Emisión pendiente (CUIT: ${payload.cuitCliente})\n` +
-      `¿Reintentar ahora?\n\n` +
-      `⚠️ Si la factura YA se emitió, tocá Cancelar para no duplicar.`
+      `⚠️ Emisión pendiente (CUIT: ${payload.cuitCliente})\n¿Reintentar ahora?\n\n⚠️ Si la factura YA se emitió, tocá Cancelar para no duplicar.`
     );
-
-    if (!ok) {
-      localStorage.removeItem("ml_pending_emission");
-      return;
-    }
+    if (!ok) { localStorage.removeItem("ml_pending_emission"); return; }
 
     btnEmitir.disabled = true;
     btnEmitir.className = "main-btn btn-loading";
@@ -577,33 +457,19 @@ showSuccessModal(j);
 
     const r = await fetchWithRetry(
       `${BASE}/facturar`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      },
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) },
       { maxRetries: 1, timeoutMs: 180000 }
     );
-
     const j = await r.json();
     if (!r.ok) throw new Error(j.message || "Error");
-    if (!j.ok) throw new Error(j.message || "Respuesta inválida");
+    if (!j.ok)  throw new Error(j.message || "Respuesta inválida");
 
-    // ✅ Guardar también el último resultado exitoso
-    try {
-      localStorage.setItem("ml_last_result", JSON.stringify({
-        result: j,
-        payload,
-        ts: Date.now()
-      }));
-    } catch {}
-
+    try { localStorage.setItem("ml_last_result", JSON.stringify({ result: j, payload, ts: Date.now() })); } catch {}
     localStorage.removeItem("ml_pending_emission");
     stopEmisionProgress();
     setBtnState("success", "¡Factura Autorizada!");
     guardarEnHistorialLocal(j, payload);
     showSuccessModal(j);
-
   } catch (e) {
     stopEmisionProgress();
     setBtnState("ready", "⚡ EMITIR FACTURA");
@@ -611,46 +477,29 @@ showSuccessModal(j);
   }
 })();
 
-// ── Recuperar último resultado exitoso ────────────────────────
-// Si la factura salió pero la app se cerró o hubo corte visual,
-// se puede volver a mostrar el resultado y descargar el PDF.
+// ============================================
+// RECUPERAR ÚLTIMO RESULTADO EXITOSO
+// ============================================
 (function checkLastResult() {
   try {
     const raw = localStorage.getItem("ml_last_result");
     if (!raw) return;
-
     const { result, payload, ts } = JSON.parse(raw);
-
-    // vence en 30 minutos
-    if (Date.now() - ts > 30 * 60 * 1000) {
-      localStorage.removeItem("ml_last_result");
-      return;
-    }
-
+    if (Date.now() - ts > 30 * 60 * 1000) { localStorage.removeItem("ml_last_result"); return; }
     const modal = document.getElementById("successModal");
     if (modal && !modal.classList.contains("active")) {
       const ok = confirm(
-        `✅ Hay una factura emitida recientemente.\n` +
-        `CUIT: ${payload?.cuitCliente || "?"}\n\n` +
-        `¿Querés volver a ver el resultado y descargar el PDF?`
+        `✅ Hay una factura emitida recientemente.\nCUIT: ${payload?.cuitCliente || "?"}\n\n¿Querés volver a ver el resultado y descargar el PDF?`
       );
-
-      if (ok) {
-        guardarEnHistorialLocal(result, payload);
-        showSuccessModal(result);
-        setBtnState("success", "¡Factura Recuperada!");
-      }
-
+      if (ok) { guardarEnHistorialLocal(result, payload); showSuccessModal(result); setBtnState("success", "¡Factura Recuperada!"); }
       localStorage.removeItem("ml_last_result");
     }
-  } catch {
-    try { localStorage.removeItem("ml_last_result"); } catch {}
-  }
+  } catch { try { localStorage.removeItem("ml_last_result"); } catch {} }
 })();
 
-// ═══════════════════════════════════════════════════════════════
+// ============================================
 // HISTORIAL LOCAL
-// ═══════════════════════════════════════════════════════════════
+// ============================================
 function guardarEnHistorialLocal(responseData, payload) {
   try {
     const facturas = Array.isArray(responseData.facturas) ? responseData.facturas : [];
@@ -658,28 +507,17 @@ function guardarEnHistorialLocal(responseData, payload) {
     const mesKey = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}`;
     const raw = localStorage.getItem("ml_historial") || "{}";
     const hist = JSON.parse(raw);
-
     if (!hist[mesKey]) hist[mesKey] = [];
 
     for (const f of facturas) {
-      const puntoVenta = Number(f.puntoVenta || f.pv || extraerPVDesdeComprobante(f.comprobante));
-      const nroFactura = Number(f.nroFactura || f.nro || extraerNroDesdeComprobante(f.comprobante));
-      const comprobante = f.comprobante || `A-${String(puntoVenta).padStart(5, "0")}-${String(nroFactura).padStart(8, "0")}`;
+      const pv  = Number(f.puntoVenta || f.pv || extraerPVDesdeComprobante(f.comprobante));
+      const nro = Number(f.nroFactura || f.nro || extraerNroDesdeComprobante(f.comprobante));
+      const comprobante = f.comprobante || `A-${String(pv).padStart(5, "0")}-${String(nro).padStart(8, "0")}`;
       const tipoCbte = f.tipoCbte || (String(comprobante).startsWith("NC-") ? "NC" : "FA");
-
-      const yaExiste = hist[mesKey].some(x =>
-        String(x.comprobante || "") === String(comprobante)
-      );
-
-      if (yaExiste) continue;
-
+      if (hist[mesKey].some(x => String(x.comprobante || "") === String(comprobante))) continue;
       hist[mesKey].push({
         fecha: f.fecha || hoy.toISOString().split("T")[0],
-        comprobante,
-        tipoCbte,
-        puntoVenta,
-        nroFactura,
-        nro: nroFactura,
+        comprobante, tipoCbte, puntoVenta: pv, nroFactura: nro, nro,
         cae: f.cae || "",
         cuit: payload?.cuitCliente || responseData?.receptor?.cuit || "",
         nombre: responseData?.receptor?.nombre || `CUIT ${payload?.cuitCliente || ""}`,
@@ -687,79 +525,89 @@ function guardarEnHistorialLocal(responseData, payload) {
         pdfUrl: f.pdfUrl || "",
       });
     }
-
     localStorage.setItem("ml_historial", JSON.stringify(hist));
-  } catch (e) {
-    console.warn("guardarEnHistorialLocal:", e?.message || e);
-  }
+  } catch (e) { console.warn("guardarEnHistorialLocal:", e?.message || e); }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// PANEL RESUMEN MENSUAL
-// ═══════════════════════════════════════════════════════════════
-const MESES = ["","Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+// ============================================
+// PANEL RESUMEN — NAVEGACIÓN DE MESES
+// ============================================
+function actualizarNavMes() {
+  const hoy = new Date();
+  const esPresente = resumenAnio === hoy.getFullYear() && resumenMes === (hoy.getMonth() + 1);
+  document.getElementById("mesNavLabel").textContent = `${MESES[resumenMes]} ${resumenAnio}`;
+  document.getElementById("btnMesNext").disabled = esPresente;
+  // No ir más de 24 meses atrás
+  const limite  = new Date(hoy.getFullYear(), hoy.getMonth() - 23, 1);
+  const selDate = new Date(resumenAnio, resumenMes - 1, 1);
+  document.getElementById("btnMesPrev").disabled = selDate <= limite;
+}
+
+window.navegarMes = function(dir) {
+  haptic();
+  resumenMes += dir;
+  if (resumenMes > 12) { resumenMes = 1;  resumenAnio++; }
+  if (resumenMes < 1)  { resumenMes = 12; resumenAnio--; }
+  actualizarNavMes();
+  renderResumen();
+};
 
 window.abrirResumen = async function () {
   haptic();
+  const hoy = new Date();
+  resumenAnio = hoy.getFullYear();
+  resumenMes  = hoy.getMonth() + 1;
+  actualizarNavMes();
   document.getElementById("resumenModal").classList.add("active");
   await renderResumen();
 };
+
 window.cerrarResumen = function () {
   haptic();
   document.getElementById("resumenModal").classList.remove("active");
 };
 
-function getMesKey() {
-  const h = new Date();
-  return `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, "0")}`;
-}
-
 async function renderResumen() {
   const contenido = document.getElementById("resumenContenido");
   if (!contenido) return;
 
+  // Skeleton loader mientras carga
   contenido.innerHTML = `
-    <div style="text-align:center;padding:60px 20px;color:#8E8E93;">
-      <div style="font-size:42px;margin-bottom:14px;">⏳</div>
-      <div style="font-size:16px;font-weight:700;color:#1C1C1E;">Cargando resumen...</div>
-    </div>`;
+    <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:10px;margin-bottom:20px;">
+      ${[1,2,3].map(() => `
+        <div style="background:#fff;border-radius:16px;padding:18px 10px;box-shadow:0 2px 10px rgba(0,0,0,0.05);">
+          <div class="skeleton" style="width:50%;margin:0 auto 8px;height:22px;"></div>
+          <div class="skeleton" style="width:70%;margin:0 auto;height:10px;"></div>
+        </div>`).join("")}
+    </div>
+    ${[1,2,3].map(() => `<div class="skeleton" style="height:82px;border-radius:16px;margin-bottom:9px;"></div>`).join("")}
+  `;
 
-  const mesKey = getMesKey();
-  const [anio, mesNum] = mesKey.split("-").map(Number);
-
+  const mesKey = getMesKey(resumenAnio, resumenMes);
   let facturas = [];
   let origen = "server";
 
   try {
     const r = await fetchWithRetry(
-      `${BASE}/admin/facturas-mes?anio=${anio}&mes=${mesNum}`,
+      `${BASE}/admin/facturas-mes?anio=${resumenAnio}&mes=${resumenMes}`,
       { method: "GET" },
       { maxRetries: 1, timeoutMs: 30000 }
     );
-
     const j = await r.json();
-    if (!r.ok || !j.ok) throw new Error(j.message || "No se pudo cargar el resumen");
-
+    if (!r.ok || !j.ok) throw new Error(j.message || "Sin datos");
     facturas = Array.isArray(j.facturas) ? j.facturas : [];
 
-    // Refrescar cache local con datos reales del backend
+    // Refrescar cache local
     try {
-      const raw = localStorage.getItem("ml_historial") || "{}";
+      const raw  = localStorage.getItem("ml_historial") || "{}";
       const hist = JSON.parse(raw);
-
       hist[mesKey] = facturas.map(f => {
-        const puntoVenta = Number(f.puntoVenta || f.punto_venta || 0);
-        const nroFactura = Number(f.nroFactura || f.nro_factura || 0);
-        const comprobante = f.comprobante || `A-${String(puntoVenta).padStart(5, "0")}-${String(nroFactura).padStart(8, "0")}`;
+        const pv  = Number(f.puntoVenta || f.punto_venta || 0);
+        const nro = Number(f.nroFactura || f.nro_factura || 0);
+        const comprobante = f.comprobante || `A-${String(pv).padStart(5,"0")}-${String(nro).padStart(8,"0")}`;
         const tipoCbte = f.tipoCbte || f.tipo_cbte || (String(comprobante).startsWith("NC-") ? "NC" : "FA");
-
         return {
-          fecha: f.fecha || "",
-          comprobante,
-          tipoCbte,
-          puntoVenta,
-          nroFactura,
-          nro: nroFactura,
+          fecha: f.fecha || "", comprobante, tipoCbte, puntoVenta: pv, nroFactura: nro, nro,
           cae: f.cae || "",
           cuit: f.cuit || f.cuitCliente || f.cuit_cliente || "",
           nombre: f.nombre || f.nombreCliente || f.nombre_cliente || "Sin nombre",
@@ -768,60 +616,40 @@ async function renderResumen() {
           anulado: !!(f.anulado || f.estado === "anulado")
         };
       });
-
       localStorage.setItem("ml_historial", JSON.stringify(hist));
-    } catch (e) {
-      console.warn("No pude refrescar cache local del resumen:", e?.message || e);
-    }
+    } catch {}
 
   } catch (e) {
-    console.warn("Resumen servidor no disponible, uso localStorage:", e?.message || e);
+    console.warn("Resumen servidor no disponible, uso localStorage:", e?.message);
     origen = "local";
-
     try {
-      const raw = localStorage.getItem("ml_historial") || "{}";
+      const raw  = localStorage.getItem("ml_historial") || "{}";
       const hist = JSON.parse(raw);
       facturas = Array.isArray(hist[mesKey]) ? hist[mesKey] : [];
-    } catch {
-      facturas = [];
-    }
+    } catch { facturas = []; }
   }
 
   const totalMes = round2(facturas.reduce((a, f) => a + Number(f.total || 0), 0));
-  const cuitsSet = new Set(
-    facturas
-      .map(f => f.cuit || f.cuitCliente || f.cuit_cliente || "")
-      .filter(Boolean)
-  );
+  const cuitsSet = new Set(facturas.map(f => f.cuit || f.cuitCliente || "").filter(Boolean));
 
   const porCliente = {};
   for (const f of facturas) {
-    const cuit = f.cuit || f.cuitCliente || f.cuit_cliente || "";
+    const cuit   = f.cuit || f.cuitCliente || f.cuit_cliente || "";
     const nombre = f.nombre || f.nombreCliente || f.nombre_cliente || "Sin nombre";
-    const key = cuit || nombre;
-
-    if (!porCliente[key]) {
-      porCliente[key] = {
-        nombre,
-        cuit,
-        total: 0,
-        cant: 0
-      };
-    }
-
+    const key    = cuit || nombre;
+    if (!porCliente[key]) porCliente[key] = { nombre, cuit, total: 0, cant: 0 };
     porCliente[key].total = round2(porCliente[key].total + Number(f.total || 0));
     porCliente[key].cant++;
   }
-
   const clientes = Object.values(porCliente).sort((a, b) => b.total - a.total);
 
   if (facturas.length === 0) {
     contenido.innerHTML = `
       <div style="text-align:center;padding:60px 20px;color:#8E8E93;">
         <div style="font-size:52px;margin-bottom:14px;">📋</div>
-        <div style="font-size:17px;font-weight:700;color:#1C1C1E;">Sin facturas este mes</div>
-        <div style="font-size:14px;margin-top:6px;">
-          ${origen === "local" ? "No encontré datos ni en servidor ni en este dispositivo" : "Las facturas que emitas aparecerán aquí automáticamente"}
+        <div style="font-size:17px;font-weight:700;color:#1C1C1E;">Sin facturas en ${MESES[resumenMes]} ${resumenAnio}</div>
+        <div style="font-size:14px;margin-top:6px;color:#8E8E93;">
+          ${origen === "local" ? "Sin datos en servidor ni en este dispositivo" : "No hay comprobantes registrados para este mes"}
         </div>
       </div>`;
     return;
@@ -831,10 +659,10 @@ async function renderResumen() {
     <div class="kpi-grid">
       <div class="kpi-card">
         <div class="kpi-num">${facturas.length}</div>
-        <div class="kpi-label">Facturas</div>
+        <div class="kpi-label">Comprobantes</div>
       </div>
       <div class="kpi-card kpi-green">
-        <div class="kpi-num kpi-num-sm">$${formatMoneyAR(totalMes)}</div>
+        <div class="kpi-num-sm">$${formatMoneyAR(totalMes)}</div>
         <div class="kpi-label">Total del mes</div>
       </div>
       <div class="kpi-card">
@@ -842,47 +670,35 @@ async function renderResumen() {
         <div class="kpi-label">Clientes</div>
       </div>
     </div>
-
-    <div class="section-label">
-      Comprobantes emitidos ${origen === "server" ? "· sincronizado" : "· cache local"}
-    </div>
+    <div class="section-label">Comprobantes · ${origen === "server" ? "sincronizado" : "cache local"}</div>
   `;
 
   for (const f of [...facturas].reverse()) {
-    const puntoVenta = Number(f.puntoVenta || f.punto_venta || 0);
-    const nroFactura = Number(f.nroFactura || f.nro_factura || f.nro || 0);
-    const comprobante = f.comprobante || `A-${String(puntoVenta).padStart(5, "0")}-${String(nroFactura).padStart(8, "0")}`;
-    const esNC = String(f.tipoCbte || f.tipo_cbte || "").toUpperCase() === "NC" || String(comprobante).startsWith("NC-");
+    const pv  = Number(f.puntoVenta || f.punto_venta || 0);
+    const nro = Number(f.nroFactura || f.nro_factura || f.nro || 0);
+    const comprobante = f.comprobante || `A-${String(pv).padStart(5,"0")}-${String(nro).padStart(8,"0")}`;
+    const esNC        = String(f.tipoCbte || f.tipo_cbte || "").toUpperCase() === "NC" || String(comprobante).startsWith("NC-");
     const estaAnulado = !!(f.anulado || f.estado === "anulado");
-    const totalNum = Number(f.total || 0);
-    const pdfUrl = f.pdfUrl || f.pdf_url || "";
-    const nombre = f.nombre || f.nombreCliente || f.nombre_cliente || "Sin nombre";
-    const cuit = f.cuit || f.cuitCliente || f.cuit_cliente || "";
+    const totalNum    = Number(f.total || 0);
+    const pdfUrl      = f.pdfUrl || f.pdf_url || "";
+    const nombre      = f.nombre || f.nombreCliente || f.nombre_cliente || "Sin nombre";
+    const cuit        = f.cuit || f.cuitCliente || f.cuit_cliente || "";
+
+    const factData = JSON.stringify({ comprobante, nombre, total: totalNum, nro, nroFactura: nro, puntoVenta: pv, cuit }).replace(/'/g, "&apos;");
 
     html += `
-      <div class="fact-row" style="${estaAnulado ? "opacity:.72;" : ""}">
+      <div class="fact-row${estaAnulado ? " anulada" : ""}">
         <div style="flex:1;min-width:0;">
-          <div style="font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-            ${nombre}
-            ${estaAnulado ? `<span style="margin-left:6px;font-size:11px;font-weight:800;color:#FF3B30;background:#FFF1F0;padding:3px 7px;border-radius:999px;">ANULADA</span>` : ""}
+          <div style="font-weight:800;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:6px;">
+            <span style="overflow:hidden;text-overflow:ellipsis;">${nombre}</span>
+            ${estaAnulado ? `<span style="flex-shrink:0;font-size:10px;font-weight:800;color:#FF3B30;background:#FFF1F0;padding:2px 7px;border-radius:999px;">ANULADA</span>` : ""}
+            ${esNC ? `<span style="flex-shrink:0;font-size:10px;font-weight:800;color:#5856D6;background:#EEEEFF;padding:2px 7px;border-radius:999px;">NC</span>` : ""}
           </div>
-          <div style="font-size:12px;color:#8E8E93;margin-top:2px;">
-            ${f.fecha || ""} · ${comprobante}
-          </div>
-          <div style="font-size:11px;color:#A0AEC0;font-family:monospace;margin-top:1px;">
-            CAE: ${f.cae || "—"}
-          </div>
+          <div style="font-size:12px;color:#8E8E93;margin-top:3px;">${f.fecha || ""} · ${comprobante}</div>
+          <div style="font-size:11px;color:#A0AEC0;font-family:monospace;margin-top:1px;">CAE: ${f.cae || "—"}</div>
           <div class="fact-actions">
             ${pdfUrl ? `<button class="fact-mini-btn pdf" onclick="window.open('${pdfUrl}','_blank')">📄 PDF</button>` : ""}
-            ${!esNC && !estaAnulado && totalNum > 0 ? `<button class="fact-mini-btn anular" onclick='abrirModalAnular(${JSON.stringify({
-              comprobante,
-              nombre,
-              total: totalNum,
-              nro: nroFactura,
-              nroFactura,
-              puntoVenta,
-              cuit
-            }).replace(/'/g, "&apos;")})'>⛔ Anular</button>` : ""}
+            ${!esNC && !estaAnulado && totalNum > 0 ? `<button class="fact-mini-btn anular" onclick='abrirModalAnular(${factData})'>⛔ NC</button>` : ""}
           </div>
         </div>
         <div style="text-align:right;flex-shrink:0;margin-left:12px;">
@@ -895,10 +711,8 @@ async function renderResumen() {
 
   if (clientes.length > 1) {
     html += `<div class="section-label" style="margin-top:20px;">Por cliente</div>`;
-
     for (const c of clientes) {
       const pct = totalMes > 0 ? Math.round((c.total / totalMes) * 100) : 0;
-
       html += `
         <div style="margin-bottom:14px;">
           <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
@@ -908,7 +722,7 @@ async function renderResumen() {
           <div style="background:#F2F2F7;border-radius:6px;height:7px;overflow:hidden;">
             <div style="background:linear-gradient(90deg,#007AFF,#5856D6);height:100%;width:${pct}%;border-radius:6px;transition:width 0.8s cubic-bezier(.4,0,.2,1);"></div>
           </div>
-          <div style="font-size:11px;color:#8E8E93;margin-top:3px;">${c.cant} factura(s) · ${pct}% del total</div>
+          <div style="font-size:11px;color:#8E8E93;margin-top:3px;">${c.cant} comprobante(s) · ${pct}% del total</div>
         </div>`;
     }
   }
@@ -916,14 +730,14 @@ async function renderResumen() {
   contenido.innerHTML = html;
 }
 
-// ═══════════════════════════════════════════════════════════════
+// ============================================
 // PANTALLA DE ÉXITO
-// ═══════════════════════════════════════════════════════════════
+// ============================================
 function showSuccessModal(data) {
   const modal      = document.getElementById("successModal");
   const actionsBox = document.getElementById("successActions");
   document.getElementById("successMsgText").innerText =
-  data.mensaje || "Factura emitida correctamente. Podés descargar el PDF aunque el email falle.";
+    data.mensaje || "Factura emitida correctamente. Podés descargar el PDF aunque el email falle.";
   actionsBox.innerHTML = "";
 
   const facturas = Array.isArray(data.facturas) ? data.facturas : [];
@@ -948,7 +762,7 @@ function showSuccessModal(data) {
         try {
           const resp = await fetch(f.pdfUrl);
           const blob = await resp.blob();
-          const file = new File([blob], `Factura_${f.nroFactura||idx+1}.pdf`, { type:"application/pdf" });
+          const file = new File([blob], `Factura_${f.nroFactura||idx+1}.pdf`, { type: "application/pdf" });
           if (navigator.canShare && navigator.canShare({ files: [file] })) {
             await navigator.share({ files: [file], title: "Factura Mercado Limpio", text: `$${formatMoneyAR(f.total)} · CAE: ${f.cae}` });
           } else {
@@ -991,18 +805,100 @@ function showSuccessModal(data) {
   modal.classList.add("active");
 }
 
+// ============================================
+// ANULACIÓN DESDE HISTORIAL
+// ============================================
+window.abrirModalAnular = function(factura) {
+  haptic();
+  facturaAAnular = factura;
+  document.getElementById("anularMotivo").value = "Factura emitida por error";
+  document.getElementById("anularTextoInfo").innerHTML =
+    `Se va a anular <strong>${factura.comprobante || `A-${String(factura.puntoVenta||"").padStart(5,"0")}-${String(factura.nro||"").padStart(8,"0")}`}</strong><br>` +
+    `Cliente: <strong>${factura.nombre || "Sin nombre"}</strong><br>` +
+    `Total: <strong>$${formatMoneyAR(factura.total || 0)}</strong>`;
+  document.getElementById("anularModal").classList.add("active");
+};
 
-// ==========================================
-// ANULACIÓN MANUAL DE FACTURAS ANTIGUAS
-// ==========================================
+window.cerrarModalAnular = function() {
+  haptic();
+  facturaAAnular = null;
+  document.getElementById("anularModal").classList.remove("active");
+};
 
+window.confirmarAnulacion = async function() {
+  if (!facturaAAnular) return;
+  const motivo = document.getElementById("anularMotivo").value.trim() || "Factura emitida por error";
+  const facturaRef = { ...facturaAAnular };
+  cerrarModalAnular();
+
+  showNcLoading(
+    `Anulando ${facturaRef.comprobante || "comprobante"}...`,
+    "Emitiendo Nota de Crédito en ARCA · no cierres la app"
+  );
+
+  try {
+    const payload = {
+      comprobante: facturaRef.comprobante,
+      puntoVenta: facturaRef.puntoVenta || extraerPVDesdeComprobante(facturaRef.comprobante),
+      nroFactura: facturaRef.nro || facturaRef.nroFactura || extraerNroDesdeComprobante(facturaRef.comprobante),
+      motivo
+    };
+    const r = await fetchWithRetry(
+      `${BASE}/anular-comprobante`,
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) },
+      { maxRetries: 1, timeoutMs: 180000 }
+    );
+    const j = await r.json();
+    if (!r.ok || !j.ok) throw new Error(j.message || "No se pudo anular");
+
+    // Actualizar historial local
+    try {
+      const raw  = localStorage.getItem("ml_historial") || "{}";
+      const hist = JSON.parse(raw);
+      const mesKey = getMesKey(resumenAnio, resumenMes);
+      if (!hist[mesKey]) hist[mesKey] = [];
+      hist[mesKey] = hist[mesKey].map(x =>
+        String(x.comprobante || "") === String(facturaRef.comprobante || "") ? { ...x, anulado: true } : x
+      );
+      if (j.notaCredito) {
+        const nc = j.notaCredito;
+        const compNC = nc.comprobante || `NC-${String(nc.puntoVenta||0).padStart(5,"0")}-${String(nc.nroFactura||0).padStart(8,"0")}`;
+        if (!hist[mesKey].some(x => String(x.comprobante||"") === compNC)) {
+          hist[mesKey].push({
+            fecha: nc.fecha || new Date().toISOString().split("T")[0],
+            comprobante: compNC, tipoCbte: "NC",
+            puntoVenta: Number(nc.puntoVenta||0), nroFactura: Number(nc.nroFactura||0), nro: Number(nc.nroFactura||0),
+            cae: nc.cae || "", cuit: facturaRef.cuit || "", nombre: facturaRef.nombre || "Sin nombre",
+            total: Number(nc.total||0) * -1, pdfUrl: nc.pdfUrl || "",
+          });
+        }
+      }
+      localStorage.setItem("ml_historial", JSON.stringify(hist));
+    } catch (e) { console.warn("historial NC:", e?.message); }
+
+    hideNcLoading();
+    haptic("success");
+    showToast("✅ Nota de Crédito emitida con éxito", "success");
+
+    if (j.notaCredito?.pdfUrl) setTimeout(() => window.open(j.notaCredito.pdfUrl, "_blank"), 400);
+
+    await renderResumen();
+
+  } catch (e) {
+    hideNcLoading();
+    showToast("❌ " + (e.message || "Error al anular"), "error");
+  }
+};
+
+// ============================================
+// ANULACIÓN MANUAL (FACTURA ANTIGUA)
+// ============================================
 window.abrirAnulacionManual = function() {
   haptic();
-  document.getElementById("manualNro").value = ""; 
-  document.getElementById("manualCUIT").value = ""; 
-  document.getElementById("manualMonto").value = ""; 
-  // Pone por defecto la fecha de hoy en el calendario
-  document.getElementById("fechaNC").valueAsDate = new Date(); 
+  document.getElementById("manualNro").value   = "";
+  document.getElementById("manualCUIT").value  = "";
+  document.getElementById("manualMonto").value = "";
+  document.getElementById("fechaNC").valueAsDate = new Date();
   document.getElementById("anularManualModal").classList.add("active");
 };
 
@@ -1012,21 +908,17 @@ window.cerrarAnulacionManual = function() {
 };
 
 window.confirmarAnulacionManual = async function() {
-  const pv = document.getElementById("manualPV").value;
-  const nro = document.getElementById("manualNro").value;
-  const cuit = document.getElementById("manualCUIT").value.trim();
-  const monto = document.getElementById("manualMonto").value.trim().replace(',', '.');
+  const pv    = document.getElementById("manualPV").value;
+  const nro   = document.getElementById("manualNro").value;
+  const cuit  = document.getElementById("manualCUIT").value.trim();
+  const monto = document.getElementById("manualMonto").value.trim().replace(",", ".");
   const fechaElegida = document.getElementById("fechaNC").value;
   const motivo = document.getElementById("manualMotivo").value.trim() || "Factura emitida por error";
 
-  // Validación: Ahora pedimos CUIT y Monto obligatoriamente
-  if(!pv || !nro || !monto || !cuit) {
-    return showToast("⚠️ Completá CUIT, Nro y Monto para anular", "error");
-  }
+  if (!pv || !nro || !monto || !cuit) return showToast("⚠️ Completá CUIT, Nro y Monto para anular", "error");
 
-  const btn = document.getElementById("btnConfirmarManual");
-  btn.disabled = true;
-  btn.textContent = "Procesando en ARCA...";
+  cerrarAnulacionManual();
+  showNcLoading("Procesando en ARCA...", `Anulando Factura ${nro} · PV ${pv}`);
 
   try {
     const r = await fetchWithRetry(
@@ -1034,42 +926,26 @@ window.confirmarAnulacionManual = async function() {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          puntoVenta: Number(pv), 
-          nroFactura: Number(nro), 
-          cuitCliente: cuit,
-          montoTotal: Number(monto),
-          fechaNC: fechaElegida,
-          motivo 
+        body: JSON.stringify({
+          puntoVenta: Number(pv), nroFactura: Number(nro),
+          cuitCliente: cuit, montoTotal: Number(monto),
+          fechaNC: fechaElegida, motivo
         })
       },
       { maxRetries: 1, timeoutMs: 180000 }
     );
-
     const j = await r.json();
     if (!r.ok || !j.ok) throw new Error(j.message || "No se pudo anular");
 
-    cerrarAnulacionManual();
+    hideNcLoading();
+    haptic("success");
     showToast("✅ Nota de Crédito generada con éxito", "success");
 
-    // Abrir el PDF de la Nota de Crédito automáticamente
-    if (j.notaCredito && j.notaCredito.pdfUrl) {
-      setTimeout(() => {
-        window.open(j.notaCredito.pdfUrl, "_blank");
-      }, 500);
-    }
-    
-    // Refrescar el resumen para que aparezca la NC en el panel
+    if (j.notaCredito?.pdfUrl) setTimeout(() => window.open(j.notaCredito.pdfUrl, "_blank"), 400);
     if (typeof renderResumen === "function") renderResumen();
 
   } catch (e) {
+    hideNcLoading();
     showToast("❌ " + (e.message || "Error al anular"), "error");
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Buscar y Anular";
   }
 };
-
-
-
-
