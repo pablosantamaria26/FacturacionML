@@ -613,6 +613,7 @@ async function renderResumen() {
           nombre: f.nombre || f.nombreCliente || f.nombre_cliente || "Sin nombre",
           total: Number(f.total || 0),
           pdfUrl: f.pdfUrl || f.pdf_url || "",
+          emailTo: f.emailTo || f.email_to || "",
           anulado: !!(f.anulado || f.estado === "anulado")
         };
       });
@@ -684,7 +685,8 @@ async function renderResumen() {
     const nombre      = f.nombre || f.nombreCliente || f.nombre_cliente || "Sin nombre";
     const cuit        = f.cuit || f.cuitCliente || f.cuit_cliente || "";
 
-    const factData = JSON.stringify({ comprobante, nombre, total: totalNum, nro, nroFactura: nro, puntoVenta: pv, cuit }).replace(/'/g, "&apos;");
+    const emailTo   = f.emailTo || f.email_to || "";
+    const factData = JSON.stringify({ comprobante, nombre, total: totalNum, nro, nroFactura: nro, puntoVenta: pv, cuit, emailTo }).replace(/'/g, "&apos;");
 
     html += `
       <div class="fact-row${estaAnulado ? " anulada" : ""}">
@@ -699,6 +701,7 @@ async function renderResumen() {
           <div class="fact-actions">
             ${pdfUrl ? `<button class="fact-mini-btn pdf" onclick="window.open('${pdfUrl}','_blank')">📄 PDF</button>` : ""}
             ${!esNC && !estaAnulado && totalNum > 0 ? `<button class="fact-mini-btn anular" onclick='abrirModalAnular(${factData})'>⛔ NC</button>` : ""}
+            ${!estaAnulado ? `<button class="fact-mini-btn" style="background:#EFF6FF;color:#1D4ED8;" onclick='abrirModalReenviarEmail(${factData})'>📧 Email</button>` : ""}
           </div>
         </div>
         <div style="text-align:right;flex-shrink:0;margin-left:12px;">
@@ -1222,4 +1225,60 @@ window.extReset = function() {
   const procBtn = document.getElementById("extBtnProcesar");
   procBtn.disabled = true;
   procBtn.innerHTML = "🔍 ANALIZAR CON IA";
+};
+
+// ============================================
+// REENVIAR EMAIL DESDE HISTORIAL
+// ============================================
+let facturaAReenviar = null;
+
+window.abrirModalReenviarEmail = function(factura) {
+  haptic();
+  facturaAReenviar = factura;
+  document.getElementById("reenviarEmailInfo").innerHTML =
+    `Comprobante: <strong>${factura.comprobante}</strong><br>` +
+    `Cliente: <strong>${factura.nombre || "Sin nombre"}</strong><br>` +
+    `Total: <strong>$${formatMoneyAR(factura.total || 0)}</strong>`;
+  document.getElementById("reenviarEmailInput").value = factura.emailTo || "";
+  document.getElementById("reenviarEmailModal").classList.add("active");
+  setTimeout(() => document.getElementById("reenviarEmailInput").focus(), 200);
+};
+
+window.cerrarModalReenviarEmail = function() {
+  haptic();
+  facturaAReenviar = null;
+  document.getElementById("reenviarEmailModal").classList.remove("active");
+};
+
+window.confirmarReenvioEmail = async function() {
+  if (!facturaAReenviar) return;
+  const emailDestino = document.getElementById("reenviarEmailInput").value.trim();
+  if (!emailDestino || !emailDestino.includes("@")) {
+    showToast("⚠️ Ingresá un email válido", "error");
+    return;
+  }
+
+  const ref = { ...facturaAReenviar };
+  cerrarModalReenviarEmail();
+
+  const btn = document.getElementById("btnConfirmarReenvio");
+  if (btn) { btn.disabled = true; btn.textContent = "Enviando..."; }
+
+  try {
+    const r = await fetchWithRetry(
+      `${BASE}/reenviar-email`,
+      { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ comprobante: ref.comprobante, emailDestino }) },
+      { maxRetries: 1, timeoutMs: 60000 }
+    );
+    const j = await r.json();
+    if (!r.ok || !j.ok) throw new Error(j.message || "Error al reenviar");
+    haptic("success");
+    showToast(`✅ Email enviado a ${emailDestino}`, "success");
+  } catch (e) {
+    haptic("error");
+    showToast("❌ " + (e.message || "Error al reenviar email"), "error");
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "Enviar"; }
+  }
 };

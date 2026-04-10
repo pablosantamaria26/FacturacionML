@@ -758,6 +758,23 @@
 </div>
 
 <!-- Modal Anulación Manual (factura antigua) -->
+<!-- Modal Reenviar Email -->
+<div class="modal-center-backdrop" id="reenviarEmailModal" onclick="if(event.target===this) cerrarModalReenviarEmail()">
+  <div class="modal-center-card">
+    <div class="modal-sheet-handle"></div>
+    <h3>📧 Reenviar por email</h3>
+    <p id="reenviarEmailInfo" style="font-size:13px;color:#334155;margin-bottom:14px;"></p>
+    <div class="form-group" style="margin-bottom:0;">
+      <label>Email del cliente</label>
+      <input type="email" id="reenviarEmailInput" placeholder="cliente@ejemplo.com" autocomplete="email" />
+    </div>
+    <div class="modal-center-actions">
+      <button class="ghost-btn" onclick="cerrarModalReenviarEmail()">Cancelar</button>
+      <button class="action-btn" id="btnConfirmarReenvio" onclick="confirmarReenvioEmail()">Enviar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-center-backdrop" id="anularManualModal" onclick="if(event.target===this) cerrarAnulacionManual()">
   <div class="modal-center-card">
     <div class="modal-sheet-handle"></div>
