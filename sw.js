@@ -1,4 +1,4 @@
-const CACHE_NAME = "mercadolimpio-v28";
+const CACHE_NAME = "mercadolimpio-v29";
 const BASE = "https://api-mercadolimpio.onrender.com";
 const STATIC = ["./", "./index.html", "./app.js", "./manifest.json"];
 
