@@ -1052,6 +1052,16 @@ function extRenderList() {
   extBtn.disabled = incluidas.length === 0 || incluidas.some(t => t.incluida && !t.cuitEdit);
   extBtn.style.opacity = extBtn.disabled ? "0.55" : "1";
 
+  // Barra de total en el bottom bar (siempre visible antes de facturar)
+  const bottomBar = document.getElementById("extBottomTotalBar");
+  const bottomCount = document.getElementById("extBottomCount");
+  const bottomTotal = document.getElementById("extBottomTotal");
+  if (bottomBar) {
+    bottomBar.style.display = incluidas.length > 0 ? "flex" : "none";
+    if (bottomCount) bottomCount.textContent = `${incluidas.length} transferencia${incluidas.length !== 1 ? "s" : ""}`;
+    if (bottomTotal) bottomTotal.textContent = `$${formatMoneyAR(total)}`;
+  }
+
   extTransferencias.forEach(t => {
     const div = document.createElement("div");
     const sinCuit = !t.cuitEdit;
@@ -1109,6 +1119,8 @@ window.extVolver = function() {
   document.getElementById("extStep1").classList.add("active");
   document.getElementById("extFileBadge").style.display = "none";
   document.getElementById("extFileInput").value = "";
+  const bottomBar = document.getElementById("extBottomTotalBar");
+  if (bottomBar) bottomBar.style.display = "none";
   const btn = document.getElementById("extBtnProcesar");
   btn.disabled = true;
   btn.innerHTML = "🔍 ANALIZAR CON IA";
@@ -1136,7 +1148,8 @@ window.extFacturar = async function() {
         monto: t.monto,
         nombre: t.nombre
       })),
-      condicionVenta: "Transferencia Bancaria"
+      condicionVenta: "Transferencia Bancaria",
+      emailReporte: "santamariapablodaniel@gmail.com"
     };
 
     const r = await fetchWithRetry(
@@ -1218,6 +1231,8 @@ window.extReset = function() {
   document.getElementById("extFileBadge").style.display = "none";
   document.getElementById("extFileInput").value = "";
   document.getElementById("extResultados").innerHTML = "";
+  const bottomBar = document.getElementById("extBottomTotalBar");
+  if (bottomBar) bottomBar.style.display = "none";
   const btn = document.getElementById("extBtnFacturar");
   btn.disabled = true;
   btn.style.display = "flex";
