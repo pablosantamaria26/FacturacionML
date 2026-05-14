@@ -31,6 +31,47 @@ setTimeout(() => {
 }, 50);
 
 // ============================================
+// BASE DE DATOS EMAIL ↔ CUIT (localStorage)
+// ============================================
+function getEmailDB() {
+  try { return JSON.parse(localStorage.getItem("ml_emails_cuit") || "{}"); } catch { return {}; }
+}
+function saveEmailCuit(cuit, email) {
+  if (!cuit || String(cuit).length !== 11 || !email || !String(email).includes("@")) return;
+  const db = getEmailDB();
+  if (db[cuit] === email) return;
+  db[cuit] = email;
+  try { localStorage.setItem("ml_emails_cuit", JSON.stringify(db)); } catch {}
+}
+function getEmailForCuit(cuit) {
+  if (!cuit || String(cuit).length !== 11) return "";
+  return getEmailDB()[cuit] || "";
+}
+function autoFillEmailSiVacio(cuit) {
+  const emailInput = document.getElementById("email");
+  if (!emailInput || emailInput.value.trim()) return;
+  const saved = getEmailForCuit(cuit);
+  if (saved) {
+    emailInput.value = saved;
+    showToast(`📧 Email cargado automáticamente`, "success");
+  }
+}
+
+// Pre-poblar DB de emails desde el historial ya guardado en este dispositivo
+(function seedEmailDBFromHistory() {
+  try {
+    const hist = JSON.parse(localStorage.getItem("ml_historial") || "{}");
+    for (const mes of Object.values(hist)) {
+      if (!Array.isArray(mes)) continue;
+      for (const f of mes) {
+        const emailTo = f.emailTo || f.email_to || "";
+        if (f.cuit && emailTo) saveEmailCuit(f.cuit, emailTo);
+      }
+    }
+  } catch {}
+})();
+
+// ============================================
 // UTILIDADES
 // ============================================
 const round2 = (n) => Math.round((Number(n || 0) + Number.EPSILON) * 100) / 100;
@@ -233,6 +274,18 @@ window.presetDetalle = function (txt) { haptic(); detalleInput.value = txt; trig
 });
 function triggerPreviewNow() { clearTimeout(previewTimer); generarVistaPrevia(); }
 
+// Autofill email cuando el CUIT llega a 11 dígitos
+cuitInput.addEventListener("input", () => {
+  if (cuitInput.value.trim().length === 11) autoFillEmailSiVacio(cuitInput.value.trim());
+});
+
+// Guardar email en DB cuando el usuario sale del campo con CUIT válido
+document.getElementById("email").addEventListener("blur", () => {
+  const emailVal = document.getElementById("email").value.trim();
+  const cuitVal  = cuitInput.value.trim();
+  if (cuitVal.length === 11 && emailVal.includes("@")) saveEmailCuit(cuitVal, emailVal);
+});
+
 function computeTotalPartes() {
   totalPartes = Math.max(1, Math.ceil((itemsGlobal.length || 0) / 25));
   if (parteActual > totalPartes) parteActual = totalPartes;
@@ -279,6 +332,7 @@ async function leerPDF(event) {
     itemsGlobal            = Array.isArray(res.items) ? res.items : [];
     parteActual            = 1;
     if (cuitInput)  cuitInput.value  = res.cuit || "";
+    if (cuitInput && res.cuit) autoFillEmailSiVacio(res.cuit);
     if (montoInput) montoInput.value = res.total ? String(res.total).replace(".", ",") : "";
     mostrarResumenExtraccion(res);
     showToast(`✅ ${itemsGlobal.length} ítems · $${formatMoneyAR(totalFinalGlobal)}`, "success");
@@ -424,6 +478,7 @@ window.emitir = async function () {
     stopEmisionProgress();
     setBtnState("success", "¡Factura Autorizada por ARCA!");
     guardarEnHistorialLocal(j, payload);
+    if (payload.emailCliente) saveEmailCuit(payload.cuitCliente, payload.emailCliente);
     showSuccessModal(j);
 
   } catch (e) {
@@ -743,6 +798,10 @@ function showSuccessModal(data) {
     data.mensaje || "Factura emitida correctamente. Podés descargar el PDF aunque el email falle.";
   actionsBox.innerHTML = "";
 
+  const cuitUsado   = document.getElementById("cuit")?.value?.trim()  || data.receptor?.cuit  || "";
+  const emailUsado  = document.getElementById("email")?.value?.trim() || "";
+  const nombreUsado = data.receptor?.nombre || (cuitUsado ? `CUIT ${cuitUsado}` : "");
+
   const facturas = Array.isArray(data.facturas) ? data.facturas : [];
 
   if (data.waLink) {
@@ -791,6 +850,21 @@ function showSuccessModal(data) {
   });
 
   if (facturas.length > 0) {
+    const factLines = facturas.map(f => `• ${f.comprobante || ""} · $${formatMoneyAR(f.total)}`).join("\n");
+    const msgOficina =
+      `✅ *Factura emitida - Mercado Limpio*\n` +
+      `Cliente: ${nombreUsado}\n` +
+      `CUIT: ${cuitUsado}\n` +
+      `${factLines}\n` +
+      (emailUsado ? `📧 Email enviado a: ${emailUsado}` : `📧 Sin email registrado`);
+    const btnOficina = document.createElement("a");
+    btnOficina.className = "action-btn btn-wa";
+    btnOficina.style.marginTop = "4px";
+    btnOficina.href = `https://wa.me/5491133395487?text=${encodeURIComponent(msgOficina)}`;
+    btnOficina.target = "_blank";
+    btnOficina.innerHTML = `📲 Avisar a Oficina`;
+    actionsBox.appendChild(btnOficina);
+
     const info = document.createElement("div");
     info.style = "margin:14px 0 6px;padding:14px;background:#F8FAFC;border-radius:14px;font-size:12px;color:#475569;line-height:1.9;font-family:monospace;border:1px solid #E2E8F0;";
     info.innerHTML = facturas.map((f, i) =>
@@ -1065,6 +1139,7 @@ function extRenderList() {
   extTransferencias.forEach(t => {
     const div = document.createElement("div");
     const sinCuit = !t.cuitEdit;
+    const emailGuardado = t.cuitEdit.length === 11 ? getEmailForCuit(t.cuitEdit) : "";
     div.className = `transfer-card${sinCuit ? " sin-cuit" : ""}${!t.incluida ? " excluida" : ""}`;
 
     div.innerHTML = `
@@ -1081,6 +1156,7 @@ function extRenderList() {
           ${t.incluida ? "✓ Incluida" : "Excluida"}
         </button>
       </div>
+      ${emailGuardado ? `<div style="font-size:11px;color:var(--green);font-weight:600;margin-top:5px;">📧 ${emailGuardado}</div>` : ""}
       ${sinCuit ? `<div style="font-size:11px;color:var(--warn);font-weight:700;margin-top:6px;">⚠️ Ingresá el CUIT para incluir</div>` : ""}
     `;
     list.appendChild(div);
@@ -1143,11 +1219,12 @@ window.extFacturar = async function() {
 
   try {
     const payload = {
-      transferencias: incluidas.map(t => ({
-        cuit: t.cuitEdit,
-        monto: t.monto,
-        nombre: t.nombre
-      })),
+      transferencias: incluidas.map(t => {
+        const savedEmail = getEmailForCuit(t.cuitEdit);
+        const obj = { cuit: t.cuitEdit, monto: t.monto, nombre: t.nombre };
+        if (savedEmail) obj.email = savedEmail;
+        return obj;
+      }),
       condicionVenta: "Transferencia Bancaria",
       emailReporte: "santamariapablodaniel@gmail.com"
     };
@@ -1254,7 +1331,7 @@ window.abrirModalReenviarEmail = function(factura) {
     `Comprobante: <strong>${factura.comprobante}</strong><br>` +
     `Cliente: <strong>${factura.nombre || "Sin nombre"}</strong><br>` +
     `Total: <strong>$${formatMoneyAR(factura.total || 0)}</strong>`;
-  document.getElementById("reenviarEmailInput").value = factura.emailTo || "";
+  document.getElementById("reenviarEmailInput").value = factura.emailTo || getEmailForCuit(factura.cuit) || "";
   document.getElementById("reenviarEmailModal").classList.add("active");
   setTimeout(() => document.getElementById("reenviarEmailInput").focus(), 200);
 };
@@ -1290,6 +1367,7 @@ window.confirmarReenvioEmail = async function() {
     if (!r.ok || !j.ok) throw new Error(j.message || "Error al reenviar");
     haptic("success");
     showToast(`✅ Email enviado a ${emailDestino}`, "success");
+    if (ref.cuit) saveEmailCuit(ref.cuit, emailDestino);
   } catch (e) {
     haptic("error");
     showToast("❌ " + (e.message || "Error al reenviar email"), "error");
