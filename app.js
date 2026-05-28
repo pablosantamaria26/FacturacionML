@@ -1044,7 +1044,8 @@ window.switchTab = function(tab) {
 // ============================================
 // MÓDULO EXTRACTO BANCARIO
 // ============================================
-let extTransferencias = []; // transferencias detectadas con estado
+let extTransferencias = []; // transferencias detectadas con estado (sólo chinos)
+let extTodasTransferencias = []; // todas las transferencias del extracto (para conciliación)
 
 // ── Archivo seleccionado ──────────────────────────────────────
 document.getElementById("extFileInput").addEventListener("change", function() {
@@ -1087,6 +1088,7 @@ window.extProcesar = async function() {
       return;
     }
 
+    extTodasTransferencias = j.todas || [];
     extTransferencias = j.transferencias.map((t, i) => ({
       ...t,
       id: i,
@@ -1225,6 +1227,12 @@ window.extFacturar = async function() {
         if (savedEmail) obj.email = savedEmail;
         return obj;
       }),
+      todasTransferencias: extTodasTransferencias.map(t => ({
+        cuit:   t.cuit   || "",
+        monto:  t.monto  || 0,
+        nombre: t.nombre || "",
+        fecha:  t.fecha  || ""
+      })),
       condicionVenta: "Transferencia Bancaria",
       emailReporte: "santamariapablodaniel@gmail.com"
     };
