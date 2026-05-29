@@ -1032,13 +1032,24 @@ window.confirmarAnulacionManual = async function() {
 // ============================================
 window.switchTab = function(tab) {
   haptic();
-  const isFacturar = tab === "facturar";
-  document.getElementById("tabFacturar").style.display    = isFacturar ? "block" : "none";
-  document.getElementById("tabExtracto").style.display    = isFacturar ? "none"  : "flex";
-  document.getElementById("bottomBarFacturar").style.display = isFacturar ? "block" : "none";
-  document.getElementById("bottomBarExtracto").style.display = isFacturar ? "none"  : "block";
-  document.getElementById("tabBtnFacturar").classList.toggle("active", isFacturar);
-  document.getElementById("tabBtnExtracto").classList.toggle("active", !isFacturar);
+  const isFacturar  = tab === "facturar";
+  const isExtracto  = tab === "extracto";
+  const isHistorial = tab === "historial";
+
+  document.getElementById("tabFacturar").style.display     = isFacturar  ? "block" : "none";
+  document.getElementById("tabExtracto").style.display     = isExtracto  ? "flex"  : "none";
+  document.getElementById("tabHistorial").style.display    = isHistorial ? "flex"  : "none";
+  document.getElementById("bottomBarFacturar").style.display = isFacturar  ? "block" : "none";
+  document.getElementById("bottomBarExtracto").style.display = isExtracto  ? "block" : "none";
+
+  document.getElementById("tabBtnFacturar").classList.toggle("active",  isFacturar);
+  document.getElementById("tabBtnExtracto").classList.toggle("active",  isExtracto);
+  document.getElementById("tabBtnHistorial").classList.toggle("active", isHistorial);
+
+  // Al entrar al historial, cargar si todavía no hay resultados
+  if (isHistorial && document.getElementById("histList").children.length === 0) {
+    histCargar();
+  }
 };
 
 // ============================================
@@ -1349,6 +1360,191 @@ window.cerrarModalReenviarEmail = function() {
   facturaAReenviar = null;
   document.getElementById("reenviarEmailModal").classList.remove("active");
 };
+
+// ============================================
+// MÓDULO HISTORIAL
+// ============================================
+const MESES_ES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio",
+                  "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+let histMes  = new Date().getMonth() + 1;
+let histAnio = new Date().getFullYear();
+let histQ    = "";
+let histDebounceTimer = null;
+let histFacturaActual = null; // factura abierta en el sheet de detalle
+
+// ── Navegación de mes ─────────────────────────────────────────
+window.histNavMes = function(dir) {
+  haptic();
+  histMes += dir;
+  if (histMes < 1)  { histMes = 12; histAnio--; }
+  if (histMes > 12) { histMes = 1;  histAnio++; }
+  // Deshabilitar "siguiente" si ya estamos en el mes actual
+  const hoy = new Date();
+  const esActual = histMes === hoy.getMonth() + 1 && histAnio === hoy.getFullYear();
+  document.getElementById("histBtnNext").disabled = esActual;
+  histActualizarLabel();
+  histCargar();
+};
+
+function histActualizarLabel() {
+  document.getElementById("histMesLabel").textContent = `${MESES_ES[histMes - 1]} ${histAnio}`;
+}
+
+// ── Buscador con debounce ─────────────────────────────────────
+document.getElementById("histSearchInput").addEventListener("input", function() {
+  histQ = this.value.trim();
+  document.getElementById("histSearchClear").classList.toggle("show", histQ.length > 0);
+  clearTimeout(histDebounceTimer);
+  histDebounceTimer = setTimeout(histCargar, 380);
+});
+
+window.histClearSearch = function() {
+  document.getElementById("histSearchInput").value = "";
+  histQ = "";
+  document.getElementById("histSearchClear").classList.remove("show");
+  histCargar();
+};
+
+// ── Cargar resultados desde el backend ───────────────────────
+async function histCargar() {
+  const list = document.getElementById("histList");
+  // Mostrar skeleton
+  list.innerHTML = [1,2,3,4].map(() => `<div class="hist-skel"></div>`).join("");
+  document.getElementById("histStatBar").style.display = "none";
+
+  try {
+    const params = new URLSearchParams({ mes: histMes, anio: histAnio });
+    if (histQ) params.set("q", histQ);
+    const r = await fetch(`${BASE}/historial?${params}`, { signal: AbortSignal.timeout(15000) });
+    const j = await r.json();
+    if (!r.ok || !j.ok) throw new Error(j.message || "Error");
+    histRenderList(j.facturas || [], j.total || 0);
+  } catch (e) {
+    list.innerHTML = `<div class="hist-empty">
+      <div class="icon">⚠️</div>
+      <p>No se pudo cargar el historial</p>
+      <small>${e.message}</small>
+    </div>`;
+  }
+}
+
+// ── Renderizar lista ──────────────────────────────────────────
+function histRenderList(facturas, totalCount) {
+  const list = document.getElementById("histList");
+  histActualizarLabel();
+
+  // Stats
+  const factSolo  = facturas.filter(f => f.tipoCbte === "FA" && !f.anulado);
+  const ncSolo    = facturas.filter(f => f.tipoCbte === "NC");
+  const totalPesos = factSolo.reduce((s, f) => s + f.total, 0);
+  const statBar = document.getElementById("histStatBar");
+  statBar.style.display = "flex";
+  document.getElementById("histStatCount").textContent = factSolo.length;
+  document.getElementById("histStatTotal").textContent = `$${formatMoneyAR(totalPesos)}`;
+  document.getElementById("histStatNCs").textContent   = ncSolo.length;
+
+  if (facturas.length === 0) {
+    list.innerHTML = `<div class="hist-empty">
+      <div class="icon">${histQ ? "🔍" : "📭"}</div>
+      <p>${histQ ? `Sin resultados para "${histQ}"` : "Sin comprobantes este mes"}</p>
+      <small>${histQ ? "Probá buscar por CUIT completo o parte del nombre" : "Navegá a otro mes con las flechas"}</small>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = facturas.map(f => {
+    const esNC     = f.tipoCbte === "NC";
+    const esAnul   = f.anulado;
+    const esExtrac = (f.condicionVenta || "").includes("EXTRACTO");
+    const totalFmt = `$${formatMoneyAR(Math.abs(f.total))}`;
+    const badgesHtml = [
+      `<span class="hist-badge comp">${f.comprobante}</span>`,
+      esNC     ? `<span class="hist-badge nc">Nota de Crédito</span>` : "",
+      esAnul   ? `<span class="hist-badge anu">Anulada</span>` : "",
+      esExtrac ? `<span class="hist-badge ext">Extracto</span>` : "",
+      f.pdfUrl ? `<span class="hist-badge pdf">PDF ✓</span>` : "",
+    ].filter(Boolean).join("");
+
+    return `<div class="hist-card ${esNC ? "nc" : ""} ${esAnul ? "anulada" : ""}"
+                 onclick="histAbrirDetalle(${facturas.indexOf(f)})">
+      <div class="hist-card-top">
+        <div class="hist-card-nombre">${f.nombre || f.cuit || "Sin nombre"}</div>
+        <div class="hist-card-total ${esNC ? "nc" : ""}">${esNC ? "−" : ""}${totalFmt}</div>
+      </div>
+      <div class="hist-card-meta">CUIT ${f.cuit} · ${f.fecha}</div>
+      <div class="hist-card-badges">${badgesHtml}</div>
+    </div>`;
+  }).join("");
+
+  // Guardar facturas en variable global para acceder desde los callbacks
+  window._histFacturasActuales = facturas;
+}
+
+// ── Sheet de detalle ─────────────────────────────────────────
+window.histAbrirDetalle = function(idx) {
+  haptic();
+  const f = (window._histFacturasActuales || [])[idx];
+  if (!f) return;
+  histFacturaActual = f;
+
+  const esNC   = f.tipoCbte === "NC";
+  const esAnul = f.anulado;
+
+  document.getElementById("histDetTipo").textContent  = esNC ? "NOTA DE CRÉDITO" : "FACTURA M";
+  document.getElementById("histDetNombre").textContent = f.nombre || "Sin nombre";
+  document.getElementById("histDetSub").textContent   = `CUIT ${f.cuit}`;
+  document.getElementById("histDetTotal").textContent  = `${esNC ? "−" : ""}$${formatMoneyAR(Math.abs(f.total))}`;
+  document.getElementById("histDetFecha").textContent  = f.fecha;
+  document.getElementById("histDetComp").textContent   = f.comprobante;
+  document.getElementById("histDetCuit").textContent   = f.cuit;
+  document.getElementById("histDetCae").textContent    = f.cae || "—";
+  document.getElementById("histDetCond2").textContent  = f.condicionVenta || "—";
+  document.getElementById("histDetEmail").textContent  = f.emailTo || "—";
+
+  // Botones según estado
+  const btnPdf   = document.getElementById("histBtnPdf");
+  const btnAnul  = document.getElementById("histBtnAnular");
+  btnPdf.style.display   = f.pdfUrl ? "flex" : "none";
+  btnAnul.style.display  = (!esNC && !esAnul) ? "flex" : "none";
+
+  document.getElementById("histDetailBackdrop").classList.add("active");
+  document.getElementById("histDetailSheet").classList.add("active");
+};
+
+window.histCerrarDetalle = function() {
+  document.getElementById("histDetailBackdrop").classList.remove("active");
+  document.getElementById("histDetailSheet").classList.remove("active");
+  histFacturaActual = null;
+};
+
+// ── Acciones desde el detalle ─────────────────────────────────
+window.histAbrirPdf = function() {
+  if (!histFacturaActual?.pdfUrl) return;
+  haptic();
+  window.open(histFacturaActual.pdfUrl, "_blank");
+};
+
+window.histReenviarEmail = function() {
+  if (!histFacturaActual) return;
+  histCerrarDetalle();
+  abrirModalReenviarEmail(histFacturaActual);
+};
+
+window.histAnular = function() {
+  if (!histFacturaActual) return;
+  histCerrarDetalle();
+  // Reutilizamos el modal existente de anulación
+  facturaAAnular = histFacturaActual;
+  document.getElementById("anularTextoInfo").innerHTML =
+    `Se va a anular <strong>${histFacturaActual.comprobante}</strong> · ${histFacturaActual.nombre || histFacturaActual.cuit}<br>` +
+    `<span style="color:var(--muted);font-size:12px;">Total: $${formatMoneyAR(histFacturaActual.total)}</span>`;
+  document.getElementById("anularMotivo").value = "Factura emitida por error";
+  document.getElementById("anularModal").classList.add("active");
+};
+
+// Inicializar label al cargar
+histActualizarLabel();
 
 window.confirmarReenvioEmail = async function() {
   if (!facturaAReenviar) return;
