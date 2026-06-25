@@ -1103,12 +1103,17 @@ window.extProcesar = async function() {
     extTransferencias = j.transferencias.map((t, i) => ({
       ...t,
       id: i,
-      incluida: true,
+      incluida: !t.yaFacturado,  // ya facturadas quedan excluidas por defecto
       cuitEdit: t.cuit || ""
     }));
 
     haptic("success");
-    showToast(`✅ ${j.detectados} transferencias detectadas`, "success");
+    const yaFact = j.transferencias.filter(t => t.yaFacturado).length;
+    const pendientes = j.transferencias.filter(t => !t.yaFacturado).length;
+    const msg = yaFact > 0
+      ? `✅ ${j.detectados} detectadas · ${yaFact} ya facturadas · ${pendientes} pendientes`
+      : `✅ ${j.detectados} transferencias detectadas`;
+    showToast(msg, "success");
     extRenderStep2();
 
   } catch (e) {
@@ -1159,6 +1164,7 @@ function extRenderList() {
       <div class="transfer-nombre">${t.nombre}</div>
       <div class="transfer-meta">${t.fecha || "Sin fecha"} · ${t.descripcion || ""}</div>
       <div class="transfer-monto">$${formatMoneyAR(t.monto)}</div>
+      ${t.yaFacturado ? `<div style="font-size:11px;color:#64748b;font-weight:700;margin-top:4px;">✅ Ya facturada este mes — excluida por defecto</div>` : ""}
       <div class="transfer-cuit-row">
         <input class="transfer-cuit-input" type="tel" inputmode="numeric" maxlength="11"
           placeholder="CUIT (11 dígitos)" value="${t.cuitEdit}"
@@ -1170,7 +1176,7 @@ function extRenderList() {
         </button>
       </div>
       ${emailGuardado ? `<div style="font-size:11px;color:var(--green);font-weight:600;margin-top:5px;">📧 ${emailGuardado}</div>` : ""}
-      ${sinCuit ? `<div style="font-size:11px;color:var(--warn);font-weight:700;margin-top:6px;">⚠️ Ingresá el CUIT para incluir</div>` : ""}
+      ${sinCuit && !t.yaFacturado ? `<div style="font-size:11px;color:var(--warn);font-weight:700;margin-top:6px;">⚠️ Ingresá el CUIT para incluir</div>` : ""}
     `;
     list.appendChild(div);
   });
@@ -1215,7 +1221,7 @@ window.extVolver = function() {
   btn.innerHTML = "🔍 ANALIZAR CON IA";
 };
 
-// ── Paso 3: Facturar ──────────────────────────────────────────
+// ── Paso 3: Facturar (fire-and-forget con job polling) ────────
 window.extFacturar = async function() {
   const incluidas = extTransferencias.filter(t => t.incluida && t.cuitEdit.length === 11 && t.monto > 0);
   if (incluidas.length === 0) return showToast("No hay transferencias válidas para facturar", "error");
@@ -1223,18 +1229,13 @@ window.extFacturar = async function() {
   haptic();
   const btn = document.getElementById("extBtnFacturar");
   btn.disabled = true;
-  btn.innerHTML = `<div class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:#fff;width:18px;height:18px;"></div> Facturando ${incluidas.length}...`;
-
-  showNcLoading(
-    `Emitiendo ${incluidas.length} factura${incluidas.length > 1 ? "s" : ""}...`,
-    "Comunicando con ARCA · este proceso puede tomar hasta 2 min"
-  );
+  btn.innerHTML = `<div class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:#fff;width:18px;height:18px;"></div> Iniciando...`;
 
   try {
     const payload = {
       transferencias: incluidas.map(t => {
         const savedEmail = getEmailForCuit(t.cuitEdit);
-        const obj = { cuit: t.cuitEdit, monto: t.monto, nombre: t.nombre };
+        const obj = { cuit: t.cuitEdit, monto: t.monto, nombre: t.nombre, fecha: t.fecha || "" };
         if (savedEmail) obj.email = savedEmail;
         return obj;
       }),
@@ -1248,43 +1249,106 @@ window.extFacturar = async function() {
       emailReporte: "santamariapablodaniel@gmail.com"
     };
 
+    // El servidor responde con jobId inmediatamente
     const r = await fetchWithRetry(
       `${BASE}/facturar-extracto`,
       { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) },
-      { maxRetries: 1, timeoutMs: 300000 } // 5 min para batch
+      { maxRetries: 1, timeoutMs: 15000 }
     );
     const j = await r.json();
-    if (!r.ok || !j.ok) throw new Error(j.message || "Error al facturar");
+    if (!r.ok || !j.ok) throw new Error(j.message || "Error al iniciar");
 
-    hideNcLoading();
     haptic("success");
-    extRenderResultados(j);
+    await extMostrarProgreso(j.jobId, j.total);
 
   } catch (e) {
-    hideNcLoading();
     showToast("❌ " + (e.message || "Error"), "error");
     btn.disabled = false;
     btn.innerHTML = `⚡ FACTURAR SELECCIONADAS`;
   }
 };
 
+// ── Pantalla de progreso con polling ──────────────────────────
+async function extMostrarProgreso(jobId, total) {
+  document.getElementById("extStep2").classList.remove("active");
+  document.getElementById("extStep3").classList.add("active");
+  document.getElementById("extBtnFacturar").style.display = "none";
+
+  const container = document.getElementById("extResultados");
+  container.innerHTML = `
+    <div style="text-align:center;padding:32px 16px;">
+      <div class="spinner" style="width:44px;height:44px;border-width:4px;margin:0 auto 20px;border-color:rgba(52,199,89,0.3);border-top-color:#34C759;"></div>
+      <div id="extProgresoTexto" style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px;">Iniciando proceso...</div>
+      <div id="extProgresoCount" style="font-size:13px;color:var(--muted);margin-bottom:16px;">0 / ${total}</div>
+      <div style="background:#e2e8f0;border-radius:8px;height:8px;overflow:hidden;margin-bottom:12px;">
+        <div id="extProgresoBar" style="background:#34C759;height:100%;width:0%;transition:width 0.6s ease;border-radius:8px;"></div>
+      </div>
+      <div id="extProgresoDetalle" style="font-size:12px;color:var(--muted);line-height:1.6;"></div>
+      <div style="margin-top:16px;padding:12px;background:#F0FDF4;border-radius:10px;border:1px solid #BBF7D0;font-size:12px;color:#15803D;font-weight:600;">
+        📱 Podés guardar el celular — el servidor sigue procesando
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:10px;font-family:monospace;">Job: ${jobId}</div>
+    </div>
+  `;
+
+  let fallos = 0;
+  while (true) {
+    await new Promise(r => setTimeout(r, 5000));
+    try {
+      const resp = await fetch(`${BASE}/estado-extracto/${jobId}`);
+      const estado = await resp.json();
+      if (!estado.ok) throw new Error(estado.message);
+
+      const pct = estado.porcentaje || 0;
+      const barEl   = document.getElementById("extProgresoBar");
+      const txtEl   = document.getElementById("extProgresoTexto");
+      const cntEl   = document.getElementById("extProgresoCount");
+      const detEl   = document.getElementById("extProgresoDetalle");
+      if (barEl) barEl.style.width = pct + "%";
+      if (txtEl) txtEl.textContent = estado.estado === "terminado" ? "✅ Proceso completado" : `Procesando... ${pct}%`;
+      if (cntEl) cntEl.textContent = `${estado.progreso} / ${estado.total}`;
+      if (detEl) detEl.innerHTML =
+        `${estado.facturasEmitidas || 0} emitidas · ${estado.omitidas || 0} ya facturadas · ${estado.errores || 0} errores`;
+
+      fallos = 0;
+
+      if (estado.estado === "terminado" || estado.estado === "error") {
+        haptic("success");
+        extRenderResultados(estado);
+        return;
+      }
+    } catch (e) {
+      fallos++;
+      if (fallos >= 3) {
+        const detEl = document.getElementById("extProgresoDetalle");
+        if (detEl) detEl.innerHTML = `⚠️ Sin conexión — el proceso sigue en el servidor.<br>Cuando vuelvas a abrir la app vas a ver el resultado.`;
+      }
+    }
+  }
+}
+
 function extRenderResultados(data) {
   document.getElementById("extStep2").classList.remove("active");
   document.getElementById("extStep3").classList.add("active");
+  document.getElementById("extBtnFacturar").style.display = "none";
 
   const container = document.getElementById("extResultados");
-  const ok = (data.resultados || []).filter(r => r.ok);
-  const err = (data.resultados || []).filter(r => !r.ok);
+  const emitidas = (data.resultados || []).filter(r => r.ok && !r.skipped);
+  const omitidas = (data.resultados || []).filter(r => r.skipped);
+  const errores  = (data.resultados || []).filter(r => !r.ok);
 
   let html = `
     <div class="ext-summary-bar" style="margin-bottom:16px;">
-      <div><div class="lbl">Facturas emitidas</div><div class="val">${data.facturasEmitidas || 0}</div></div>
+      <div><div class="lbl">Facturas emitidas</div><div class="val">${emitidas.length}</div></div>
       <div style="text-align:right;"><div class="lbl">Total facturado</div><div class="val">$${formatMoneyAR(data.totalFacturado || 0)}</div></div>
     </div>
-    <div style="font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:10px;">Comprobantes emitidos</div>
+    ${omitidas.length > 0 ? `<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#64748B;font-weight:600;">
+      ✅ ${omitidas.length} ya facturada${omitidas.length !== 1 ? "s" : ""} este mes — omitidas para no duplicar
+    </div>` : ""}
+    <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;">Comprobantes emitidos</div>
   `;
 
-  ok.forEach(r => {
+  emitidas.forEach(r => {
     html += `
       <div class="ext-result-card">
         <div style="font-weight:800;font-size:14px;">${r.nombre}</div>
@@ -1296,9 +1360,9 @@ function extRenderResultados(data) {
       </div>`;
   });
 
-  if (err.length > 0) {
-    html += `<div style="font-size:12px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:0.6px;margin:16px 0 8px;">Errores (${err.length})</div>`;
-    err.forEach(r => {
+  if (errores.length > 0) {
+    html += `<div style="font-size:12px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:0.6px;margin:16px 0 8px;">Con error (${errores.length})</div>`;
+    errores.forEach(r => {
       html += `
         <div class="ext-result-card error">
           <div style="font-weight:800;font-size:14px;">${r.nombre}</div>
@@ -1313,9 +1377,6 @@ function extRenderResultados(data) {
   </div>`;
 
   container.innerHTML = html;
-
-  // Ocultar botón de facturar
-  document.getElementById("extBtnFacturar").style.display = "none";
 }
 
 window.extReset = function() {
