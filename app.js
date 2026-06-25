@@ -1070,7 +1070,7 @@ document.getElementById("extFileInput").addEventListener("change", function() {
   document.getElementById("extBtnProcesar").style.opacity = "1";
 });
 
-// ── Paso 1: Analizar con Gemini ───────────────────────────────
+// ── Paso 1: Analizar extracto (fire-and-forget con polling) ──────
 window.extProcesar = async function() {
   const file = document.getElementById("extFileInput").files[0];
   if (!file) return showToast("Seleccioná un archivo primero", "error");
@@ -1078,43 +1078,24 @@ window.extProcesar = async function() {
   haptic();
   const btn = document.getElementById("extBtnProcesar");
   btn.disabled = true;
-  btn.innerHTML = `<div class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:#fff;width:18px;height:18px;"></div> Analizando con Gemini...`;
+  btn.innerHTML = `<div class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:#fff;width:18px;height:18px;"></div> Subiendo...`;
 
   try {
     const formData = new FormData();
     formData.append("extracto", file);
 
+    // Solo sube el archivo — el servidor responde con jobId al instante
     const r = await fetchWithRetry(
       `${BASE}/procesar-extracto`,
       { method: "POST", body: formData },
-      { maxRetries: 2, timeoutMs: 90000 }
+      { maxRetries: 2, timeoutMs: 20000 }
     );
     const j = await r.json();
-    if (!r.ok || !j.ok) throw new Error(j.message || "Error al procesar");
+    if (!r.ok || !j.ok) throw new Error(j.message || "Error al subir");
 
-    if (j.detectados === 0) {
-      showToast(`Se encontraron ${j.total} movimientos pero ninguno de cliente chino`, "error");
-      btn.disabled = false;
-      btn.innerHTML = "🔍 ANALIZAR CON IA";
-      return;
-    }
-
-    extTodasTransferencias = j.todas || [];
-    extTransferencias = j.transferencias.map((t, i) => ({
-      ...t,
-      id: i,
-      incluida: !t.yaFacturado,  // ya facturadas quedan excluidas por defecto
-      cuitEdit: t.cuit || ""
-    }));
-
-    haptic("success");
-    const yaFact = j.transferencias.filter(t => t.yaFacturado).length;
-    const pendientes = j.transferencias.filter(t => !t.yaFacturado).length;
-    const msg = yaFact > 0
-      ? `✅ ${j.detectados} detectadas · ${yaFact} ya facturadas · ${pendientes} pendientes`
-      : `✅ ${j.detectados} transferencias detectadas`;
-    showToast(msg, "success");
-    extRenderStep2();
+    // Mostrar pantalla de análisis con polling
+    btn.innerHTML = `<div class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:#fff;width:18px;height:18px;"></div> Analizando...`;
+    await extEsperarAnalisis(j.jobId, btn);
 
   } catch (e) {
     showToast("❌ " + (e.message || "Error"), "error");
@@ -1122,6 +1103,61 @@ window.extProcesar = async function() {
     btn.innerHTML = "🔍 ANALIZAR CON IA";
   }
 };
+
+async function extEsperarAnalisis(jobId, btn) {
+  // Mostrar mensaje de que puede guardar el celu
+  showToast("📱 Analizando en servidor — podés guardar el celular", "success");
+
+  let fallos = 0;
+  while (true) {
+    await new Promise(r => setTimeout(r, 4000));
+    try {
+      const resp = await fetch(`${BASE}/estado-procesar/${jobId}`);
+      const estado = await resp.json();
+
+      if (estado.estado === "error") {
+        throw new Error(estado.message || "Error en análisis");
+      }
+
+      if (estado.estado === "terminado") {
+        if (estado.detectados === 0) {
+          showToast(`Se encontraron ${estado.total} movimientos pero ninguno de cliente chino`, "error");
+          btn.disabled = false;
+          btn.innerHTML = "🔍 ANALIZAR CON IA";
+          return;
+        }
+
+        extTodasTransferencias = estado.todas || [];
+        extTransferencias = estado.transferencias.map((t, i) => ({
+          ...t,
+          id: i,
+          incluida: !t.yaFacturado,
+          cuitEdit: t.cuit || ""
+        }));
+
+        haptic("success");
+        const yaFact    = estado.transferencias.filter(t => t.yaFacturado).length;
+        const pendientes = estado.transferencias.filter(t => !t.yaFacturado).length;
+        const msg = yaFact > 0
+          ? `✅ ${estado.detectados} detectadas · ${yaFact} ya facturadas · ${pendientes} pendientes`
+          : `✅ ${estado.detectados} transferencias detectadas`;
+        showToast(msg, "success");
+        extRenderStep2();
+        return;
+      }
+
+      fallos = 0;
+    } catch (e) {
+      fallos++;
+      if (fallos >= 4) {
+        showToast("❌ " + (e.message || "Error en análisis"), "error");
+        btn.disabled = false;
+        btn.innerHTML = "🔍 ANALIZAR CON IA";
+        return;
+      }
+    }
+  }
+}
 
 // ── Renderizar paso 2: lista de transferencias ────────────────
 function extRenderStep2() {
