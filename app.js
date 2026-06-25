@@ -1323,7 +1323,6 @@ async function extMostrarProgreso(jobId, total) {
       <div style="margin-top:16px;padding:12px;background:#F0FDF4;border-radius:10px;border:1px solid #BBF7D0;font-size:12px;color:#15803D;font-weight:600;">
         📱 Podés guardar el celular — el servidor sigue procesando
       </div>
-      <div style="font-size:10px;color:var(--muted);margin-top:10px;font-family:monospace;">Job: ${jobId}</div>
     </div>
   `;
 
