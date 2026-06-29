@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#0E0C0A">
+  <meta name="theme-color" content="#F5F0EA">
   <title>Mercado Limpio</title>
   <link rel="manifest" href="manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,24 +13,24 @@
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg:       #0E0C0A;
-      --surface:  #181512;
-      --surface2: #221E19;
-      --surface3: #2C2721;
+      --bg:       #F5F0EA;
+      --surface:  #FFFFFF;
+      --surface2: #FAF7F3;
+      --surface3: #F0EAE0;
       --accent:   #C97A3A;
       --accent2:  #E08C45;
-      --accent-dim: rgba(201,122,58,0.14);
-      --accent-glow: rgba(201,122,58,0.28);
-      --green:    #34D399;
-      --green-dim: rgba(52,211,153,0.12);
-      --red:      #F87171;
-      --red-dim:  rgba(248,113,113,0.12);
-      --warn:     #FBBF24;
-      --text:     #EDE8E3;
-      --text2:    #8A7E74;
-      --text3:    #4A4440;
-      --border:   rgba(255,210,160,0.07);
-      --border2:  rgba(255,210,160,0.14);
+      --accent-dim: rgba(201,122,58,0.10);
+      --accent-glow: rgba(201,122,58,0.22);
+      --green:    #16A34A;
+      --green-dim: rgba(22,163,74,0.08);
+      --red:      #DC2626;
+      --red-dim:  rgba(220,38,38,0.08);
+      --warn:     #D97706;
+      --text:     #1A1512;
+      --text2:    #7A6555;
+      --text3:    #C0A898;
+      --border:   rgba(0,0,0,0.06);
+      --border2:  rgba(0,0,0,0.10);
       --safe-b:   env(safe-area-inset-bottom, 20px);
       --safe-t:   env(safe-area-inset-top, 44px);
     }
@@ -49,7 +49,7 @@
     /* ── Header ─────────────────────────────────────── */
     header {
       position: sticky; top: 0; z-index: 50;
-      background: rgba(14,12,10,0.92);
+      background: rgba(245,240,234,0.94);
       backdrop-filter: blur(20px) saturate(180%);
       -webkit-backdrop-filter: blur(20px) saturate(180%);
       padding: calc(var(--safe-t) + 6px) 18px 12px;
@@ -97,7 +97,7 @@
     }
     .skeleton {
       border-radius: 10px; height: 18px;
-      background: linear-gradient(90deg, var(--surface2) 25%, var(--surface3) 50%, var(--surface2) 75%);
+      background: linear-gradient(90deg, #EDE8E0 25%, #F5F0EA 50%, #EDE8E0 75%);
       background-size: 800px 100%;
       animation: shimmer 1.4s infinite;
     }
@@ -216,7 +216,7 @@
     /* ── Tab bar ─────────────────────────────────────── */
     .tab-bar {
       position: fixed; bottom: 0; left: 0; width: 100%;
-      background: rgba(14,12,10,0.95);
+      background: rgba(245,240,234,0.96);
       backdrop-filter: blur(24px) saturate(180%);
       -webkit-backdrop-filter: blur(24px) saturate(180%);
       border-top: 1px solid var(--border);
@@ -229,7 +229,7 @@
     }
     .tab-btn {
       flex: 1; padding: 10px 8px 8px; border: none; background: none;
-      font-size: 9px; font-weight: 700; color: var(--text3);
+      font-size: 9px; font-weight: 700; color: var(--text2);
       display: flex; flex-direction: column; align-items: center; gap: 4px;
       cursor: pointer; transition: color 0.15s;
       text-transform: uppercase; letter-spacing: 0.7px;
@@ -275,13 +275,13 @@
       bottom: calc(94px + var(--safe-b));
       left: 14px; right: 14px;
       z-index: 9000;
-      background: var(--surface2);
-      border: 1px solid var(--accent);
+      background: #1A1512;
+      border: 1px solid rgba(201,122,58,0.4);
       border-radius: 18px;
       padding: 16px 20px;
       display: none;
       align-items: center; gap: 16px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px var(--border);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.22);
     }
     #ncLoadingOverlay.active { display: flex; }
     .nc-spinner-ring {
@@ -306,9 +306,9 @@
       display: flex; flex-direction: column; gap: 8px;
     }
     .toast {
-      background: var(--surface2);
-      border: 1px solid var(--border2);
-      color: var(--text); padding: 13px 18px; border-radius: 14px;
+      background: rgba(26,21,18,0.94);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #FFF; padding: 13px 18px; border-radius: 14px;
       font-size: 13px; font-weight: 600;
       transform: translateY(-14px) scale(0.97); opacity: 0;
       transition: all 0.22s cubic-bezier(0.32,0.72,0,1); text-align: center;
@@ -596,7 +596,7 @@
 
     .hist-header {
       position: sticky; top: calc(var(--safe-t) + 54px); z-index: 40;
-      background: rgba(14,12,10,0.96);
+      background: rgba(245,240,234,0.96);
       backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
       padding: 12px 14px 10px;
       border-bottom: 1px solid var(--border);
@@ -728,7 +728,7 @@
     .hist-action-btn.anular { background: var(--red-dim); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
 
     .hist-skel { border-radius: 16px; height: 88px;
-      background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
+      background: linear-gradient(90deg, #EDE8E0 25%, #F5F0EA 50%, #EDE8E0 75%);
       background-size: 800px 100%; animation: shimmer 1.4s infinite;
     }
 
@@ -737,7 +737,7 @@
 
     .email-sticky-header {
       position: sticky; top: calc(var(--safe-t) + 54px); z-index: 40;
-      background: rgba(14,12,10,0.96);
+      background: rgba(245,240,234,0.96);
       backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
       padding: 12px 14px 10px;
       border-bottom: 1px solid var(--border);
@@ -880,6 +880,26 @@
 <!-- ══ TAB FACTURAR ══════════════════════════════════════════ -->
 <main class="container" id="tabFacturar">
 
+  <!-- Hero card -->
+  <div style="background:linear-gradient(135deg,#1A1512 0%,#3A2010 100%);border-radius:22px;padding:22px 20px;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:-30px;right:-20px;width:130px;height:130px;border-radius:50%;background:rgba(201,122,58,0.15);"></div>
+    <div style="position:absolute;bottom:-40px;right:30px;width:90px;height:90px;border-radius:50%;background:rgba(201,122,58,0.08);"></div>
+    <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px;" id="heroFecha">—</div>
+    <div style="font-size:22px;font-weight:800;color:#FFF;letter-spacing:-0.5px;line-height:1.2;margin-bottom:14px;">
+      Nueva<br><span style="color:var(--accent2);">Facturación</span>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <div style="flex:1;background:rgba(255,255,255,0.07);border-radius:12px;padding:10px 12px;border:1px solid rgba(255,255,255,0.08);">
+        <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:3px;">Servidor</div>
+        <div style="font-size:13px;font-weight:700;color:#FFF;" id="heroStatus">Conectando…</div>
+      </div>
+      <div style="flex:1;background:rgba(255,255,255,0.07);border-radius:12px;padding:10px 12px;border:1px solid rgba(255,255,255,0.08);">
+        <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:3px;">Punto Venta</div>
+        <div style="font-size:13px;font-weight:700;color:var(--accent2);">PV 0005</div>
+      </div>
+    </div>
+  </div>
+
   <div class="card">
     <div class="card-label">Remito PDF</div>
     <div class="upload-zone">
@@ -917,10 +937,9 @@
     <div class="form-group">
       <label>Atajos</label>
       <div class="tags-scroll">
-        <button class="tag-btn" onclick="presetDetalle('Artículos Make')">Make</button>
+        <button class="tag-btn" onclick="presetDetalle('Artículos varios marca Make')">Make</button>
         <button class="tag-btn" onclick="presetDetalle('Artículos Romil')">Romil</button>
         <button class="tag-btn" onclick="presetDetalle('Artículos de limpieza varios')">Varios</button>
-        <button class="tag-btn" onclick="presetDetalle('Productos de higiene')">Higiene</button>
       </div>
     </div>
     <div class="form-group">
@@ -1253,16 +1272,30 @@
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js").catch(() => {});
   }
+  // Fecha en hero card
+  (function() {
+    const DIAS = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+    const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+    const d = new Date();
+    const el = document.getElementById("heroFecha");
+    if (el) el.textContent = `${DIAS[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]} ${d.getFullYear()}`;
+  })();
+
   async function checkServer() {
-    const dot   = document.getElementById("statusDot");
-    const label = document.getElementById("statusLabel");
+    const dot    = document.getElementById("statusDot");
+    const label  = document.getElementById("statusLabel");
+    const heroSt = document.getElementById("heroStatus");
     try {
       dot.className = "status-dot waking"; label.textContent = "…";
+      if (heroSt) heroSt.textContent = "Conectando…";
       const r = await fetch("https://api-mercadolimpio.onrender.com/health", { signal: AbortSignal.timeout(12000) });
-      if (r.ok) { dot.className = "status-dot online"; label.textContent = "Online"; }
-      else throw new Error();
+      if (r.ok) {
+        dot.className = "status-dot online"; label.textContent = "Online";
+        if (heroSt) { heroSt.textContent = "✓ Activo"; heroSt.style.color = "#34D399"; }
+      } else throw new Error();
     } catch {
       dot.className = "status-dot offline"; label.textContent = "Offline";
+      if (heroSt) { heroSt.textContent = "Sin conexión"; heroSt.style.color = "#F87171"; }
     }
   }
   checkServer();
