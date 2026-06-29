@@ -857,13 +857,7 @@
     <div class="header-logo">🍋</div>
     <h1>Mercado Limpio</h1>
   </div>
-  <div style="display:flex;align-items:center;gap:10px;">
-    <button class="btn-resumen-header" onclick="abrirResumen()">📊 Resumen</button>
-    <div class="server-status">
-      <div class="status-dot waking" id="statusDot"></div>
-      <span id="statusLabel">…</span>
-    </div>
-  </div>
+  <button class="btn-resumen-header" onclick="abrirResumen()">📊 Resumen</button>
 </header>
 
 <div id="toast-container"></div>
@@ -880,22 +874,36 @@
 <!-- ══ TAB FACTURAR ══════════════════════════════════════════ -->
 <main class="container" id="tabFacturar">
 
-  <!-- Hero card -->
-  <div style="background:linear-gradient(135deg,#1A1512 0%,#3A2010 100%);border-radius:22px;padding:22px 20px;position:relative;overflow:hidden;">
-    <div style="position:absolute;top:-30px;right:-20px;width:130px;height:130px;border-radius:50%;background:rgba(201,122,58,0.15);"></div>
-    <div style="position:absolute;bottom:-40px;right:30px;width:90px;height:90px;border-radius:50%;background:rgba(201,122,58,0.08);"></div>
-    <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px;" id="heroFecha">—</div>
-    <div style="font-size:22px;font-weight:800;color:#FFF;letter-spacing:-0.5px;line-height:1.2;margin-bottom:14px;">
-      Nueva<br><span style="color:var(--accent2);">Facturación</span>
-    </div>
-    <div style="display:flex;gap:10px;">
-      <div style="flex:1;background:rgba(255,255,255,0.07);border-radius:12px;padding:10px 12px;border:1px solid rgba(255,255,255,0.08);">
-        <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:3px;">Servidor</div>
-        <div style="font-size:13px;font-weight:700;color:#FFF;" id="heroStatus">Conectando…</div>
+  <!-- Dashboard Header -->
+  <div style="background:linear-gradient(135deg,#1A1512 0%,#3A2010 100%);border-radius:22px;padding:20px;position:relative;overflow:hidden;">
+    <div style="position:absolute;top:-40px;right:-30px;width:160px;height:160px;border-radius:50%;background:rgba(201,122,58,0.12);pointer-events:none;"></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+      <div>
+        <div style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;" id="heroFecha">—</div>
+        <div style="font-size:19px;font-weight:800;color:#FFF;letter-spacing:-0.4px;">Mercado Limpio</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:2px;font-weight:500;">Sistema de Facturación ARCA</div>
       </div>
-      <div style="flex:1;background:rgba(255,255,255,0.07);border-radius:12px;padding:10px 12px;border:1px solid rgba(255,255,255,0.08);">
-        <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:3px;">Punto Venta</div>
-        <div style="font-size:13px;font-weight:700;color:var(--accent2);">PV 0005</div>
+      <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.07);border-radius:20px;padding:6px 10px;border:1px solid rgba(255,255,255,0.08);">
+        <div class="status-dot waking" id="statusDot" style="width:7px;height:7px;"></div>
+        <span id="statusLabel" style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.7);">…</span>
+      </div>
+    </div>
+    <!-- KPI row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+      <div style="background:rgba(255,255,255,0.07);border-radius:14px;padding:12px 10px;border:1px solid rgba(255,255,255,0.07);text-align:center;">
+        <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Facturas</div>
+        <div style="font-size:24px;font-weight:800;color:#FFF;letter-spacing:-1px;line-height:1;" id="kpiFacturas">—</div>
+        <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-top:4px;font-weight:500;" id="kpiMesLabel">este mes</div>
+      </div>
+      <div style="background:rgba(201,122,58,0.18);border-radius:14px;padding:12px 10px;border:1px solid rgba(201,122,58,0.25);text-align:center;">
+        <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Total</div>
+        <div style="font-size:14px;font-weight:800;color:var(--accent2);letter-spacing:-0.5px;line-height:1.2;" id="kpiTotal">—</div>
+        <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-top:4px;font-weight:500;">facturado</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.07);border-radius:14px;padding:12px 10px;border:1px solid rgba(255,255,255,0.07);text-align:center;">
+        <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Clientes</div>
+        <div style="font-size:24px;font-weight:800;color:#FFF;letter-spacing:-1px;line-height:1;" id="kpiClientes">—</div>
+        <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-top:4px;font-weight:500;">únicos</div>
       </div>
     </div>
   </div>
@@ -1270,35 +1278,66 @@
 
 <script>
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./sw.js").catch(() => {});
+    navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" })
+      .then(reg => reg.update())
+      .catch(() => {});
   }
   // Fecha en hero card
   (function() {
-    const DIAS = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+    const DIAS  = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
     const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
     const d = new Date();
     const el = document.getElementById("heroFecha");
-    if (el) el.textContent = `${DIAS[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]} ${d.getFullYear()}`;
+    if (el) el.textContent = `${DIAS[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}`;
   })();
 
+  const SB_URL  = "https://gjeyvbidomxzofcdycya.supabase.co";
+  const SB_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZXl2Ymlkb214em9mY2R5Y3lhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwNjQxMjcsImV4cCI6MjA1OTY0MDEyN30.JeRpbBITg6eMDFNQaHNwwgBGzOYHUEJUaGJwwYjrOAo";
+
+  async function loadHeroKPIs() {
+    try {
+      const now = new Date();
+      const mes = now.getMonth() + 1;
+      const anio = now.getFullYear();
+      const mesStr = String(mes).padStart(2, "0");
+      const headers = { apikey: SB_ANON, Authorization: "Bearer " + SB_ANON };
+      const r = await fetch(
+        `${SB_URL}/rest/v1/facturas?mes=eq.${mes}&anio=eq.${anio}&select=total,cuit_cliente,cbte_tipo`,
+        { headers }
+      );
+      if (!r.ok) return;
+      const data = await r.json();
+      const facturas = data.filter(f => f.cbte_tipo !== 53); // excluir NCs
+      const total = facturas.reduce((s, f) => s + (Number(f.total) || 0), 0);
+      const clientes = new Set(facturas.map(f => f.cuit_cliente)).size;
+      const fmtM = n => {
+        if (n >= 1000000) return "$" + (n/1000000).toFixed(1) + "M";
+        if (n >= 1000) return "$" + Math.round(n/1000) + "K";
+        return "$" + Math.round(n);
+      };
+      const MESES_NOM = ["","Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+      document.getElementById("kpiFacturas").textContent  = facturas.length || "0";
+      document.getElementById("kpiTotal").textContent     = fmtM(total);
+      document.getElementById("kpiClientes").textContent  = clientes || "0";
+      document.getElementById("kpiMesLabel").textContent  = MESES_NOM[mes] + " " + anio;
+    } catch(_) {}
+  }
+
   async function checkServer() {
-    const dot    = document.getElementById("statusDot");
-    const label  = document.getElementById("statusLabel");
-    const heroSt = document.getElementById("heroStatus");
+    const dot   = document.getElementById("statusDot");
+    const label = document.getElementById("statusLabel");
     try {
       dot.className = "status-dot waking"; label.textContent = "…";
-      if (heroSt) heroSt.textContent = "Conectando…";
       const r = await fetch("https://api-mercadolimpio.onrender.com/health", { signal: AbortSignal.timeout(12000) });
-      if (r.ok) {
-        dot.className = "status-dot online"; label.textContent = "Online";
-        if (heroSt) { heroSt.textContent = "✓ Activo"; heroSt.style.color = "#34D399"; }
-      } else throw new Error();
+      if (r.ok) { dot.className = "status-dot online"; label.textContent = "Online"; }
+      else throw new Error();
     } catch {
-      dot.className = "status-dot offline"; label.textContent = "Offline";
-      if (heroSt) { heroSt.textContent = "Sin conexión"; heroSt.style.color = "#F87171"; }
+      dot.className = "status-dot offline"; label.textContent = "Sin señal";
     }
   }
+
   checkServer();
+  loadHeroKPIs();
   setInterval(checkServer, 9 * 60 * 1000);
 </script>
 
