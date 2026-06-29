@@ -5,62 +5,86 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#F2F2F7">
+  <meta name="theme-color" content="#0E0C0A">
   <title>Mercado Limpio</title>
   <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg:     #F2F2F7;
-      --card:   #FFFFFF;
-      --blue:   #007AFF;
-      --green:  #34C759;
-      --red:    #FF3B30;
-      --warn:   #FF9500;
-      --text:   #1C1C1E;
-      --muted:  #8E8E93;
-      --border: #E5E5EA;
-      --safe-b: env(safe-area-inset-bottom, 20px);
-      --safe-t: env(safe-area-inset-top,    44px);
-      --safe-l: env(safe-area-inset-left,   0px);
-      --safe-r: env(safe-area-inset-right,  0px);
+      --bg:       #0E0C0A;
+      --surface:  #181512;
+      --surface2: #221E19;
+      --surface3: #2C2721;
+      --accent:   #C97A3A;
+      --accent2:  #E08C45;
+      --accent-dim: rgba(201,122,58,0.14);
+      --accent-glow: rgba(201,122,58,0.28);
+      --green:    #34D399;
+      --green-dim: rgba(52,211,153,0.12);
+      --red:      #F87171;
+      --red-dim:  rgba(248,113,113,0.12);
+      --warn:     #FBBF24;
+      --text:     #EDE8E3;
+      --text2:    #8A7E74;
+      --text3:    #4A4440;
+      --border:   rgba(255,210,160,0.07);
+      --border2:  rgba(255,210,160,0.14);
+      --safe-b:   env(safe-area-inset-bottom, 20px);
+      --safe-t:   env(safe-area-inset-top, 44px);
     }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
-      background: var(--bg); color: var(--text);
-      padding-bottom: calc(90px + var(--safe-b));
+      font-family: 'Sora', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding-bottom: calc(88px + var(--safe-b));
       overscroll-behavior-y: none;
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ── Header ──────────────────────────────────────── */
+    /* ── Header ─────────────────────────────────────── */
     header {
       position: sticky; top: 0; z-index: 50;
-      background: rgba(242,242,247,0.88);
+      background: rgba(14,12,10,0.92);
       backdrop-filter: blur(20px) saturate(180%);
       -webkit-backdrop-filter: blur(20px) saturate(180%);
-      padding: calc(var(--safe-t) + 8px) 18px 12px;
-      border-bottom: 0.5px solid rgba(0,0,0,0.12);
+      padding: calc(var(--safe-t) + 6px) 18px 12px;
+      border-bottom: 1px solid var(--border);
       display: flex; justify-content: space-between; align-items: center;
     }
-    .header-left { display: flex; align-items: center; gap: 10px; }
-    header h1 { font-size: 19px; font-weight: 800; letter-spacing: -0.5px; }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .header-logo {
+      width: 32px; height: 32px; border-radius: 9px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+      box-shadow: 0 2px 10px var(--accent-glow);
+    }
+    header h1 {
+      font-size: 17px; font-weight: 700; letter-spacing: -0.3px;
+      color: var(--text);
+    }
 
     .btn-resumen-header {
-      background: #1C1C1E; color: #FFF;
-      border: none; border-radius: 20px;
-      padding: 7px 14px; font-size: 13px; font-weight: 700;
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      padding: 7px 14px; font-size: 12px; font-weight: 600;
       cursor: pointer; display: flex; align-items: center; gap: 5px;
-      transition: transform 0.12s, opacity 0.12s;
+      font-family: 'Sora', sans-serif;
+      transition: transform 0.12s, background 0.15s;
       -webkit-user-select: none;
     }
-    .btn-resumen-header:active { transform: scale(0.90); opacity: 0.75; }
+    .btn-resumen-header:active { transform: scale(0.91); background: var(--surface3); }
 
-    .server-status { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--muted); }
-    .status-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--warn); transition: background 0.4s; flex-shrink: 0; }
-    .status-dot.online  { background: var(--green); box-shadow: 0 0 7px rgba(52,199,89,0.6); }
+    .server-status { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: var(--text2); }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); transition: background 0.4s; flex-shrink: 0; }
+    .status-dot.online  { background: var(--green); box-shadow: 0 0 6px rgba(52,211,153,0.7); }
     .status-dot.offline { background: var(--red); }
     .status-dot.waking  { background: var(--warn); animation: blink 1.1s infinite; }
 
@@ -73,228 +97,263 @@
     }
     .skeleton {
       border-radius: 10px; height: 18px;
-      background: linear-gradient(90deg, #E5E5EA 25%, #F2F2F7 50%, #E5E5EA 75%);
+      background: linear-gradient(90deg, var(--surface2) 25%, var(--surface3) 50%, var(--surface2) 75%);
       background-size: 800px 100%;
       animation: shimmer 1.4s infinite;
     }
 
     /* ── Layout ─────────────────────────────────────── */
-    .container { padding: 14px; display: flex; flex-direction: column; gap: 14px; }
+    .container { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
     .card {
-      background: var(--card); border-radius: 20px; padding: 18px;
-      box-shadow: 0 1px 0 rgba(0,0,0,0.04), 0 2px 12px rgba(0,0,0,0.06);
+      background: var(--surface);
+      border-radius: 18px;
+      padding: 18px;
+      border: 1px solid var(--border);
+    }
+    .card-label {
+      font-size: 10px; font-weight: 700; color: var(--text2);
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px;
     }
 
     /* ── Upload ─────────────────────────────────────── */
     .upload-zone {
-      background: #F2F2F7; border: 2px dashed #C7C7CC; border-radius: 16px;
-      padding: 26px 20px; text-align: center; position: relative; transition: all 0.18s;
+      background: var(--surface2);
+      border: 1.5px dashed var(--border2);
+      border-radius: 14px;
+      padding: 24px 20px; text-align: center; position: relative; transition: all 0.18s;
     }
-    .upload-zone:active { transform: scale(0.97); border-color: var(--blue); background: #EFF6FF; }
-    .upload-zone h3 { color: var(--blue); font-size: 16px; margin-bottom: 4px; font-weight: 700; }
-    .upload-zone p  { font-size: 13px; color: var(--muted); }
+    .upload-zone:active { transform: scale(0.97); border-color: var(--accent); }
+    .upload-zone h3 { color: var(--accent); font-size: 15px; margin-bottom: 4px; font-weight: 700; }
+    .upload-zone p  { font-size: 12px; color: var(--text2); }
     .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; z-index: 10; cursor: pointer; }
     #file-badge {
       display: none; margin-top: 10px; padding: 8px 14px;
-      background: #DCFCE7; color: #15803D;
-      border-radius: 10px; font-size: 13px; font-weight: 700;
+      background: var(--green-dim); color: var(--green);
+      border-radius: 10px; font-size: 12px; font-weight: 700;
+      border: 1px solid rgba(52,211,153,0.2);
     }
     .summary-box {
       display: none; margin-top: 14px; padding: 14px;
-      background: #EFF6FF; border: 1px solid #BFDBFE;
-      border-radius: 14px; font-size: 13px; color: #1E40AF; line-height: 1.7;
+      background: var(--accent-dim); border: 1px solid rgba(201,122,58,0.2);
+      border-radius: 12px; font-size: 13px; color: var(--text); line-height: 1.7;
     }
-    .summary-total { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #93C5FD; font-weight: 800; font-size: 15px; color: #1D4ED8; }
-    .domicilio-pdf { margin-top: 5px; font-style: italic; color: #3B82F6; font-size: 12px; }
+    .summary-total { margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(201,122,58,0.3); font-weight: 800; font-size: 14px; color: var(--accent2); }
+    .domicilio-pdf { margin-top: 5px; font-style: italic; color: var(--text2); font-size: 12px; }
 
     /* ── Forms ──────────────────────────────────────── */
-    .form-group { margin-bottom: 14px; }
+    .form-group { margin-bottom: 12px; }
     .form-group:last-child { margin-bottom: 0; }
     label {
-      display: block; font-size: 11px; font-weight: 700; color: var(--muted);
-      margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.7px;
+      display: block; font-size: 10px; font-weight: 700; color: var(--text2);
+      margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.8px;
     }
     input, select, textarea {
-      width: 100%; padding: 14px; border: 1.5px solid var(--border); border-radius: 14px;
-      font-size: 16px; background: #F8F8F9; color: var(--text); font-weight: 500;
+      width: 100%; padding: 13px 14px;
+      border: 1px solid var(--border2);
+      border-radius: 12px;
+      font-size: 15px; background: var(--surface2); color: var(--text); font-weight: 500;
       appearance: none; -webkit-appearance: none;
-      transition: border 0.18s, background 0.18s, box-shadow 0.18s;
-      font-family: inherit;
+      transition: border 0.18s, box-shadow 0.18s;
+      font-family: 'Sora', sans-serif;
     }
+    input::placeholder, textarea::placeholder { color: var(--text3); }
     input:focus, select:focus, textarea:focus {
-      outline: none; border-color: var(--blue); background: #FFF;
-      box-shadow: 0 0 0 3px rgba(0,122,255,0.12);
+      outline: none; border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
     }
-    textarea { height: 74px; resize: none; font-size: 15px; line-height: 1.5; }
+    textarea { height: 72px; resize: none; font-size: 14px; line-height: 1.5; }
     select {
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='%238E8E93' d='M0 0l6 8 6-8z'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='%238A7E74' d='M0 0l6 8 6-8z'/%3E%3C/svg%3E");
       background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
     }
-    .tags-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 3px; scrollbar-width: none; }
+    select option { background: #221E19; }
+
+    .tags-scroll { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 3px; scrollbar-width: none; }
     .tags-scroll::-webkit-scrollbar { display: none; }
     .tag-btn {
-      white-space: nowrap; padding: 9px 16px; background: #F2F2F7;
-      border: none; border-radius: 20px; font-size: 13px; font-weight: 600;
-      color: var(--text); cursor: pointer; transition: transform 0.1s, background 0.1s;
-      flex-shrink: 0;
+      white-space: nowrap; padding: 8px 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border2); border-radius: 20px;
+      font-size: 12px; font-weight: 600;
+      color: var(--text2); cursor: pointer;
+      font-family: 'Sora', sans-serif;
+      transition: all 0.1s; flex-shrink: 0;
     }
-    .tag-btn:active { transform: scale(0.88); background: #E5E5EA; }
+    .tag-btn:active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); transform: scale(0.92); }
 
     /* ── Botón preview ──────────────────────────────── */
     .btn-preview-card {
-      width: 100%; padding: 14px; background: #EFF6FF; color: var(--blue);
-      border: none; border-radius: 14px; font-size: 15px; font-weight: 700;
+      width: 100%; padding: 13px; background: var(--accent-dim); color: var(--accent);
+      border: 1px solid rgba(201,122,58,0.25); border-radius: 12px; font-size: 14px; font-weight: 700;
       display: flex; align-items: center; justify-content: center; gap: 6px;
-      cursor: pointer; transition: opacity 0.15s, transform 0.12s;
+      cursor: pointer; font-family: 'Sora', sans-serif;
+      transition: opacity 0.15s, transform 0.12s;
     }
     .btn-preview-card:active:not(:disabled) { transform: scale(0.97); }
-    .btn-preview-card:disabled { opacity: .45; background: #F2F2F7; color: var(--muted); }
+    .btn-preview-card:disabled { opacity: .35; }
 
     .ghost-btn {
-      background: #FFF; color: var(--text);
-      border: 1.5px solid var(--border); border-radius: 12px;
-      padding: 11px 14px; font-size: 13px; font-weight: 700;
+      background: transparent; color: var(--text2);
+      border: 1px solid var(--border2); border-radius: 12px;
+      padding: 11px 14px; font-size: 13px; font-weight: 600;
       cursor: pointer; width: 100%; text-align: center;
+      font-family: 'Sora', sans-serif;
       transition: opacity 0.12s, transform 0.1s;
     }
-    .ghost-btn:active { transform: scale(0.97); opacity: 0.75; }
+    .ghost-btn:active { transform: scale(0.97); opacity: 0.7; }
 
     .danger-btn {
-      background: var(--red); color: #FFF;
-      border: none; border-radius: 12px;
-      padding: 11px 14px; font-size: 13px; font-weight: 800;
-      cursor: pointer; transition: opacity 0.12s, transform 0.1s;
+      background: var(--red-dim); color: var(--red);
+      border: 1px solid rgba(248,113,113,0.25);
+      border-radius: 12px;
+      padding: 11px 14px; font-size: 13px; font-weight: 700;
+      cursor: pointer; font-family: 'Sora', sans-serif;
+      transition: opacity 0.12s, transform 0.1s;
     }
     .danger-btn:active { transform: scale(0.96); opacity: 0.82; }
-    .danger-btn:disabled { opacity: 0.55; }
+    .danger-btn:disabled { opacity: 0.45; }
 
     /* ── Tab bar ─────────────────────────────────────── */
     .tab-bar {
       position: fixed; bottom: 0; left: 0; width: 100%;
-      background: rgba(255,255,255,0.94);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      border-top: 0.5px solid rgba(0,0,0,0.10);
+      background: rgba(14,12,10,0.95);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border-top: 1px solid var(--border);
       z-index: 100;
       display: flex; flex-direction: column;
       padding-bottom: var(--safe-b);
     }
     .tab-buttons {
-      display: flex; border-bottom: 0.5px solid rgba(0,0,0,0.08);
+      display: flex; border-bottom: 1px solid var(--border);
     }
     .tab-btn {
       flex: 1; padding: 10px 8px 8px; border: none; background: none;
-      font-size: 10px; font-weight: 700; color: var(--muted);
-      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      font-size: 9px; font-weight: 700; color: var(--text3);
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
       cursor: pointer; transition: color 0.15s;
-      text-transform: uppercase; letter-spacing: 0.5px;
+      text-transform: uppercase; letter-spacing: 0.7px;
+      font-family: 'Sora', sans-serif;
     }
-    .tab-btn .tab-icon { font-size: 22px; line-height: 1; }
-    .tab-btn.active { color: var(--blue); }
+    .tab-btn .tab-icon { font-size: 20px; line-height: 1; }
+    .tab-btn.active { color: var(--accent); }
 
-    /* ── Bottom bar (dentro del tab de facturar) ───── */
-    .bottom-bar {
-      padding: 10px 16px 8px;
-    }
+    /* ── Bottom bar ─────────────────────────────── */
+    .bottom-bar { padding: 10px 14px 8px; }
     .main-btn {
-      width: 100%; padding: 17px; background: var(--blue); color: #FFF;
-      border: none; border-radius: 16px; font-size: 16px; font-weight: 800;
+      width: 100%; padding: 16px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      color: #FFF;
+      border: none; border-radius: 14px; font-size: 15px; font-weight: 700;
       display: flex; align-items: center; justify-content: center; gap: 9px;
-      box-shadow: 0 6px 20px rgba(0,122,255,0.30); cursor: pointer;
-      transition: transform 0.12s, opacity 0.12s; min-height: 56px;
+      box-shadow: 0 6px 22px var(--accent-glow);
+      cursor: pointer; font-family: 'Sora', sans-serif;
+      transition: transform 0.12s, opacity 0.12s; min-height: 54px;
       letter-spacing: -0.2px;
     }
     .main-btn:active:not(:disabled) { transform: scale(0.97); }
-    .main-btn:disabled { opacity: .65; pointer-events: none; }
-    .main-btn.btn-success { background: var(--green); box-shadow: 0 6px 18px rgba(52,199,89,0.30); }
-    .main-btn.btn-loading { background: #636366; box-shadow: none; }
+    .main-btn:disabled { opacity: .5; pointer-events: none; }
+    .main-btn.btn-success {
+      background: linear-gradient(135deg, #34D399 0%, #059669 100%);
+      box-shadow: 0 6px 20px rgba(52,211,153,0.28);
+    }
+    .main-btn.btn-loading {
+      background: var(--surface3); box-shadow: none; color: var(--text2);
+    }
 
     /* ── Spinner ─────────────────────────────────────── */
     .spinner {
-      border: 2.5px solid rgba(255,255,255,0.3); border-top: 2.5px solid #FFF;
-      border-radius: 50%; width: 20px; height: 20px; flex-shrink: 0;
+      border: 2.5px solid rgba(255,255,255,0.2); border-top: 2.5px solid #FFF;
+      border-radius: 50%; width: 18px; height: 18px; flex-shrink: 0;
       animation: spin 0.7s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── NC Loading Overlay ─────────────────────────── */
+    /* ── NC Loading — flotante no bloqueante ─────────── */
     #ncLoadingOverlay {
-      position: fixed; inset: 0; z-index: 9000;
-      background: rgba(0,0,0,0.55);
-      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-      display: none; align-items: center; justify-content: center;
-      flex-direction: column; gap: 18px;
-      padding: 30px;
+      position: fixed;
+      bottom: calc(94px + var(--safe-b));
+      left: 14px; right: 14px;
+      z-index: 9000;
+      background: var(--surface2);
+      border: 1px solid var(--accent);
+      border-radius: 18px;
+      padding: 16px 20px;
+      display: none;
+      align-items: center; gap: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px var(--border);
     }
     #ncLoadingOverlay.active { display: flex; }
     .nc-spinner-ring {
-      width: 64px; height: 64px;
-      border: 4px solid rgba(255,255,255,0.2);
-      border-top: 4px solid #FF3B30;
+      width: 36px; height: 36px; flex-shrink: 0;
+      border: 3px solid var(--border2);
+      border-top: 3px solid var(--accent);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
+    .nc-text-wrap { flex: 1; }
     #ncLoadingText {
-      color: #FFF; font-size: 17px; font-weight: 700;
-      text-align: center; line-height: 1.5;
+      color: var(--text); font-size: 14px; font-weight: 700; line-height: 1.3;
     }
     #ncLoadingSubtext {
-      color: rgba(255,255,255,0.65); font-size: 13px;
-      text-align: center; margin-top: -10px;
+      color: var(--text2); font-size: 11px; margin-top: 3px; font-weight: 500;
     }
 
     /* ── Toast ──────────────────────────────────────── */
     #toast-container {
-      position: fixed; top: calc(var(--safe-t) + 64px);
+      position: fixed; top: calc(var(--safe-t) + 60px);
       left: 14px; right: 14px; z-index: 8000; pointer-events: none;
       display: flex; flex-direction: column; gap: 8px;
     }
     .toast {
-      background: rgba(28,28,30,0.94); backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      color: #FFF; padding: 13px 18px; border-radius: 14px;
-      font-size: 14px; font-weight: 600;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      color: var(--text); padding: 13px 18px; border-radius: 14px;
+      font-size: 13px; font-weight: 600;
       transform: translateY(-14px) scale(0.97); opacity: 0;
       transition: all 0.22s cubic-bezier(0.32,0.72,0,1); text-align: center;
+      backdrop-filter: blur(12px);
     }
     .toast.show { transform: translateY(0) scale(1); opacity: 1; }
-    .toast.success { border-left: 4px solid var(--green); }
-    .toast.error   { border-left: 4px solid var(--red); }
+    .toast.success { border-color: rgba(52,211,153,0.4); }
+    .toast.error   { border-color: rgba(248,113,113,0.4); }
 
     /* ── Modal preview ──────────────────────────────── */
     .modal-backdrop {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.4);
-      backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
       z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.22s;
     }
     .modal-backdrop.active { opacity: 1; pointer-events: auto; }
     .bottom-sheet {
       position: fixed; bottom: 0; left: 0; width: 100%; height: 91vh;
-      background: #F2F2F7; border-radius: 26px 26px 0 0;
+      background: var(--surface); border-radius: 22px 22px 0 0;
       z-index: 1001; transform: translateY(100%);
       transition: transform 0.38s cubic-bezier(0.32,0.72,0,1);
       display: flex; flex-direction: column; overflow: hidden;
+      border-top: 1px solid var(--border);
     }
     .bottom-sheet.active { transform: translateY(0); }
     .sheet-header {
-      padding: 14px 18px; background: #FFF;
+      padding: 14px 18px; background: var(--surface2);
       display: flex; justify-content: space-between; align-items: center;
       border-bottom: 1px solid var(--border);
     }
-    .sheet-header h2 { font-size: 17px; font-weight: 800; }
+    .sheet-header h2 { font-size: 16px; font-weight: 700; color: var(--text); }
     .close-btn {
-      background: #E5E5EA; border: none; width: 30px; height: 30px;
-      border-radius: 50%; font-size: 14px; font-weight: bold;
-      color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center;
+      background: var(--surface3); border: none; width: 30px; height: 30px;
+      border-radius: 50%; font-size: 13px; font-weight: bold;
+      color: var(--text2); cursor: pointer; display: flex; align-items: center; justify-content: center;
     }
     .pill-parte {
-      background: var(--blue); color: white; padding: 3px 9px;
-      border-radius: 11px; font-size: 12px; font-weight: 700; margin-left: 8px;
+      background: var(--accent); color: white; padding: 3px 9px;
+      border-radius: 11px; font-size: 11px; font-weight: 700; margin-left: 8px;
     }
     .nav-parts { display: flex; gap: 8px; }
     .nav-parts button {
-      padding: 7px 12px; border: none; background: #F2F2F7;
-      border-radius: 11px; font-weight: bold; font-size: 17px; cursor: pointer;
+      padding: 7px 12px; border: 1px solid var(--border2); background: var(--surface3);
+      border-radius: 10px; font-weight: bold; font-size: 15px; cursor: pointer; color: var(--text);
+      font-family: 'Sora', sans-serif;
     }
     .iframe-wrapper { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; }
     .iframe-wrapper iframe { width: 1px; min-width: 100%; height: 100%; border: none; }
@@ -309,118 +368,119 @@
     .resumen-modal.active { transform: translateY(0); }
 
     .resumen-header {
-      background: #1C1C1E; color: #FFF;
+      background: var(--surface);
       padding: calc(var(--safe-t) + 12px) 20px 16px;
       flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
     }
     .resumen-header-top {
       display: flex; justify-content: space-between; align-items: center;
       margin-bottom: 14px;
     }
-    .resumen-header h2 { font-size: 20px; font-weight: 800; letter-spacing: -0.4px; }
+    .resumen-header h2 { font-size: 20px; font-weight: 800; letter-spacing: -0.4px; color: var(--text); }
     .resumen-close {
-      background: rgba(255,255,255,0.15); border: none; width: 34px; height: 34px;
-      border-radius: 50%; font-size: 16px; color: #FFF; font-weight: bold;
+      background: var(--surface2); border: 1px solid var(--border2); width: 34px; height: 34px;
+      border-radius: 50%; font-size: 16px; color: var(--text2); font-weight: bold;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
-      transition: background 0.15s;
     }
-    .resumen-close:active { background: rgba(255,255,255,0.28); }
+    .resumen-close:active { background: var(--surface3); }
 
-    /* Navegación de meses */
     .mes-nav {
       display: flex; align-items: center; justify-content: space-between;
-      background: rgba(255,255,255,0.1); border-radius: 14px;
-      padding: 4px;
+      background: var(--surface2); border-radius: 12px;
+      padding: 4px; border: 1px solid var(--border);
     }
     .mes-nav-btn {
-      background: none; border: none; color: #FFF; padding: 8px 14px;
-      font-size: 20px; cursor: pointer; border-radius: 10px;
-      transition: background 0.15s; line-height: 1;
+      background: none; border: none; color: var(--text2); padding: 8px 14px;
+      font-size: 18px; cursor: pointer; border-radius: 9px;
+      transition: background 0.15s; line-height: 1; font-family: 'Sora', sans-serif;
     }
-    .mes-nav-btn:active { background: rgba(255,255,255,0.15); }
+    .mes-nav-btn:active { background: var(--surface3); }
     .mes-nav-btn:disabled { opacity: 0.2; pointer-events: none; }
     #mesNavLabel {
-      font-size: 15px; font-weight: 700; color: #FFF;
-      text-align: center; flex: 1; letter-spacing: -0.3px;
+      font-size: 14px; font-weight: 700; color: var(--text);
+      text-align: center; flex: 1; letter-spacing: -0.2px;
     }
 
     .resumen-body {
       flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
-      padding: 18px; padding-bottom: calc(30px + var(--safe-b));
+      padding: 16px; padding-bottom: calc(30px + var(--safe-b));
     }
 
-    .kpi-grid { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 10px; margin-bottom: 20px; }
+    .kpi-grid { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 10px; margin-bottom: 18px; }
     .kpi-card {
-      background: var(--card); border-radius: 16px; padding: 14px 10px;
-      text-align: center; box-shadow: 0 1px 0 rgba(0,0,0,0.04), 0 2px 10px rgba(0,0,0,0.06);
+      background: var(--surface); border-radius: 14px; padding: 14px 10px;
+      text-align: center; border: 1px solid var(--border);
     }
-    .kpi-card.kpi-green { background: linear-gradient(135deg, #34C759, #248A3D); }
-    .kpi-num { font-size: 26px; font-weight: 900; color: var(--text); line-height: 1; letter-spacing: -1px; }
-    .kpi-num-sm { font-size: 14px; font-weight: 900; color: #FFF; line-height: 1.3; }
-    .kpi-card.kpi-green .kpi-label { color: rgba(255,255,255,0.8); }
-    .kpi-label { font-size: 10px; color: var(--muted); font-weight: 700; margin-top: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .kpi-card.kpi-green {
+      background: linear-gradient(135deg, rgba(52,211,153,0.15), rgba(5,150,105,0.1));
+      border-color: rgba(52,211,153,0.2);
+    }
+    .kpi-num { font-size: 24px; font-weight: 800; color: var(--text); line-height: 1; letter-spacing: -1px; }
+    .kpi-num-sm { font-size: 13px; font-weight: 800; color: var(--green); line-height: 1.3; }
+    .kpi-label { font-size: 9px; color: var(--text2); font-weight: 700; margin-top: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
 
     .section-label {
-      font-size: 12px; font-weight: 700; color: var(--muted);
-      text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 10px;
+      font-size: 10px; font-weight: 700; color: var(--text2);
+      text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px;
     }
 
     .fact-row {
       display: flex; align-items: flex-start; padding: 14px;
-      background: var(--card); border-radius: 16px; margin-bottom: 9px;
-      box-shadow: 0 1px 0 rgba(0,0,0,0.03), 0 2px 8px rgba(0,0,0,0.04);
+      background: var(--surface); border-radius: 14px; margin-bottom: 8px;
+      border: 1px solid var(--border);
     }
     .fact-row.anulada {
-      opacity: 0.68;
-      border: 1px solid #FFD6D2;
-      background: linear-gradient(180deg, #FFFFFF 0%, #FFF8F7 100%);
+      opacity: 0.55; border-color: rgba(248,113,113,0.15);
     }
 
     .fact-actions { display: flex; gap: 7px; margin-top: 9px; flex-wrap: wrap; }
     .fact-mini-btn {
-      border: none; border-radius: 10px;
-      padding: 7px 11px; font-size: 12px; font-weight: 800;
-      cursor: pointer; transition: transform 0.1s, opacity 0.1s;
+      border: none; border-radius: 9px;
+      padding: 7px 11px; font-size: 11px; font-weight: 700;
+      cursor: pointer; font-family: 'Sora', sans-serif;
+      transition: transform 0.1s, opacity 0.1s;
     }
     .fact-mini-btn:active { transform: scale(0.93); opacity: 0.75; }
-    .fact-mini-btn.pdf    { background: #EFF6FF; color: var(--blue); }
-    .fact-mini-btn.anular { background: #FFF1F0; color: var(--red); }
+    .fact-mini-btn.pdf    { background: var(--accent-dim); color: var(--accent); }
+    .fact-mini-btn.anular { background: var(--red-dim); color: var(--red); }
 
     /* ── Modal éxito ────────────────────────────────── */
     .success-modal {
-      position: fixed; inset: 0; background: #FFF; z-index: 2001;
+      position: fixed; inset: 0; background: var(--bg); z-index: 2001;
       transform: translateY(100%);
       transition: transform 0.38s cubic-bezier(0.32,0.72,0,1);
       display: flex; flex-direction: column; overflow-y: auto;
     }
     .success-modal.active { transform: translateY(0); }
     .success-header {
-      background: linear-gradient(160deg, #34C759, #248A3D);
+      background: linear-gradient(160deg, #065F46, #034732);
       color: white; padding: calc(var(--safe-t) + 26px) 20px 30px; text-align: center;
       position: relative;
     }
-    .success-header .icon { font-size: 56px; display: block; margin-bottom: 10px; }
+    .success-header .icon { font-size: 52px; display: block; margin-bottom: 10px; }
     .success-header h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.4px; }
-    .success-header p  { opacity: .88; margin-top: 5px; font-size: 14px; }
-    .success-body { padding: 24px 18px; flex: 1; background: var(--bg); padding-bottom: calc(24px + var(--safe-b)); }
+    .success-header p  { opacity: .8; margin-top: 5px; font-size: 13px; }
+    .success-body { padding: 20px 16px; flex: 1; background: var(--bg); padding-bottom: calc(24px + var(--safe-b)); }
 
     .action-btn {
       display: flex; align-items: center; justify-content: center; gap: 9px;
-      width: 100%; padding: 16px; border-radius: 16px;
-      font-size: 15px; font-weight: 800; text-decoration: none;
-      margin-bottom: 11px; border: none; cursor: pointer;
+      width: 100%; padding: 15px; border-radius: 14px;
+      font-size: 14px; font-weight: 700; text-decoration: none;
+      margin-bottom: 10px; border: none; cursor: pointer;
+      font-family: 'Sora', sans-serif;
       transition: transform 0.1s, opacity 0.12s;
     }
     .action-btn:active { transform: scale(0.97); opacity: 0.82; }
-    .btn-wa           { background: #25D366; color: white; box-shadow: 0 5px 16px rgba(37,211,102,0.25); }
-    .btn-download     { background: #FFF; color: var(--blue); border: 2px solid var(--blue); }
-    .btn-close-success{ background: #636366; color: white; }
+    .btn-wa           { background: #25D366; color: white; }
+    .btn-download     { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(201,122,58,0.25); }
+    .btn-close-success{ background: var(--surface2); color: var(--text2); border: 1px solid var(--border2); }
 
-    /* ── Modal centrado (anulación / manual) ─────────── */
+    /* ── Modal centrado ─────────────────────────────── */
     .modal-center-backdrop {
       position: fixed; inset: 0;
-      background: rgba(0,0,0,0.42);
-      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
       z-index: 3000; display: none;
       align-items: flex-end; justify-content: center;
       padding: 0;
@@ -429,415 +489,364 @@
 
     .modal-center-card {
       width: 100%; max-width: 600px;
-      background: #FFF; border-radius: 26px 26px 0 0;
-      padding: 22px 20px calc(20px + var(--safe-b));
-      box-shadow: 0 -4px 40px rgba(0,0,0,0.20);
+      background: var(--surface); border-radius: 22px 22px 0 0;
+      padding: 20px 18px calc(20px + var(--safe-b));
+      border-top: 1px solid var(--border);
       animation: sheetUp 0.30s cubic-bezier(0.32,0.72,0,1);
       max-height: 90vh; overflow-y: auto;
     }
 
-    @keyframes sheetUp {
-      from { transform: translateY(100%); }
-      to   { transform: translateY(0); }
-    }
+    @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
     .modal-sheet-handle {
-      width: 36px; height: 4px; background: #E5E5EA; border-radius: 2px;
+      width: 36px; height: 4px; background: var(--surface3); border-radius: 2px;
       margin: 0 auto 18px;
     }
 
-    .modal-center-card h3 { font-size: 19px; font-weight: 900; margin-bottom: 6px; }
+    .modal-center-card h3 { font-size: 18px; font-weight: 800; margin-bottom: 6px; color: var(--text); }
     .modal-center-card > p {
-      font-size: 13px; color: var(--muted); line-height: 1.55; margin-bottom: 14px;
+      font-size: 12px; color: var(--text2); line-height: 1.55; margin-bottom: 14px;
     }
     .modal-center-actions { display: flex; gap: 10px; margin-top: 16px; }
     .modal-center-actions button { flex: 1; }
 
     #anularMotivo { min-height: 88px; }
 
-    /* ── Módulo Extracto ─────────────────────────────── */
+    /* ── Tab Extracto ─────────────────────────────── */
     #tabExtracto { display: none; }
     #tabFacturar { display: block; }
 
     .ext-upload-zone {
-      background: #F2F2F7; border: 2px dashed #C7C7CC; border-radius: 18px;
-      padding: 32px 20px; text-align: center; position: relative; transition: all 0.18s;
+      background: var(--surface2); border: 1.5px dashed var(--border2); border-radius: 16px;
+      padding: 30px 20px; text-align: center; position: relative; transition: all 0.18s;
       cursor: pointer;
     }
-    .ext-upload-zone:active { transform: scale(0.97); border-color: var(--blue); }
+    .ext-upload-zone:active { transform: scale(0.97); border-color: var(--accent); }
     .ext-upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; z-index: 10; cursor: pointer; }
-    .ext-upload-icon { font-size: 48px; margin-bottom: 10px; }
-    .ext-upload-zone h3 { color: var(--text); font-size: 17px; font-weight: 800; margin-bottom: 4px; }
-    .ext-upload-zone p  { font-size: 13px; color: var(--muted); }
+    .ext-upload-icon { font-size: 42px; margin-bottom: 10px; }
+    .ext-upload-zone h3 { color: var(--text); font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .ext-upload-zone p  { font-size: 12px; color: var(--text2); }
 
     .transfer-card {
-      background: var(--card); border-radius: 16px;
+      background: var(--surface); border-radius: 14px;
       padding: 14px 16px; margin-bottom: 10px;
-      box-shadow: 0 1px 0 rgba(0,0,0,0.03), 0 2px 8px rgba(0,0,0,0.05);
-      border-left: 4px solid var(--green);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--green);
     }
     .transfer-card.sin-cuit { border-left-color: var(--warn); }
-    .transfer-card.excluida { border-left-color: #E5E5EA; opacity: 0.55; }
-    .transfer-nombre { font-weight: 800; font-size: 15px; margin-bottom: 4px; }
-    .transfer-meta { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
-    .transfer-monto { font-size: 20px; font-weight: 900; color: var(--green); margin-bottom: 10px; }
+    .transfer-card.excluida { border-left-color: var(--text3); opacity: 0.45; }
+    .transfer-nombre { font-weight: 700; font-size: 14px; margin-bottom: 4px; color: var(--text); }
+    .transfer-meta { font-size: 11px; color: var(--text2); margin-bottom: 8px; }
+    .transfer-monto { font-size: 20px; font-weight: 800; color: var(--green); margin-bottom: 10px; letter-spacing: -0.5px; }
     .transfer-cuit-row { display: flex; gap: 8px; align-items: center; }
     .transfer-cuit-input {
-      flex: 1; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 11px;
-      font-size: 15px; font-weight: 600; background: #F8F8F9; font-family: monospace;
+      flex: 1; padding: 10px 12px; border: 1px solid var(--border2); border-radius: 10px;
+      font-size: 14px; font-weight: 600; background: var(--surface2); font-family: monospace;
       color: var(--text);
     }
-    .transfer-cuit-input:focus { outline: none; border-color: var(--blue); background: #fff; }
+    .transfer-cuit-input:focus { outline: none; border-color: var(--accent); }
     .transfer-toggle {
-      padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 11px;
-      background: #F8F8F9; font-size: 13px; font-weight: 700; cursor: pointer; color: var(--muted);
+      padding: 9px 12px; border: 1px solid var(--border2); border-radius: 10px;
+      background: var(--surface2); font-size: 12px; font-weight: 700; cursor: pointer; color: var(--text2);
+      font-family: 'Sora', sans-serif;
       transition: all 0.12s; white-space: nowrap;
     }
-    .transfer-toggle.incluida { background: #DCFCE7; border-color: #86EFAC; color: #15803D; }
+    .transfer-toggle.incluida { background: var(--green-dim); border-color: rgba(52,211,153,0.3); color: var(--green); }
 
     .ext-summary-bar {
-      background: #1C1C1E; border-radius: 16px; padding: 16px 18px;
-      margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;
+      background: var(--surface); border-radius: 14px; padding: 16px 18px;
+      margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;
+      border: 1px solid var(--border);
     }
-    .ext-summary-bar .lbl { font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 700; text-transform: uppercase; }
-    .ext-summary-bar .val { font-size: 18px; font-weight: 900; color: #fff; }
+    .ext-summary-bar .lbl { font-size: 10px; color: var(--text2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .ext-summary-bar .val { font-size: 20px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
 
     .ext-result-card {
-      background: var(--card); border-radius: 14px; padding: 14px 16px;
-      margin-bottom: 9px; border-left: 4px solid var(--green);
-      box-shadow: 0 1px 0 rgba(0,0,0,0.03), 0 2px 8px rgba(0,0,0,0.04);
+      background: var(--surface); border-radius: 13px; padding: 14px 16px;
+      margin-bottom: 8px; border-left: 3px solid var(--green);
+      border: 1px solid var(--border);
+      border-left-width: 3px;
     }
     .ext-result-card.error { border-left-color: var(--red); }
 
     #extBtnFacturar {
-      width: 100%; padding: 17px; background: var(--green); color: #FFF;
-      border: none; border-radius: 16px; font-size: 16px; font-weight: 800;
+      width: 100%; padding: 16px;
+      background: linear-gradient(135deg, var(--green) 0%, #059669 100%);
+      color: #FFF;
+      border: none; border-radius: 14px; font-size: 15px; font-weight: 700;
       display: flex; align-items: center; justify-content: center; gap: 9px;
-      box-shadow: 0 6px 20px rgba(52,199,89,0.32); cursor: pointer;
-      transition: transform 0.12s, opacity 0.12s; min-height: 56px;
+      box-shadow: 0 6px 20px rgba(52,211,153,0.25);
+      cursor: pointer; font-family: 'Sora', sans-serif;
+      transition: transform 0.12s, opacity 0.12s; min-height: 54px;
     }
-    .ext-step {
-      display: none; flex-direction: column; gap: 14px;
-    }
+    .ext-step { display: none; flex-direction: column; gap: 12px; }
     .ext-step.active { display: flex; }
 
-    /* ── Historial ───────────────────────────────────── */
-    #tabHistorial {
-      display: none; flex-direction: column; gap: 0;
-      padding-bottom: calc(90px + var(--safe-b));
+    /* Info card extracto */
+    .info-card {
+      background: var(--accent-dim);
+      border: 1px solid rgba(201,122,58,0.18);
+      border-radius: 14px; padding: 14px 16px;
     }
+    .info-card-title { font-size: 12px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+    .info-card-body { font-size: 12px; color: var(--text2); line-height: 1.7; }
+
+    /* ── Historial ───────────────────────────────────── */
+    #tabHistorial { display: none; flex-direction: column; gap: 0; padding-bottom: calc(88px + var(--safe-b)); }
 
     .hist-header {
-      position: sticky; top: calc(var(--safe-t) + 57px); z-index: 40;
-      background: rgba(242,242,247,0.95);
+      position: sticky; top: calc(var(--safe-t) + 54px); z-index: 40;
+      background: rgba(14,12,10,0.96);
       backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
       padding: 12px 14px 10px;
-      border-bottom: 0.5px solid rgba(0,0,0,0.10);
+      border-bottom: 1px solid var(--border);
     }
 
     .hist-mes-nav {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 10px;
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
     }
     .hist-mes-btn {
-      width: 36px; height: 36px; border-radius: 50%; border: none;
-      background: var(--card); font-size: 18px; cursor: pointer;
+      width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border2);
+      background: var(--surface2); font-size: 16px; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+      color: var(--text2);
       transition: transform 0.1s, opacity 0.1s;
     }
     .hist-mes-btn:active { transform: scale(0.88); opacity: 0.7; }
-    .hist-mes-btn:disabled { opacity: 0.25; pointer-events: none; }
-    #histMesLabel {
-      font-size: 16px; font-weight: 800; color: var(--text); letter-spacing: -0.3px;
-    }
+    .hist-mes-btn:disabled { opacity: 0.2; pointer-events: none; }
+    #histMesLabel { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
 
-    .hist-search-wrap {
-      position: relative;
-    }
+    .hist-search-wrap { position: relative; }
     .hist-search-wrap input {
-      padding: 12px 14px 12px 40px;
-      border-radius: 13px; border: 1.5px solid var(--border);
-      background: var(--card); font-size: 15px;
+      padding: 11px 14px 11px 38px;
+      border-radius: 11px; border: 1px solid var(--border2);
+      background: var(--surface2); font-size: 14px;
     }
     .hist-search-icon {
       position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
-      font-size: 16px; pointer-events: none; color: var(--muted);
+      font-size: 14px; pointer-events: none; color: var(--text2);
     }
     .hist-search-clear {
       position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-      background: #C7C7CC; border: none; border-radius: 50%;
-      width: 20px; height: 20px; font-size: 11px; font-weight: 900;
-      color: #FFF; cursor: pointer; display: none;
+      background: var(--surface3); border: none; border-radius: 50%;
+      width: 20px; height: 20px; font-size: 10px; font-weight: 900;
+      color: var(--text2); cursor: pointer; display: none;
       align-items: center; justify-content: center;
     }
     .hist-search-clear.show { display: flex; }
 
-    .hist-list { padding: 12px 14px; display: flex; flex-direction: column; gap: 9px; }
+    .hist-list { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
 
     .hist-card {
-      background: var(--card); border-radius: 18px; padding: 14px 16px;
-      box-shadow: 0 1px 0 rgba(0,0,0,0.03), 0 2px 10px rgba(0,0,0,0.06);
-      cursor: pointer; transition: transform 0.12s, box-shadow 0.12s;
-      border-left: 4px solid var(--blue);
+      background: var(--surface); border-radius: 16px; padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      cursor: pointer; transition: transform 0.12s;
     }
-    .hist-card:active { transform: scale(0.98); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .hist-card:active { transform: scale(0.98); }
     .hist-card.nc     { border-left-color: var(--warn); }
-    .hist-card.anulada{ border-left-color: var(--red); opacity: 0.65; }
+    .hist-card.anulada{ border-left-color: var(--red); opacity: 0.5; }
 
-    .hist-card-top {
-      display: flex; justify-content: space-between; align-items: flex-start;
-      margin-bottom: 4px;
-    }
-    .hist-card-nombre {
-      font-size: 14px; font-weight: 800; color: var(--text);
-      flex: 1; margin-right: 10px; line-height: 1.3;
-    }
-    .hist-card-total {
-      font-size: 16px; font-weight: 900; color: var(--text); white-space: nowrap;
-    }
+    .hist-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+    .hist-card-nombre { font-size: 14px; font-weight: 700; color: var(--text); flex: 1; margin-right: 10px; line-height: 1.3; }
+    .hist-card-total { font-size: 16px; font-weight: 800; color: var(--text); white-space: nowrap; }
     .hist-card-total.nc { color: var(--warn); }
-    .hist-card-meta {
-      font-size: 11px; color: var(--muted); font-weight: 600; margin-bottom: 10px;
-    }
-    .hist-card-badges { display: flex; gap: 6px; flex-wrap: wrap; }
-    .hist-badge {
-      padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700;
-    }
-    .hist-badge.comp { background: #EFF6FF; color: var(--blue); }
-    .hist-badge.nc   { background: #FFF8EE; color: var(--warn); }
-    .hist-badge.anu  { background: #FFF1F0; color: var(--red); }
-    .hist-badge.ext  { background: #F0FDF4; color: #16A34A; }
-    .hist-badge.pdf  { background: #F0F0FF; color: #5856D6; }
+    .hist-card-meta { font-size: 11px; color: var(--text2); font-weight: 500; margin-bottom: 10px; }
+    .hist-card-badges { display: flex; gap: 5px; flex-wrap: wrap; }
+    .hist-badge { padding: 3px 9px; border-radius: 7px; font-size: 10px; font-weight: 700; }
+    .hist-badge.comp { background: var(--accent-dim); color: var(--accent); }
+    .hist-badge.nc   { background: rgba(251,191,36,0.12); color: var(--warn); }
+    .hist-badge.anu  { background: var(--red-dim); color: var(--red); }
+    .hist-badge.ext  { background: var(--green-dim); color: var(--green); }
+    .hist-badge.pdf  { background: rgba(139,92,246,0.12); color: #A78BFA; }
 
-    .hist-empty {
-      text-align: center; padding: 60px 30px; color: var(--muted);
-    }
-    .hist-empty .icon { font-size: 52px; margin-bottom: 14px; }
-    .hist-empty p { font-size: 15px; font-weight: 600; }
-    .hist-empty small { font-size: 13px; }
+    .hist-empty { text-align: center; padding: 60px 30px; color: var(--text2); }
+    .hist-empty .icon { font-size: 48px; margin-bottom: 14px; }
+    .hist-empty p { font-size: 14px; font-weight: 600; }
+    .hist-empty small { font-size: 12px; color: var(--text3); }
 
-    .hist-stat-bar {
-      display: flex; gap: 10px; padding: 0 14px 12px;
-    }
+    .hist-stat-bar { display: flex; gap: 10px; padding: 0 14px 12px; }
     .hist-stat {
-      flex: 1; background: var(--card); border-radius: 14px; padding: 12px;
-      text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      flex: 1; background: var(--surface); border-radius: 12px; padding: 12px;
+      text-align: center; border: 1px solid var(--border);
     }
-    .hist-stat .num { font-size: 20px; font-weight: 900; color: var(--text); }
-    .hist-stat .lbl { font-size: 10px; color: var(--muted); font-weight: 700;
-                      text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+    .hist-stat .num { font-size: 18px; font-weight: 800; color: var(--text); }
+    .hist-stat .lbl { font-size: 9px; color: var(--text2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
 
-    /* Sheet de detalle de factura del historial */
+    /* Sheet detalle historial */
     #histDetailSheet {
       position: fixed; bottom: 0; left: 0; width: 100%;
-      background: var(--bg); border-radius: 26px 26px 0 0;
+      background: var(--surface); border-radius: 22px 22px 0 0;
       z-index: 2000; transform: translateY(100%);
       transition: transform 0.35s cubic-bezier(0.32,0.72,0,1);
       max-height: 88vh; overflow-y: auto;
       padding-bottom: calc(24px + var(--safe-b));
+      border-top: 1px solid var(--border);
     }
     #histDetailSheet.active { transform: translateY(0); }
     #histDetailBackdrop {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.42);
-      backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+      position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
       z-index: 1999; opacity: 0; pointer-events: none; transition: opacity 0.25s;
     }
     #histDetailBackdrop.active { opacity: 1; pointer-events: auto; }
 
-    .hist-detail-handle {
-      width: 36px; height: 4px; background: #E5E5EA; border-radius: 2px;
-      margin: 12px auto 0;
-    }
-    .hist-detail-header {
-      padding: 14px 20px 0;
-    }
-    .hist-detail-tipo {
-      font-size: 11px; font-weight: 700; color: var(--muted);
-      text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 4px;
-    }
-    .hist-detail-nombre {
-      font-size: 20px; font-weight: 900; letter-spacing: -0.4px; margin-bottom: 2px;
-    }
-    .hist-detail-sub {
-      font-size: 13px; color: var(--muted); font-weight: 600;
-    }
+    .hist-detail-handle { width: 36px; height: 4px; background: var(--surface3); border-radius: 2px; margin: 12px auto 0; }
+    .hist-detail-header { padding: 14px 20px 0; }
+    .hist-detail-tipo { font-size: 10px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+    .hist-detail-nombre { font-size: 20px; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 2px; color: var(--text); }
+    .hist-detail-sub { font-size: 12px; color: var(--text2); font-weight: 500; }
+
     .hist-detail-total-box {
       margin: 14px 20px;
-      background: linear-gradient(135deg, #0F172A, #1E3A5F);
-      border-radius: 18px; padding: 18px 20px;
+      background: linear-gradient(135deg, var(--accent) 0%, #8B3A0F 100%);
+      border-radius: 16px; padding: 18px 20px;
       display: flex; justify-content: space-between; align-items: center;
     }
-    .hist-detail-total-box .lbl { font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 700; }
-    .hist-detail-total-box .amount { font-size: 28px; font-weight: 900; color: #FFF; letter-spacing: -0.8px; }
-    .hist-detail-total-box .fecha  { font-size: 13px; color: rgba(255,255,255,0.75); font-weight: 600; margin-top: 4px; }
+    .hist-detail-total-box .lbl { font-size: 11px; color: rgba(255,255,255,0.6); font-weight: 600; }
+    .hist-detail-total-box .amount { font-size: 28px; font-weight: 800; color: #FFF; letter-spacing: -0.8px; }
+    .hist-detail-total-box .fecha  { font-size: 12px; color: rgba(255,255,255,0.7); font-weight: 500; margin-top: 4px; }
     .hist-detail-info { padding: 0 20px; }
     .hist-info-row {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 11px 0; border-bottom: 0.5px solid var(--border);
+      padding: 11px 0; border-bottom: 1px solid var(--border);
     }
     .hist-info-row:last-child { border-bottom: none; }
-    .hist-info-row .key { font-size: 12px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
-    .hist-info-row .val { font-size: 13px; font-weight: 700; color: var(--text); text-align: right; max-width: 65%; word-break: break-all; }
+    .hist-info-row .key { font-size: 11px; color: var(--text2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
+    .hist-info-row .val { font-size: 13px; font-weight: 600; color: var(--text); text-align: right; max-width: 65%; word-break: break-all; }
     .hist-detail-actions { padding: 16px 20px 0; display: flex; flex-direction: column; gap: 10px; }
     .hist-action-btn {
-      width: 100%; padding: 15px; border-radius: 15px; border: none;
-      font-size: 15px; font-weight: 800; cursor: pointer;
+      width: 100%; padding: 14px; border-radius: 13px; border: none;
+      font-size: 14px; font-weight: 700; cursor: pointer;
       display: flex; align-items: center; justify-content: center; gap: 8px;
+      font-family: 'Sora', sans-serif;
       transition: transform 0.1s, opacity 0.12s;
     }
     .hist-action-btn:active { transform: scale(0.97); opacity: 0.82; }
-    .hist-action-btn.pdf  { background: #EFF6FF; color: var(--blue); }
-    .hist-action-btn.email{ background: #F0FDF4; color: #16A34A; }
-    .hist-action-btn.anular { background: #FFF1F0; color: var(--red); }
+    .hist-action-btn.pdf  { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(201,122,58,0.2); }
+    .hist-action-btn.email{ background: var(--green-dim); color: var(--green); border: 1px solid rgba(52,211,153,0.2); }
+    .hist-action-btn.anular { background: var(--red-dim); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
 
-    /* Skeleton de carga */
-    .hist-skel { border-radius: 18px; height: 92px;
-      background: linear-gradient(90deg, #E5E5EA 25%, #F2F2F7 50%, #E5E5EA 75%);
+    .hist-skel { border-radius: 16px; height: 88px;
+      background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
       background-size: 800px 100%; animation: shimmer 1.4s infinite;
     }
 
     /* ── Tab Email ───────────────────────────────────── */
-    #tabEmail {
-      display: none; flex-direction: column;
-      padding-bottom: calc(90px + var(--safe-b));
-    }
+    #tabEmail { display: none; flex-direction: column; padding-bottom: calc(88px + var(--safe-b)); }
 
     .email-sticky-header {
-      position: sticky; top: calc(var(--safe-t) + 57px); z-index: 40;
-      background: rgba(242,242,247,0.95);
+      position: sticky; top: calc(var(--safe-t) + 54px); z-index: 40;
+      background: rgba(14,12,10,0.96);
       backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
       padding: 12px 14px 10px;
-      border-bottom: 0.5px solid rgba(0,0,0,0.10);
+      border-bottom: 1px solid var(--border);
     }
-    .email-mes-nav {
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    #emailMesLabel {
-      font-size: 16px; font-weight: 800; color: var(--text); letter-spacing: -0.3px;
-    }
+    .email-mes-nav { display: flex; align-items: center; justify-content: space-between; }
+    #emailMesLabel { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
     .email-mes-btn {
-      width: 36px; height: 36px; border-radius: 50%; border: none;
-      background: var(--card); font-size: 18px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+      width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border2);
+      background: var(--surface2); font-size: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; color: var(--text2);
       transition: transform 0.1s, opacity 0.1s;
     }
     .email-mes-btn:active { transform: scale(0.88); opacity: 0.7; }
-    .email-mes-btn:disabled { opacity: 0.25; pointer-events: none; }
+    .email-mes-btn:disabled { opacity: 0.2; pointer-events: none; }
 
     .email-body { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
 
     .email-preview-card {
-      background: linear-gradient(135deg, #0F172A 0%, #1E3A5F 100%);
-      border-radius: 20px; padding: 20px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+      background: linear-gradient(135deg, var(--accent) 0%, #7A3010 100%);
+      border-radius: 18px; padding: 20px;
     }
     .email-preview-card .pv-label {
-      font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.55);
-      text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px;
+      font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.55);
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;
     }
     .email-preview-card .pv-mes {
-      font-size: 22px; font-weight: 900; color: #FFF; letter-spacing: -0.5px; margin-bottom: 14px;
+      font-size: 22px; font-weight: 800; color: #FFF; letter-spacing: -0.5px; margin-bottom: 16px;
     }
-    .email-preview-stats {
-      display: flex; gap: 10px;
-    }
+    .email-preview-stats { display: flex; gap: 8px; }
     .email-preview-stat {
-      flex: 1; background: rgba(255,255,255,0.10); border-radius: 12px; padding: 12px;
-      text-align: center;
+      flex: 1; background: rgba(0,0,0,0.2); border-radius: 11px; padding: 12px;
+      text-align: center; border: 1px solid rgba(255,255,255,0.1);
     }
-    .email-preview-stat .n { font-size: 20px; font-weight: 900; color: #FFF; line-height: 1; }
-    .email-preview-stat .l { font-size: 10px; color: rgba(255,255,255,0.6); font-weight: 700;
-                              text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+    .email-preview-stat .n { font-size: 18px; font-weight: 800; color: #FFF; line-height: 1; }
+    .email-preview-stat .l { font-size: 9px; color: rgba(255,255,255,0.55); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
 
     .email-compose-card {
-      background: var(--card); border-radius: 20px; padding: 18px;
-      box-shadow: 0 1px 0 rgba(0,0,0,0.04), 0 2px 12px rgba(0,0,0,0.06);
+      background: var(--surface); border-radius: 18px; padding: 18px;
+      border: 1px solid var(--border);
     }
     .email-section-label {
-      font-size: 11px; font-weight: 700; color: var(--muted);
-      text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 12px;
+      font-size: 10px; font-weight: 700; color: var(--text2);
+      text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px;
     }
 
     .email-chips { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
     .email-chip {
       display: flex; align-items: center; gap: 10px;
-      padding: 12px 14px; border-radius: 14px;
-      background: #F8F8F9; border: 1.5px solid var(--border);
+      padding: 12px 14px; border-radius: 13px;
+      background: var(--surface2); border: 1px solid var(--border2);
       cursor: pointer; transition: all 0.15s; -webkit-user-select: none;
     }
-    .email-chip.active {
-      background: #EFF6FF; border-color: var(--blue);
-    }
+    .email-chip.active { background: var(--accent-dim); border-color: rgba(201,122,58,0.3); }
     .email-chip:active { transform: scale(0.97); }
     .email-chip-check {
       width: 22px; height: 22px; border-radius: 50%;
-      background: #E5E5EA; display: flex; align-items: center; justify-content: center;
-      font-size: 12px; flex-shrink: 0; transition: all 0.15s;
+      background: var(--surface3); display: flex; align-items: center; justify-content: center;
+      font-size: 11px; flex-shrink: 0; transition: all 0.15s;
     }
-    .email-chip.active .email-chip-check {
-      background: var(--blue); color: #FFF;
-    }
+    .email-chip.active .email-chip-check { background: var(--accent); color: #FFF; }
     .email-chip-info { flex: 1; min-width: 0; }
-    .email-chip-name { font-size: 14px; font-weight: 800; color: var(--text); }
-    .email-chip-addr {
-      font-size: 11px; color: var(--muted); font-weight: 600;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-    .email-chip-remove {
-      background: none; border: none; font-size: 18px; color: #C7C7CC;
-      cursor: pointer; padding: 4px; line-height: 1; flex-shrink: 0;
-    }
+    .email-chip-name { font-size: 13px; font-weight: 700; color: var(--text); }
+    .email-chip-addr { font-size: 11px; color: var(--text2); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .email-chip-remove { background: none; border: none; font-size: 16px; color: var(--text3); cursor: pointer; padding: 4px; line-height: 1; flex-shrink: 0; }
 
-    .email-add-row { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; }
-    .email-add-row input { flex: 1; padding: 12px 14px; border-radius: 13px; font-size: 14px; }
+    .email-add-row { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; }
+    .email-add-row input { flex: 1; padding: 12px 14px; border-radius: 11px; font-size: 13px; }
     .email-add-btn {
-      width: 46px; height: 46px; border-radius: 13px;
-      background: var(--blue); color: #FFF; border: none;
-      font-size: 24px; font-weight: 300; cursor: pointer;
+      width: 44px; height: 44px; border-radius: 11px;
+      background: var(--accent); color: #FFF; border: none;
+      font-size: 22px; cursor: pointer; font-family: 'Sora', sans-serif;
       display: flex; align-items: center; justify-content: center;
-      transition: transform 0.1s, opacity 0.12s; flex-shrink: 0;
+      transition: transform 0.1s; flex-shrink: 0;
     }
-    .email-add-btn:active { transform: scale(0.90); opacity: 0.75; }
+    .email-add-btn:active { transform: scale(0.90); }
 
     .email-send-btn {
-      width: 100%; padding: 17px; border-radius: 16px;
-      background: linear-gradient(135deg, #007AFF 0%, #5856D6 100%);
-      color: #FFF; border: none; font-size: 16px; font-weight: 800;
+      width: 100%; padding: 16px; border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      color: #FFF; border: none; font-size: 14px; font-weight: 700;
       display: flex; align-items: center; justify-content: center; gap: 8px;
-      box-shadow: 0 6px 20px rgba(0,122,255,0.28); cursor: pointer;
-      transition: transform 0.12s, opacity 0.12s; min-height: 56px; letter-spacing: -0.2px;
+      box-shadow: 0 6px 20px var(--accent-glow); cursor: pointer;
+      font-family: 'Sora', sans-serif;
+      transition: transform 0.12s, opacity 0.12s; min-height: 52px;
     }
     .email-send-btn:active:not(:disabled) { transform: scale(0.97); }
-    .email-send-btn:disabled { opacity: 0.50; pointer-events: none; background: #636366; box-shadow: none; }
+    .email-send-btn:disabled { opacity: 0.45; pointer-events: none; background: var(--surface3); box-shadow: none; }
 
     .email-send-result {
-      border-radius: 14px; padding: 14px 16px; margin-top: 10px;
-      font-size: 13px; font-weight: 700; display: none;
+      border-radius: 12px; padding: 12px 14px; margin-top: 10px;
+      font-size: 12px; font-weight: 700; display: none;
     }
     .email-send-result.show { display: block; }
-    .email-send-result.ok  { background: #F0FDF4; color: #15803D; }
-    .email-send-result.err { background: #FFF1F0; color: var(--red); }
+    .email-send-result.ok  { background: var(--green-dim); color: var(--green); border: 1px solid rgba(52,211,153,0.2); }
+    .email-send-result.err { background: var(--red-dim); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
 
     .email-hist-section { padding: 4px 14px 0; }
     .email-hist-item {
-      background: var(--card); border-radius: 16px; padding: 14px 16px;
-      margin-bottom: 9px;
-      box-shadow: 0 1px 0 rgba(0,0,0,0.03), 0 2px 8px rgba(0,0,0,0.04);
+      background: var(--surface); border-radius: 14px; padding: 14px 16px;
+      margin-bottom: 8px; border: 1px solid var(--border);
     }
     .email-hist-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-    .email-hist-mes { font-size: 14px; font-weight: 800; color: var(--text); }
-    .email-hist-time { font-size: 11px; color: var(--muted); font-weight: 600; }
+    .email-hist-mes { font-size: 13px; font-weight: 700; color: var(--text); }
+    .email-hist-time { font-size: 10px; color: var(--text2); font-weight: 500; }
     .email-hist-chips { display: flex; flex-wrap: wrap; gap: 5px; }
-    .email-hist-chip {
-      padding: 3px 10px; border-radius: 8px; font-size: 11px; font-weight: 700;
-    }
-    .email-hist-chip.ok  { background: #F0FDF4; color: #16A34A; }
-    .email-hist-chip.err { background: #FFF1F0; color: var(--red); }
-    .email-hist-empty {
-      text-align: center; padding: 30px; color: var(--muted); font-size: 13px; font-weight: 600;
-    }
+    .email-hist-chip { padding: 3px 9px; border-radius: 7px; font-size: 10px; font-weight: 700; }
+    .email-hist-chip.ok  { background: var(--green-dim); color: var(--green); }
+    .email-hist-chip.err { background: var(--red-dim); color: var(--red); }
+    .email-hist-empty { text-align: center; padding: 30px; color: var(--text2); font-size: 12px; font-weight: 600; }
 
   </style>
 </head>
@@ -845,30 +854,37 @@
 
 <header>
   <div class="header-left">
-    <h1>🧾 Mercado Limpio</h1>
-    <button class="btn-resumen-header" onclick="abrirResumen()">📊 Resumen</button>
+    <div class="header-logo">🍋</div>
+    <h1>Mercado Limpio</h1>
   </div>
-  <div class="server-status">
-    <div class="status-dot waking" id="statusDot"></div>
-    <span id="statusLabel">Conectando</span>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <button class="btn-resumen-header" onclick="abrirResumen()">📊 Resumen</button>
+    <div class="server-status">
+      <div class="status-dot waking" id="statusDot"></div>
+      <span id="statusLabel">…</span>
+    </div>
   </div>
 </header>
 
 <div id="toast-container"></div>
 
-<!-- NC Loading Overlay -->
+<!-- NC Loading — flotante, no bloquea la app -->
 <div id="ncLoadingOverlay">
   <div class="nc-spinner-ring"></div>
-  <div id="ncLoadingText">Emitiendo Nota de Crédito...</div>
-  <div id="ncLoadingSubtext">Comunicando con ARCA · no cierres la app</div>
+  <div class="nc-text-wrap">
+    <div id="ncLoadingText">Emitiendo Nota de Crédito…</div>
+    <div id="ncLoadingSubtext">Podés navegar — te avisamos al terminar</div>
+  </div>
 </div>
 
+<!-- ══ TAB FACTURAR ══════════════════════════════════════════ -->
 <main class="container" id="tabFacturar">
 
   <div class="card">
+    <div class="card-label">Remito PDF</div>
     <div class="upload-zone">
-      <h3>📄 Subir Remito PDF</h3>
-      <p>Tocá para seleccionar uno o varios archivos</p>
+      <h3>📄 Subir Remito</h3>
+      <p>Tocá para seleccionar uno o varios archivos PDF</p>
       <input type="file" id="fileRemito" accept="application/pdf" multiple />
     </div>
     <div id="file-badge"></div>
@@ -876,12 +892,13 @@
   </div>
 
   <div class="card">
+    <div class="card-label">Datos de facturación</div>
     <div class="form-group">
       <label>CUIT Cliente</label>
       <input type="tel" id="cuit" placeholder="30112233445" inputmode="numeric" maxlength="11" />
     </div>
     <div class="form-group">
-      <label>Monto Total a Facturar</label>
+      <label>Monto Total</label>
       <input type="tel" id="monto" placeholder="150000,00" inputmode="decimal" />
     </div>
     <div class="form-group">
@@ -895,171 +912,138 @@
     </div>
     <div class="form-group">
       <label>Email destinatario</label>
-      <input type="email" id="email" placeholder="Opcional — se guarda por CUIT" autocomplete="email" />
-      <div style="font-size:11px;color:#8E8E93;margin-top:5px;font-weight:600;">💾 Se recuerda automáticamente por CUIT</div>
+      <input type="email" id="email" placeholder="Opcional — se recuerda por CUIT" autocomplete="email" />
     </div>
     <div class="form-group">
-      <label>Atajos Rápidos</label>
+      <label>Atajos</label>
       <div class="tags-scroll">
-        <button class="tag-btn" onclick="presetDetalle('Artículos Make')">🏷 Make</button>
-        <button class="tag-btn" onclick="presetDetalle('Artículos Romil')">🏷 Romil</button>
-        <button class="tag-btn" onclick="presetDetalle('Artículos de limpieza varios')">🏷 Varios</button>
-        <button class="tag-btn" onclick="presetDetalle('Productos de higiene')">🏷 Higiene</button>
+        <button class="tag-btn" onclick="presetDetalle('Artículos Make')">Make</button>
+        <button class="tag-btn" onclick="presetDetalle('Artículos Romil')">Romil</button>
+        <button class="tag-btn" onclick="presetDetalle('Artículos de limpieza varios')">Varios</button>
+        <button class="tag-btn" onclick="presetDetalle('Productos de higiene')">Higiene</button>
       </div>
     </div>
     <div class="form-group">
-      <label>Descripción Manual</label>
+      <label>Descripción</label>
       <textarea id="detalle" placeholder="Opcional si subís PDF..."></textarea>
     </div>
   </div>
 
-  <div class="card" style="padding: 8px;">
+  <div class="card" style="padding:10px;display:flex;flex-direction:column;gap:8px;">
     <button class="btn-preview-card" id="btnOpenPreview" disabled>
-      👁️ Ver Vista Previa del PDF
+      👁 Vista previa del PDF
     </button>
-    <button class="ghost-btn" onclick="abrirAnulacionManual()" style="margin-top: 8px; border: 1px dashed #FF3B30; color: #FF3B30;">
-      ⛔ Anular Factura de otro mes
+    <button class="ghost-btn" onclick="abrirAnulacionManual()" style="border-color:rgba(248,113,113,0.3);color:var(--red);">
+      ⛔ Anular factura de otro mes
     </button>
   </div>
 
 </main>
 
-<!-- ══ TAB EXTRACTO BANCARIO ══════════════════════════════════ -->
-<div id="tabExtracto" style="display:none; padding: 14px; padding-bottom: calc(130px + var(--safe-b)); flex-direction: column; gap: 14px;">
+<!-- ══ TAB EXTRACTO BANCARIO ═══════════════════════════════ -->
+<div id="tabExtracto" style="display:none; padding:14px; padding-bottom:calc(130px + var(--safe-b)); flex-direction:column; gap:12px;">
 
-  <!-- Paso 1: subir archivo -->
   <div class="ext-step active" id="extStep1">
     <div class="card">
-      <div style="margin-bottom: 14px;">
-        <p style="font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px;">Módulo Extracto Bancario</p>
-        <p style="font-size: 14px; color: var(--text); line-height: 1.5;">Subí el extracto o captura de pantalla del banco. Gemini detectará automáticamente las transferencias de clientes chinos.</p>
-      </div>
+      <div class="card-label">Extracto Bancario</div>
+      <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px;">
+        Subí el extracto o captura del banco. Gemini detecta automáticamente las transferencias.
+      </p>
       <div class="ext-upload-zone" id="extUploadZone">
         <div class="ext-upload-icon">🏦</div>
-        <h3>Subir extracto bancario</h3>
-        <p>Excel .xlsx del banco, PDF o imagen JPG/PNG</p>
+        <h3>Subir extracto</h3>
+        <p>Excel .xlsx, PDF o imagen JPG/PNG</p>
         <input type="file" id="extFileInput" accept=".xlsx,.xls,application/pdf,image/jpeg,image/png,image/webp" />
       </div>
-      <div id="extFileBadge" style="display:none; margin-top:10px; padding:8px 14px; background:#DCFCE7; color:#15803D; border-radius:10px; font-size:13px; font-weight:700;"></div>
-      <button class="main-btn" id="extBtnProcesar" disabled style="margin-top:14px; background: #5856D6; box-shadow: 0 6px 18px rgba(88,86,214,0.28);" onclick="extProcesar()">
+      <div id="extFileBadge" style="display:none;margin-top:10px;padding:8px 14px;background:var(--green-dim);color:var(--green);border-radius:10px;font-size:12px;font-weight:700;border:1px solid rgba(52,211,153,0.2);"></div>
+      <button class="main-btn" id="extBtnProcesar" disabled style="margin-top:14px;background:linear-gradient(135deg,#7C3AED,#5B21B6);box-shadow:0 6px 18px rgba(124,58,237,0.28);" onclick="extProcesar()">
         🔍 ANALIZAR CON IA
       </button>
     </div>
-    <div class="card" style="background: #FFF8F0; border: 1px solid #FED7AA;">
-      <p style="font-size: 13px; font-weight: 700; color: #92400E; margin-bottom: 6px;">⚡ Cómo funciona</p>
-      <p style="font-size: 13px; color: #78350F; line-height: 1.6;">
+    <div class="info-card">
+      <div class="info-card-title">⚡ Cómo funciona</div>
+      <div class="info-card-body">
         1. Subís el extracto bancario<br>
-        2. Gemini detecta transferencias de clientes chinos<br>
+        2. Gemini detecta transferencias de clientes<br>
         3. Revisás y confirmás los CUITs<br>
-        4. Se emiten todas las facturas automáticamente<br>
-        5. Recibís un reporte por email
-      </p>
+        4. Se emiten todas las facturas<br>
+        5. Recibís reporte por email
+      </div>
     </div>
   </div>
 
-  <!-- Paso 2: revisar transferencias detectadas -->
   <div class="ext-step" id="extStep2">
     <div class="ext-summary-bar" id="extSummaryBar">
       <div><div class="lbl">Transferencias</div><div class="val" id="extCountLabel">0</div></div>
       <div style="text-align:right;"><div class="lbl">Total a facturar</div><div class="val" id="extTotalLabel">$0</div></div>
     </div>
-    <div style="font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:6px;">
-      Transferencias detectadas — confirmá o editá cada CUIT
+    <div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:6px;">
+      Confirmá o editá cada CUIT
     </div>
     <div id="extTransferList"></div>
-    <button class="ghost-btn" style="border: 1px dashed #5856D6; color:#5856D6;" onclick="extVolver()">
-      ← Subir otro extracto
-    </button>
+    <button class="ghost-btn" onclick="extVolver()">← Subir otro extracto</button>
   </div>
 
-  <!-- Paso 3: resultados -->
   <div class="ext-step" id="extStep3">
     <div id="extResultados"></div>
-    <button class="ghost-btn" style="margin-top: 4px;" onclick="extReset()">
-      🔄 Procesar otro extracto
-    </button>
+    <button class="ghost-btn" style="margin-top:4px;" onclick="extReset()">🔄 Procesar otro extracto</button>
   </div>
 
 </div>
 
-<!-- ══ TAB HISTORIAL ══════════════════════════════════════════ -->
-<div id="tabHistorial" style="display:none; flex-direction:column;">
+<!-- ══ TAB HISTORIAL ══════════════════════════════════════ -->
+<div id="tabHistorial" style="display:none;flex-direction:column;">
 
-  <!-- Header sticky con navegador de mes + buscador -->
   <div class="hist-header">
     <div class="hist-mes-nav">
       <button class="hist-mes-btn" id="histBtnPrev" onclick="histNavMes(-1)">‹</button>
-      <span id="histMesLabel">Mayo 2026</span>
+      <span id="histMesLabel">Cargando…</span>
       <button class="hist-mes-btn" id="histBtnNext" onclick="histNavMes(1)" disabled>›</button>
     </div>
     <div class="hist-search-wrap">
       <span class="hist-search-icon">🔍</span>
-      <input type="search" id="histSearchInput" placeholder="Buscar por nombre o CUIT..." inputmode="search" autocomplete="off" />
+      <input type="search" id="histSearchInput" placeholder="Buscar por nombre o CUIT…" inputmode="search" autocomplete="off" />
       <button class="hist-search-clear" id="histSearchClear" onclick="histClearSearch()">✕</button>
     </div>
   </div>
 
-  <!-- Stats bar -->
-  <div class="hist-stat-bar" id="histStatBar" style="margin-top:12px; display:none;">
-    <div class="hist-stat">
-      <div class="num" id="histStatCount">—</div>
-      <div class="lbl">Facturas</div>
-    </div>
-    <div class="hist-stat">
-      <div class="num" id="histStatTotal">—</div>
-      <div class="lbl">Total</div>
-    </div>
-    <div class="hist-stat">
-      <div class="num" id="histStatNCs">—</div>
-      <div class="lbl">NCs</div>
-    </div>
+  <div class="hist-stat-bar" id="histStatBar" style="margin-top:12px;display:none;">
+    <div class="hist-stat"><div class="num" id="histStatCount">—</div><div class="lbl">Facturas</div></div>
+    <div class="hist-stat"><div class="num" id="histStatTotal">—</div><div class="lbl">Total</div></div>
+    <div class="hist-stat"><div class="num" id="histStatNCs">—</div><div class="lbl">NCs</div></div>
   </div>
 
-  <!-- Lista de resultados -->
   <div class="hist-list" id="histList"></div>
-
 </div>
 
-<!-- ══ TAB EMAIL ═══════════════════════════════════════════════ -->
-<div id="tabEmail" style="display:none; flex-direction:column;">
+<!-- ══ TAB EMAIL ══════════════════════════════════════════ -->
+<div id="tabEmail" style="display:none;flex-direction:column;">
 
-  <!-- Header sticky con mes -->
   <div class="email-sticky-header">
     <div class="email-mes-nav">
       <button class="email-mes-btn" id="emailBtnPrev" onclick="emailNavMes(-1)">‹</button>
-      <span id="emailMesLabel">Junio 2026</span>
+      <span id="emailMesLabel">Cargando…</span>
       <button class="email-mes-btn" id="emailBtnNext" onclick="emailNavMes(1)" disabled>›</button>
     </div>
   </div>
 
   <div class="email-body">
-
-    <!-- Preview del mes -->
     <div class="email-preview-card" id="emailPreviewCard">
       <div class="pv-label">Resumen a enviar</div>
-      <div class="pv-mes" id="emailPreviewMes">Cargando...</div>
+      <div class="pv-mes" id="emailPreviewMes">…</div>
       <div class="email-preview-stats">
-        <div class="email-preview-stat">
-          <div class="n" id="emailStatCount">—</div>
-          <div class="l">Comprobantes</div>
-        </div>
-        <div class="email-preview-stat">
-          <div class="n" id="emailStatTotal">—</div>
-          <div class="l">Total del mes</div>
-        </div>
-        <div class="email-preview-stat">
-          <div class="n" id="emailStatClientes">—</div>
-          <div class="l">Clientes</div>
-        </div>
+        <div class="email-preview-stat"><div class="n" id="emailStatCount">—</div><div class="l">Comprobantes</div></div>
+        <div class="email-preview-stat"><div class="n" id="emailStatTotal">—</div><div class="l">Total</div></div>
+        <div class="email-preview-stat"><div class="n" id="emailStatClientes">—</div><div class="l">Clientes</div></div>
       </div>
     </div>
 
-    <!-- Compose: destinatarios -->
     <div class="email-compose-card">
       <div class="email-section-label">Destinatarios</div>
       <div class="email-chips" id="emailChips"></div>
       <div class="email-add-row">
-        <input type="email" id="emailNuevoInput" placeholder="Agregar email..." inputmode="email" autocomplete="email" onkeydown="if(event.key==='Enter'){emailAgregarDestinatario();event.preventDefault()}" />
+        <input type="email" id="emailNuevoInput" placeholder="Agregar email…" inputmode="email" autocomplete="email"
+               onkeydown="if(event.key==='Enter'){emailAgregarDestinatario();event.preventDefault()}" />
         <button class="email-add-btn" onclick="emailAgregarDestinatario()">+</button>
       </div>
       <button class="email-send-btn" id="emailSendBtn" onclick="emailEnviar()">
@@ -1068,16 +1052,14 @@
       <div class="email-send-result" id="emailSendResult"></div>
     </div>
 
-    <!-- Historial de envíos -->
     <div class="email-hist-section" id="emailHistSection">
       <div class="email-section-label" style="margin-bottom:10px;">Historial de envíos</div>
       <div id="emailHistList"></div>
     </div>
-
   </div>
 </div>
 
-<!-- ══ SHEET DETALLE HISTORIAL ═══════════════════════════════ -->
+<!-- ══ SHEET DETALLE HISTORIAL ══════════════════════════ -->
 <div id="histDetailBackdrop" onclick="histCerrarDetalle()"></div>
 <div id="histDetailSheet">
   <div class="hist-detail-handle"></div>
@@ -1094,7 +1076,7 @@
     </div>
     <div style="text-align:right;">
       <div class="lbl">Comprobante</div>
-      <div style="font-size:14px;font-weight:800;color:#FFF;margin-top:4px;" id="histDetComp">—</div>
+      <div style="font-size:13px;font-weight:800;color:#FFF;margin-top:4px;" id="histDetComp">—</div>
       <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:2px;" id="histDetCond">—</div>
     </div>
   </div>
@@ -1111,6 +1093,7 @@
   </div>
 </div>
 
+<!-- ══ TAB BAR ══════════════════════════════════════════ -->
 <div class="tab-bar">
   <div class="tab-buttons">
     <button class="tab-btn active" id="tabBtnFacturar" onclick="switchTab('facturar')">
@@ -1126,17 +1109,15 @@
       <span class="tab-icon">📧</span>Email
     </button>
   </div>
-  <!-- Bottom bar: Facturar -->
   <div class="bottom-bar" id="bottomBarFacturar">
     <button id="btnEmitir" class="main-btn" onclick="emitir()">
       ⚡ EMITIR FACTURA
     </button>
   </div>
-  <!-- Bottom bar: Extracto -->
   <div class="bottom-bar" id="bottomBarExtracto" style="display:none;">
-    <div id="extBottomTotalBar" style="display:none; padding:0 2px 10px; justify-content:space-between; align-items:baseline; border-bottom: 0.5px solid rgba(0,0,0,0.08); margin-bottom:8px;">
-      <span style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;" id="extBottomCount">0 transferencias</span>
-      <span style="font-size:20px;font-weight:900;color:var(--green);" id="extBottomTotal">$0</span>
+    <div id="extBottomTotalBar" style="display:none;padding:0 2px 10px;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--border);margin-bottom:8px;">
+      <span style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;" id="extBottomCount">0 transferencias</span>
+      <span style="font-size:20px;font-weight:800;color:var(--green);letter-spacing:-0.5px;" id="extBottomTotal">$0</span>
     </div>
     <button id="extBtnFacturar" onclick="extFacturar()" disabled>
       ⚡ FACTURAR SELECCIONADAS
@@ -1163,7 +1144,7 @@
   </div>
 </div>
 
-<!-- ══ MODAL RESUMEN MENSUAL ══════════════════════════════ -->
+<!-- Modal Resumen Mensual -->
 <div class="resumen-modal" id="resumenModal">
   <div class="resumen-header">
     <div class="resumen-header-top">
@@ -1172,21 +1153,18 @@
     </div>
     <div class="mes-nav">
       <button class="mes-nav-btn" id="btnMesPrev" onclick="navegarMes(-1)">‹</button>
-      <span id="mesNavLabel">Cargando...</span>
+      <span id="mesNavLabel">Cargando…</span>
       <button class="mes-nav-btn" id="btnMesNext" onclick="navegarMes(1)">›</button>
     </div>
   </div>
-  <div class="resumen-body" id="resumenContenido">
-  </div>
+  <div class="resumen-body" id="resumenContenido"></div>
 </div>
 
 <!-- Modal Éxito -->
 <div class="success-modal" id="successModal">
   <div class="success-header">
-    <button
-      type="button"
-      onclick="document.getElementById('successModal').classList.remove('active')"
-      style="position:absolute;top:calc(var(--safe-t) + 10px);right:16px;width:34px;height:34px;border:none;border-radius:50%;background:rgba(255,255,255,0.2);color:#fff;font-size:18px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+    <button type="button" onclick="document.getElementById('successModal').classList.remove('active')"
+      style="position:absolute;top:calc(var(--safe-t)+10px);right:16px;width:34px;height:34px;border:none;border-radius:50%;background:rgba(255,255,255,0.15);color:#fff;font-size:18px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;">
       ✕
     </button>
     <span class="icon">✅</span>
@@ -1196,14 +1174,12 @@
   <div class="success-body" id="successActions"></div>
 </div>
 
-<!-- Modal Anular Comprobante (desde historial) -->
-<div class="modal-center-backdrop" id="anularModal" onclick="if(event.target===this) cerrarModalAnular()">
+<!-- Modal Anular -->
+<div class="modal-center-backdrop" id="anularModal" onclick="if(event.target===this)cerrarModalAnular()">
   <div class="modal-center-card">
     <div class="modal-sheet-handle"></div>
     <h3>🧾 Anular comprobante</h3>
-    <p id="anularTextoInfo">
-      Se emitirá una Nota de Crédito asociada para neutralizar la factura.
-    </p>
+    <p id="anularTextoInfo">Se emitirá una Nota de Crédito para neutralizar la factura.</p>
     <div class="form-group" style="margin-bottom:0;">
       <label>Motivo</label>
       <textarea id="anularMotivo" placeholder="Ej: Factura duplicada / emitida por error"></textarea>
@@ -1215,64 +1191,57 @@
   </div>
 </div>
 
-<!-- Modal Anulación Manual (factura antigua) -->
 <!-- Modal Reenviar Email -->
-<div class="modal-center-backdrop" id="reenviarEmailModal" onclick="if(event.target===this) cerrarModalReenviarEmail()">
+<div class="modal-center-backdrop" id="reenviarEmailModal" onclick="if(event.target===this)cerrarModalReenviarEmail()">
   <div class="modal-center-card">
     <div class="modal-sheet-handle"></div>
     <h3>📧 Reenviar por email</h3>
-    <p id="reenviarEmailInfo" style="font-size:13px;color:#334155;margin-bottom:14px;"></p>
+    <p id="reenviarEmailInfo" style="font-size:12px;color:var(--text2);margin-bottom:14px;"></p>
     <div class="form-group" style="margin-bottom:0;">
       <label>Email del cliente</label>
       <input type="email" id="reenviarEmailInput" placeholder="cliente@ejemplo.com" autocomplete="email" />
     </div>
     <div class="modal-center-actions">
       <button class="ghost-btn" onclick="cerrarModalReenviarEmail()">Cancelar</button>
-      <button class="action-btn" id="btnConfirmarReenvio" onclick="confirmarReenvioEmail()">Enviar</button>
+      <button class="action-btn" id="btnConfirmarReenvio" onclick="confirmarReenvioEmail()" style="background:var(--green-dim);color:var(--green);border:1px solid rgba(52,211,153,0.2);">Enviar</button>
     </div>
   </div>
 </div>
 
-<div class="modal-center-backdrop" id="anularManualModal" onclick="if(event.target===this) cerrarAnulacionManual()">
+<!-- Modal Anulación Manual -->
+<div class="modal-center-backdrop" id="anularManualModal" onclick="if(event.target===this)cerrarAnulacionManual()">
   <div class="modal-center-card">
     <div class="modal-sheet-handle"></div>
     <h3>⛔ Anular Factura Antigua</h3>
-    <p style="font-size: 12px; color: #666; margin-bottom: 15px;">
-      Para facturas de otro mes, ingresá CUIT y Monto manualmente.
-    </p>
-
-    <div style="display:flex; gap:10px; margin-bottom:14px;">
-      <div class="form-group" style="flex:1; margin-bottom:0;">
+    <p style="font-size:12px;color:var(--text2);margin-bottom:14px;">Para facturas de otro mes, ingresá CUIT y Monto manualmente.</p>
+    <div style="display:flex;gap:10px;margin-bottom:12px;">
+      <div class="form-group" style="flex:1;margin-bottom:0;">
         <label>Punto Venta</label>
-        <input type="number" id="manualPV" placeholder="Ej: 5" value="5" />
+        <input type="number" id="manualPV" placeholder="5" value="5" />
       </div>
-      <div class="form-group" style="flex:2; margin-bottom:0;">
+      <div class="form-group" style="flex:2;margin-bottom:0;">
         <label>Nro Factura</label>
-        <input type="number" id="manualNro" placeholder="Ej: 1234" />
+        <input type="number" id="manualNro" placeholder="1234" />
       </div>
     </div>
-
-    <div style="display:flex; gap:10px; margin-bottom:14px;">
-      <div class="form-group" style="flex:1; margin-bottom:0;">
+    <div style="display:flex;gap:10px;margin-bottom:12px;">
+      <div class="form-group" style="flex:1;margin-bottom:0;">
         <label>CUIT Cliente</label>
         <input type="tel" id="manualCUIT" placeholder="30112233445" maxlength="11" />
       </div>
-      <div class="form-group" style="flex:1; margin-bottom:0;">
+      <div class="form-group" style="flex:1;margin-bottom:0;">
         <label>Monto Total</label>
-        <input type="tel" id="manualMonto" placeholder="Ej: 1524.50" />
+        <input type="tel" id="manualMonto" placeholder="1524.50" />
       </div>
     </div>
-
-    <div class="form-group" style="margin-bottom:14px;">
-      <label>Fecha de la NC (Máx 5 días atrás)</label>
-      <input type="date" id="fechaNC" style="background: #FFFBEB; border-color: #F59E0B;" />
+    <div class="form-group" style="margin-bottom:12px;">
+      <label>Fecha NC (Máx 5 días atrás)</label>
+      <input type="date" id="fechaNC" style="border-color:rgba(251,191,36,0.3);" />
     </div>
-
     <div class="form-group" style="margin-bottom:0;">
-      <label>Motivo de anulación</label>
+      <label>Motivo</label>
       <textarea id="manualMotivo" placeholder="Ej: Error de facturación">Factura emitida por error</textarea>
     </div>
-
     <div class="modal-center-actions">
       <button class="ghost-btn" onclick="cerrarAnulacionManual()">Cancelar</button>
       <button class="danger-btn" id="btnConfirmarManual" onclick="confirmarAnulacionManual()">Buscar y Anular</button>
@@ -1284,19 +1253,16 @@
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js").catch(() => {});
   }
-
   async function checkServer() {
     const dot   = document.getElementById("statusDot");
     const label = document.getElementById("statusLabel");
     try {
-      dot.className = "status-dot waking";
-      label.textContent = "Conectando";
+      dot.className = "status-dot waking"; label.textContent = "…";
       const r = await fetch("https://api-mercadolimpio.onrender.com/health", { signal: AbortSignal.timeout(12000) });
-      if (r.ok) { dot.className = "status-dot online"; label.textContent = "Activo"; }
+      if (r.ok) { dot.className = "status-dot online"; label.textContent = "Online"; }
       else throw new Error();
     } catch {
-      dot.className = "status-dot offline";
-      label.textContent = "Sin conexión";
+      dot.className = "status-dot offline"; label.textContent = "Offline";
     }
   }
   checkServer();
