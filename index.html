@@ -1291,25 +1291,20 @@
     if (el) el.textContent = `${DIAS[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}`;
   })();
 
-  const SB_URL  = "https://gjeyvbidomxzofcdycya.supabase.co";
-  const SB_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZXl2Ymlkb214em9mY2R5Y3lhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwNjQxMjcsImV4cCI6MjA1OTY0MDEyN30.JeRpbBITg6eMDFNQaHNwwgBGzOYHUEJUaGJwwYjrOAo";
-
   async function loadHeroKPIs() {
     try {
       const now = new Date();
       const mes = now.getMonth() + 1;
       const anio = now.getFullYear();
-      const mesStr = String(mes).padStart(2, "0");
-      const headers = { apikey: SB_ANON, Authorization: "Bearer " + SB_ANON };
       const r = await fetch(
-        `${SB_URL}/rest/v1/facturas?mes=eq.${mes}&anio=eq.${anio}&select=total,cuit_cliente,cbte_tipo`,
-        { headers }
+        `https://api-mercadolimpio.onrender.com/admin/facturas-mes?mes=${mes}&anio=${anio}`,
+        { signal: AbortSignal.timeout(15000) }
       );
       if (!r.ok) return;
-      const data = await r.json();
-      const facturas = data.filter(f => f.cbte_tipo !== 53); // excluir NCs
+      const j = await r.json();
+      const facturas = (j.facturas || []).filter(f => f.tipoCbte === "FA" && !f.anulado);
       const total = facturas.reduce((s, f) => s + (Number(f.total) || 0), 0);
-      const clientes = new Set(facturas.map(f => f.cuit_cliente)).size;
+      const clientes = new Set(facturas.map(f => f.cuit)).size;
       const fmtM = n => {
         if (n >= 1000000) return "$" + (n/1000000).toFixed(1) + "M";
         if (n >= 1000) return "$" + Math.round(n/1000) + "K";
