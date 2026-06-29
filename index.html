@@ -697,6 +697,148 @@
       background-size: 800px 100%; animation: shimmer 1.4s infinite;
     }
 
+    /* ── Tab Email ───────────────────────────────────── */
+    #tabEmail {
+      display: none; flex-direction: column;
+      padding-bottom: calc(90px + var(--safe-b));
+    }
+
+    .email-sticky-header {
+      position: sticky; top: calc(var(--safe-t) + 57px); z-index: 40;
+      background: rgba(242,242,247,0.95);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      padding: 12px 14px 10px;
+      border-bottom: 0.5px solid rgba(0,0,0,0.10);
+    }
+    .email-mes-nav {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    #emailMesLabel {
+      font-size: 16px; font-weight: 800; color: var(--text); letter-spacing: -0.3px;
+    }
+    .email-mes-btn {
+      width: 36px; height: 36px; border-radius: 50%; border: none;
+      background: var(--card); font-size: 18px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+      transition: transform 0.1s, opacity 0.1s;
+    }
+    .email-mes-btn:active { transform: scale(0.88); opacity: 0.7; }
+    .email-mes-btn:disabled { opacity: 0.25; pointer-events: none; }
+
+    .email-body { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+
+    .email-preview-card {
+      background: linear-gradient(135deg, #0F172A 0%, #1E3A5F 100%);
+      border-radius: 20px; padding: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+    }
+    .email-preview-card .pv-label {
+      font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.55);
+      text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px;
+    }
+    .email-preview-card .pv-mes {
+      font-size: 22px; font-weight: 900; color: #FFF; letter-spacing: -0.5px; margin-bottom: 14px;
+    }
+    .email-preview-stats {
+      display: flex; gap: 10px;
+    }
+    .email-preview-stat {
+      flex: 1; background: rgba(255,255,255,0.10); border-radius: 12px; padding: 12px;
+      text-align: center;
+    }
+    .email-preview-stat .n { font-size: 20px; font-weight: 900; color: #FFF; line-height: 1; }
+    .email-preview-stat .l { font-size: 10px; color: rgba(255,255,255,0.6); font-weight: 700;
+                              text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+
+    .email-compose-card {
+      background: var(--card); border-radius: 20px; padding: 18px;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04), 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .email-section-label {
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 12px;
+    }
+
+    .email-chips { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+    .email-chip {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px; border-radius: 14px;
+      background: #F8F8F9; border: 1.5px solid var(--border);
+      cursor: pointer; transition: all 0.15s; -webkit-user-select: none;
+    }
+    .email-chip.active {
+      background: #EFF6FF; border-color: var(--blue);
+    }
+    .email-chip:active { transform: scale(0.97); }
+    .email-chip-check {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: #E5E5EA; display: flex; align-items: center; justify-content: center;
+      font-size: 12px; flex-shrink: 0; transition: all 0.15s;
+    }
+    .email-chip.active .email-chip-check {
+      background: var(--blue); color: #FFF;
+    }
+    .email-chip-info { flex: 1; min-width: 0; }
+    .email-chip-name { font-size: 14px; font-weight: 800; color: var(--text); }
+    .email-chip-addr {
+      font-size: 11px; color: var(--muted); font-weight: 600;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .email-chip-remove {
+      background: none; border: none; font-size: 18px; color: #C7C7CC;
+      cursor: pointer; padding: 4px; line-height: 1; flex-shrink: 0;
+    }
+
+    .email-add-row { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; }
+    .email-add-row input { flex: 1; padding: 12px 14px; border-radius: 13px; font-size: 14px; }
+    .email-add-btn {
+      width: 46px; height: 46px; border-radius: 13px;
+      background: var(--blue); color: #FFF; border: none;
+      font-size: 24px; font-weight: 300; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.1s, opacity 0.12s; flex-shrink: 0;
+    }
+    .email-add-btn:active { transform: scale(0.90); opacity: 0.75; }
+
+    .email-send-btn {
+      width: 100%; padding: 17px; border-radius: 16px;
+      background: linear-gradient(135deg, #007AFF 0%, #5856D6 100%);
+      color: #FFF; border: none; font-size: 16px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      box-shadow: 0 6px 20px rgba(0,122,255,0.28); cursor: pointer;
+      transition: transform 0.12s, opacity 0.12s; min-height: 56px; letter-spacing: -0.2px;
+    }
+    .email-send-btn:active:not(:disabled) { transform: scale(0.97); }
+    .email-send-btn:disabled { opacity: 0.50; pointer-events: none; background: #636366; box-shadow: none; }
+
+    .email-send-result {
+      border-radius: 14px; padding: 14px 16px; margin-top: 10px;
+      font-size: 13px; font-weight: 700; display: none;
+    }
+    .email-send-result.show { display: block; }
+    .email-send-result.ok  { background: #F0FDF4; color: #15803D; }
+    .email-send-result.err { background: #FFF1F0; color: var(--red); }
+
+    .email-hist-section { padding: 4px 14px 0; }
+    .email-hist-item {
+      background: var(--card); border-radius: 16px; padding: 14px 16px;
+      margin-bottom: 9px;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.03), 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .email-hist-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .email-hist-mes { font-size: 14px; font-weight: 800; color: var(--text); }
+    .email-hist-time { font-size: 11px; color: var(--muted); font-weight: 600; }
+    .email-hist-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+    .email-hist-chip {
+      padding: 3px 10px; border-radius: 8px; font-size: 11px; font-weight: 700;
+    }
+    .email-hist-chip.ok  { background: #F0FDF4; color: #16A34A; }
+    .email-hist-chip.err { background: #FFF1F0; color: var(--red); }
+    .email-hist-empty {
+      text-align: center; padding: 30px; color: var(--muted); font-size: 13px; font-weight: 600;
+    }
+
   </style>
 </head>
 <body>
@@ -878,6 +1020,63 @@
 
 </div>
 
+<!-- ══ TAB EMAIL ═══════════════════════════════════════════════ -->
+<div id="tabEmail" style="display:none; flex-direction:column;">
+
+  <!-- Header sticky con mes -->
+  <div class="email-sticky-header">
+    <div class="email-mes-nav">
+      <button class="email-mes-btn" id="emailBtnPrev" onclick="emailNavMes(-1)">‹</button>
+      <span id="emailMesLabel">Junio 2026</span>
+      <button class="email-mes-btn" id="emailBtnNext" onclick="emailNavMes(1)" disabled>›</button>
+    </div>
+  </div>
+
+  <div class="email-body">
+
+    <!-- Preview del mes -->
+    <div class="email-preview-card" id="emailPreviewCard">
+      <div class="pv-label">Resumen a enviar</div>
+      <div class="pv-mes" id="emailPreviewMes">Cargando...</div>
+      <div class="email-preview-stats">
+        <div class="email-preview-stat">
+          <div class="n" id="emailStatCount">—</div>
+          <div class="l">Comprobantes</div>
+        </div>
+        <div class="email-preview-stat">
+          <div class="n" id="emailStatTotal">—</div>
+          <div class="l">Total del mes</div>
+        </div>
+        <div class="email-preview-stat">
+          <div class="n" id="emailStatClientes">—</div>
+          <div class="l">Clientes</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Compose: destinatarios -->
+    <div class="email-compose-card">
+      <div class="email-section-label">Destinatarios</div>
+      <div class="email-chips" id="emailChips"></div>
+      <div class="email-add-row">
+        <input type="email" id="emailNuevoInput" placeholder="Agregar email..." inputmode="email" autocomplete="email" onkeydown="if(event.key==='Enter'){emailAgregarDestinatario();event.preventDefault()}" />
+        <button class="email-add-btn" onclick="emailAgregarDestinatario()">+</button>
+      </div>
+      <button class="email-send-btn" id="emailSendBtn" onclick="emailEnviar()">
+        📧 Enviar Resumen
+      </button>
+      <div class="email-send-result" id="emailSendResult"></div>
+    </div>
+
+    <!-- Historial de envíos -->
+    <div class="email-hist-section" id="emailHistSection">
+      <div class="email-section-label" style="margin-bottom:10px;">Historial de envíos</div>
+      <div id="emailHistList"></div>
+    </div>
+
+  </div>
+</div>
+
 <!-- ══ SHEET DETALLE HISTORIAL ═══════════════════════════════ -->
 <div id="histDetailBackdrop" onclick="histCerrarDetalle()"></div>
 <div id="histDetailSheet">
@@ -922,6 +1121,9 @@
     </button>
     <button class="tab-btn" id="tabBtnHistorial" onclick="switchTab('historial')">
       <span class="tab-icon">🔍</span>Historial
+    </button>
+    <button class="tab-btn" id="tabBtnEmail" onclick="switchTab('email')">
+      <span class="tab-icon">📧</span>Email
     </button>
   </div>
   <!-- Bottom bar: Facturar -->

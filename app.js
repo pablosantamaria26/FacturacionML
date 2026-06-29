@@ -1035,21 +1035,22 @@ window.switchTab = function(tab) {
   const isFacturar  = tab === "facturar";
   const isExtracto  = tab === "extracto";
   const isHistorial = tab === "historial";
+  const isEmail     = tab === "email";
 
   document.getElementById("tabFacturar").style.display     = isFacturar  ? "block" : "none";
   document.getElementById("tabExtracto").style.display     = isExtracto  ? "flex"  : "none";
   document.getElementById("tabHistorial").style.display    = isHistorial ? "flex"  : "none";
+  document.getElementById("tabEmail").style.display        = isEmail     ? "flex"  : "none";
   document.getElementById("bottomBarFacturar").style.display = isFacturar  ? "block" : "none";
   document.getElementById("bottomBarExtracto").style.display = isExtracto  ? "block" : "none";
 
   document.getElementById("tabBtnFacturar").classList.toggle("active",  isFacturar);
   document.getElementById("tabBtnExtracto").classList.toggle("active",  isExtracto);
   document.getElementById("tabBtnHistorial").classList.toggle("active", isHistorial);
+  document.getElementById("tabBtnEmail").classList.toggle("active",     isEmail);
 
-  // Al entrar al historial, cargar si todavía no hay resultados
-  if (isHistorial && document.getElementById("histList").children.length === 0) {
-    histCargar();
-  }
+  if (isHistorial && document.getElementById("histList").children.length === 0) histCargar();
+  if (isEmail) emailInicializar();
 };
 
 // ============================================
@@ -1641,6 +1642,284 @@ window.histAnular = function() {
 
 // Inicializar label al cargar
 histActualizarLabel();
+
+// ============================================
+// MÓDULO EMAIL — Envío de resumen mensual
+// ============================================
+const EMAIL_CONTACTOS_DEFAULT = [
+  { id: "pablo",    nombre: "Pablo (yo)",  email: "santamariapablodaniel@gmail.com", activo: true,  removible: false },
+  { id: "contador", nombre: "Contador",    email: "Sticcoj@estudiosticco.com.ar",   activo: false, removible: false }
+];
+const EMAIL_STORAGE_KEY      = "ml_email_contactos";
+const EMAIL_HIST_STORAGE_KEY = "ml_email_send_history";
+
+let emailMes  = new Date().getMonth() + 1;
+let emailAnio = new Date().getFullYear();
+let emailContactos = [];
+let emailIniciado  = false;
+let emailStatsCache = {};
+
+function emailCargarContactos() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(EMAIL_STORAGE_KEY) || "null");
+    if (Array.isArray(saved) && saved.length > 0) {
+      // Asegurar que los defaults siempre estén
+      const ids = saved.map(c => c.id);
+      const base = saved.slice();
+      for (const def of EMAIL_CONTACTOS_DEFAULT) {
+        if (!ids.includes(def.id)) base.unshift({ ...def });
+      }
+      emailContactos = base;
+    } else {
+      emailContactos = EMAIL_CONTACTOS_DEFAULT.map(c => ({ ...c }));
+    }
+  } catch { emailContactos = EMAIL_CONTACTOS_DEFAULT.map(c => ({ ...c })); }
+}
+
+function emailGuardarContactos() {
+  try { localStorage.setItem(EMAIL_STORAGE_KEY, JSON.stringify(emailContactos)); } catch {}
+}
+
+function emailActualizarLabel() {
+  const el = document.getElementById("emailMesLabel");
+  if (el) el.textContent = `${MESES[emailMes]} ${emailAnio}`;
+  const lbl = document.getElementById("emailPreviewMes");
+  if (lbl) lbl.textContent = `${MESES[emailMes]} ${emailAnio}`;
+  const hoy = new Date();
+  const esActual = emailMes === hoy.getMonth() + 1 && emailAnio === hoy.getFullYear();
+  const btnNext = document.getElementById("emailBtnNext");
+  if (btnNext) btnNext.disabled = esActual;
+}
+
+window.emailNavMes = function(dir) {
+  haptic();
+  emailMes += dir;
+  if (emailMes < 1)  { emailMes = 12; emailAnio--; }
+  if (emailMes > 12) { emailMes = 1;  emailAnio++; }
+  emailActualizarLabel();
+  emailCargarStats();
+  emailOcultarResultado();
+};
+
+async function emailCargarStats() {
+  const key = `${emailAnio}-${String(emailMes).padStart(2,"0")}`;
+  document.getElementById("emailStatCount").textContent   = "—";
+  document.getElementById("emailStatTotal").textContent   = "—";
+  document.getElementById("emailStatClientes").textContent = "—";
+
+  if (emailStatsCache[key]) {
+    emailRenderStats(emailStatsCache[key]);
+    return;
+  }
+  try {
+    const r = await fetch(`${BASE}/admin/facturas-mes?anio=${emailAnio}&mes=${emailMes}`, { signal: AbortSignal.timeout(15000) });
+    const j = await r.json();
+    if (!r.ok || !j.ok) throw new Error();
+    const facturas = Array.isArray(j.facturas) ? j.facturas : [];
+    const total    = facturas.reduce((a, f) => a + Number(f.total || 0), 0);
+    const clientes = new Set(facturas.map(f => f.cuit || f.cuit_cliente || "").filter(Boolean)).size;
+    const stats    = { count: facturas.length, total, clientes };
+    emailStatsCache[key] = stats;
+    emailRenderStats(stats);
+  } catch { /* stats quedan en — */ }
+}
+
+function emailRenderStats(stats) {
+  const fmtK = n => {
+    if (Math.abs(n) >= 1000000) return `$${(n/1000000).toFixed(1)}M`;
+    if (Math.abs(n) >= 1000)    return `$${(n/1000).toFixed(0)}K`;
+    return `$${formatMoneyAR(n)}`;
+  };
+  document.getElementById("emailStatCount").textContent    = stats.count;
+  document.getElementById("emailStatTotal").textContent    = fmtK(stats.total);
+  document.getElementById("emailStatClientes").textContent = stats.clientes;
+}
+
+function emailRenderChips() {
+  const container = document.getElementById("emailChips");
+  if (!container) return;
+  container.innerHTML = "";
+  emailContactos.forEach((c, i) => {
+    const div = document.createElement("div");
+    div.className = `email-chip${c.activo ? " active" : ""}`;
+    div.onclick = () => emailToggleContacto(i);
+    div.innerHTML = `
+      <div class="email-chip-check">${c.activo ? "✓" : ""}</div>
+      <div class="email-chip-info">
+        <div class="email-chip-name">${c.nombre}</div>
+        <div class="email-chip-addr">${c.email}</div>
+      </div>
+      ${c.removible ? `<button class="email-chip-remove" onclick="emailEliminarContacto(event,${i})">×</button>` : ""}
+    `;
+    container.appendChild(div);
+  });
+  emailActualizarSendBtn();
+}
+
+window.emailToggleContacto = function(i) {
+  haptic();
+  emailContactos[i].activo = !emailContactos[i].activo;
+  emailGuardarContactos();
+  emailRenderChips();
+};
+
+window.emailEliminarContacto = function(e, i) {
+  e.stopPropagation();
+  haptic();
+  emailContactos.splice(i, 1);
+  emailGuardarContactos();
+  emailRenderChips();
+};
+
+window.emailAgregarDestinatario = function() {
+  const input = document.getElementById("emailNuevoInput");
+  const val   = (input?.value || "").trim().toLowerCase();
+  if (!val || !val.includes("@") || !val.includes(".")) {
+    showToast("⚠️ Ingresá un email válido", "error");
+    return;
+  }
+  if (emailContactos.some(c => c.email.toLowerCase() === val)) {
+    showToast("⚠️ Ese email ya está en la lista", "error");
+    return;
+  }
+  haptic();
+  const nombre = val.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+  emailContactos.push({ id: `custom_${Date.now()}`, nombre, email: val, activo: true, removible: true });
+  emailGuardarContactos();
+  emailRenderChips();
+  if (input) input.value = "";
+  showToast(`✅ ${val} agregado`, "success");
+};
+
+function emailActualizarSendBtn() {
+  const btn       = document.getElementById("emailSendBtn");
+  const activos   = emailContactos.filter(c => c.activo);
+  const key       = `${emailAnio}-${String(emailMes).padStart(2,"0")}`;
+  const stats     = emailStatsCache[key];
+  if (!btn) return;
+  btn.disabled    = activos.length === 0;
+  if (activos.length === 0) {
+    btn.innerHTML = "📧 Seleccioná al menos un destinatario";
+  } else {
+    const mesNom = MESES[emailMes];
+    const cantStr = activos.length === 1 ? activos[0].nombre.split(" ")[0] : `${activos.length} destinatarios`;
+    const factStr = stats ? ` · ${stats.count} comp.` : "";
+    btn.innerHTML = `📧 Enviar Resumen ${mesNom}${factStr} → ${cantStr}`;
+  }
+}
+
+function emailOcultarResultado() {
+  const res = document.getElementById("emailSendResult");
+  if (res) { res.className = "email-send-result"; res.innerHTML = ""; }
+}
+
+window.emailEnviar = async function() {
+  const activos = emailContactos.filter(c => c.activo);
+  if (activos.length === 0) return showToast("⚠️ Seleccioná al menos un destinatario", "error");
+  haptic();
+
+  const btn = document.getElementById("emailSendBtn");
+  const oldHtml = btn.innerHTML;
+  btn.disabled  = true;
+  btn.innerHTML = `<div class="spinner" style="width:18px;height:18px;border-color:rgba(255,255,255,0.3);border-top-color:#fff;"></div> Enviando...`;
+  emailOcultarResultado();
+
+  try {
+    const r = await fetchWithRetry(
+      `${BASE}/enviar-resumen`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mes: emailMes, anio: emailAnio, destinatarios: activos.map(c => c.email) })
+      },
+      { maxRetries: 1, timeoutMs: 60000 }
+    );
+    const j = await r.json();
+    const resultados = Array.isArray(j.resultados) ? j.resultados : [];
+
+    // Guardar en historial local
+    emailGuardarHistorial({ mes: emailMes, anio: emailAnio, resultados });
+
+    const exitosos = resultados.filter(r => r.ok);
+    const fallidos = resultados.filter(r => !r.ok);
+
+    haptic(exitosos.length > 0 ? "success" : "error");
+
+    let resHtml = "";
+    if (exitosos.length > 0) {
+      resHtml += `<div style="margin-bottom:6px;">✅ Enviado correctamente a:</div>`;
+      resHtml += exitosos.map(r => `<div style="font-size:12px;opacity:0.85;margin-left:14px;">• ${r.email}</div>`).join("");
+    }
+    if (fallidos.length > 0) {
+      resHtml += `<div style="margin-top:${exitosos.length?8:0}px;margin-bottom:4px;">⚠️ No se pudo enviar a:</div>`;
+      resHtml += fallidos.map(r => `<div style="font-size:12px;opacity:0.85;margin-left:14px;">• ${r.email}<br><span style="font-size:11px;opacity:0.7;">${r.error || "Restricción del proveedor de email"}</span></div>`).join("");
+    }
+
+    const resEl = document.getElementById("emailSendResult");
+    if (resEl) {
+      resEl.className = `email-send-result show ${exitosos.length > 0 ? "ok" : "err"}`;
+      resEl.innerHTML = resHtml;
+    }
+
+    emailRenderHistorial();
+
+  } catch (e) {
+    haptic("error");
+    showToast("❌ " + (e.message || "Error al enviar"), "error");
+  } finally {
+    btn.disabled  = false;
+    btn.innerHTML = oldHtml;
+    emailActualizarSendBtn();
+  }
+};
+
+function emailGuardarHistorial(entry) {
+  try {
+    const hist = JSON.parse(localStorage.getItem(EMAIL_HIST_STORAGE_KEY) || "[]");
+    hist.unshift({ ...entry, ts: Date.now() });
+    if (hist.length > 30) hist.splice(30);
+    localStorage.setItem(EMAIL_HIST_STORAGE_KEY, JSON.stringify(hist));
+  } catch {}
+}
+
+function emailRenderHistorial() {
+  const list = document.getElementById("emailHistList");
+  if (!list) return;
+  try {
+    const hist = JSON.parse(localStorage.getItem(EMAIL_HIST_STORAGE_KEY) || "[]");
+    if (hist.length === 0) {
+      list.innerHTML = `<div class="email-hist-empty">Sin envíos registrados aún</div>`;
+      return;
+    }
+    list.innerHTML = hist.slice(0, 20).map(h => {
+      const fecha  = new Date(h.ts);
+      const fechaStr = fecha.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "2-digit" });
+      const horaStr  = fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+      const chips    = (h.resultados || []).map(r =>
+        `<span class="email-hist-chip ${r.ok ? "ok" : "err"}">${r.ok ? "✓" : "✗"} ${r.email.split("@")[0]}</span>`
+      ).join("");
+      return `
+        <div class="email-hist-item">
+          <div class="email-hist-header">
+            <div class="email-hist-mes">${MESES[h.mes] || "?"} ${h.anio}</div>
+            <div class="email-hist-time">${fechaStr} ${horaStr}</div>
+          </div>
+          <div class="email-hist-chips">${chips || "<span style='font-size:11px;color:var(--muted)'>Sin destinatarios</span>"}</div>
+        </div>`;
+    }).join("");
+  } catch { list.innerHTML = ""; }
+}
+
+function emailInicializar() {
+  if (!emailIniciado) {
+    emailCargarContactos();
+    emailIniciado = true;
+  }
+  emailActualizarLabel();
+  emailRenderChips();
+  emailCargarStats();
+  emailRenderHistorial();
+}
 
 window.confirmarReenvioEmail = async function() {
   if (!facturaAReenviar) return;
