@@ -579,6 +579,17 @@
       cursor: pointer; font-family: 'Sora', sans-serif;
       transition: transform 0.12s, opacity 0.12s; min-height: 54px;
     }
+    #extBtnFacturarTodo {
+      width: 100%; padding: 14px;
+      background: linear-gradient(135deg, #C97A3A 0%, #a85f28 100%);
+      color: #FFF;
+      border: none; border-radius: 14px; font-size: 14px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; gap: 9px;
+      box-shadow: 0 4px 16px rgba(201,122,58,0.28);
+      cursor: pointer; font-family: 'Sora', sans-serif;
+      transition: transform 0.12s, opacity 0.12s; min-height: 50px;
+      margin-top: 8px;
+    }
     .ext-step { display: none; flex-direction: column; gap: 12px; }
     .ext-step.active { display: flex; }
 
@@ -1148,6 +1159,9 @@
     </div>
     <button id="extBtnFacturar" onclick="extFacturar()" disabled>
       ⚡ FACTURAR SELECCIONADAS
+    </button>
+    <button id="extBtnFacturarTodo" onclick="extFacturarTodo()" disabled style="display:none;">
+      🏦 FACTURAR TODO CON CUIT
     </button>
   </div>
 </div>

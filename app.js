@@ -1121,20 +1121,26 @@ async function extEsperarAnalisis(jobId, btn) {
       }
 
       if (estado.estado === "terminado") {
-        if (estado.detectados === 0) {
-          showToast(`Se encontraron ${estado.total} movimientos pero ninguno de cliente chino`, "error");
-          btn.disabled = false;
-          btn.innerHTML = "🔍 ANALIZAR CON IA";
-          return;
-        }
-
         extTodasTransferencias = estado.todas || [];
-        extTransferencias = estado.transferencias.map((t, i) => ({
+        extTransferencias = (estado.transferencias || []).map((t, i) => ({
           ...t,
           id: i,
           incluida: !t.yaFacturado,
           cuitEdit: t.cuit || ""
         }));
+
+        if (estado.detectados === 0) {
+          const conCuit = extTodasTransferencias.filter(t =>
+            String(t.cuit || "").replace(/\D/g, "").length === 11 && !t.yaFacturado && Number(t.monto) > 0
+          );
+          if (conCuit.length === 0) {
+            showToast(`Se encontraron ${estado.total} movimientos pero ninguno tiene CUIT para facturar`, "error");
+            btn.disabled = false;
+            btn.innerHTML = "🔍 ANALIZAR CON IA";
+            return;
+          }
+          showToast(`Sin chinos detectados · ${conCuit.length} transferencia${conCuit.length !== 1 ? "s" : ""} con CUIT disponible${conCuit.length !== 1 ? "s" : ""}`, "success");
+        }
 
         haptic("success");
         const yaFact    = estado.transferencias.filter(t => t.yaFacturado).length;
@@ -1180,6 +1186,19 @@ function extRenderList() {
   const extBtn = document.getElementById("extBtnFacturar");
   extBtn.disabled = incluidas.length === 0 || incluidas.some(t => t.incluida && !t.cuitEdit);
   extBtn.style.opacity = extBtn.disabled ? "0.55" : "1";
+
+  const btnTodo = document.getElementById("extBtnFacturarTodo");
+  if (btnTodo) {
+    const candidatasTodo = extTodasTransferencias.filter(t =>
+      String(t.cuit || "").replace(/\D/g, "").length === 11 && !t.yaFacturado && Number(t.monto) > 0
+    );
+    btnTodo.style.display = "flex";
+    btnTodo.disabled = candidatasTodo.length === 0;
+    btnTodo.style.opacity = btnTodo.disabled ? "0.55" : "1";
+    btnTodo.innerHTML = candidatasTodo.length > 0
+      ? `🏦 FACTURAR TODO (${candidatasTodo.length})`
+      : `🏦 FACTURAR TODO CON CUIT`;
+  }
 
   // Barra de total en el bottom bar (siempre visible antes de facturar)
   const bottomBar = document.getElementById("extBottomTotalBar");
@@ -1305,11 +1324,58 @@ window.extFacturar = async function() {
   }
 };
 
+// ── Facturar TODO con CUIT (no solo chinos) ───────────────────
+window.extFacturarTodo = async function() {
+  const candidatas = extTodasTransferencias.filter(t =>
+    String(t.cuit || "").replace(/\D/g, "").length === 11 && !t.yaFacturado && Number(t.monto) > 0
+  );
+  if (candidatas.length === 0) return showToast("No hay transferencias con CUIT para facturar", "error");
+
+  haptic();
+  const btn = document.getElementById("extBtnFacturarTodo");
+  btn.disabled = true;
+  btn.innerHTML = `<div class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:#fff;width:18px;height:18px;"></div> Iniciando...`;
+
+  try {
+    const payload = {
+      transferencias: candidatas.map(t => {
+        const cuit = String(t.cuit || "").replace(/\D/g, "");
+        const savedEmail = cuit.length === 11 ? getEmailForCuit(cuit) : "";
+        const obj = { cuit, monto: t.monto, nombre: t.nombre, fecha: t.fecha || "" };
+        if (savedEmail) obj.email = savedEmail;
+        return obj;
+      }),
+      todasTransferencias: extTodasTransferencias.map(t => ({
+        cuit: t.cuit || "", monto: t.monto || 0, nombre: t.nombre || "", fecha: t.fecha || ""
+      })),
+      condicionVenta: "Transferencia Bancaria",
+      emailReporte: "santamariapablodaniel@gmail.com"
+    };
+
+    const r = await fetchWithRetry(
+      `${BASE}/facturar-extracto`,
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) },
+      { maxRetries: 1, timeoutMs: 15000 }
+    );
+    const j = await r.json();
+    if (!r.ok || !j.ok) throw new Error(j.message || "Error al iniciar");
+
+    haptic("success");
+    await extMostrarProgreso(j.jobId, j.total);
+  } catch (e) {
+    showToast("❌ " + (e.message || "Error"), "error");
+    btn.disabled = false;
+    btn.innerHTML = `🏦 FACTURAR TODO CON CUIT`;
+  }
+};
+
 // ── Pantalla de progreso con polling ──────────────────────────
 async function extMostrarProgreso(jobId, total) {
   document.getElementById("extStep2").classList.remove("active");
   document.getElementById("extStep3").classList.add("active");
   document.getElementById("extBtnFacturar").style.display = "none";
+  const btnTodoP = document.getElementById("extBtnFacturarTodo");
+  if (btnTodoP) btnTodoP.style.display = "none";
 
   const container = document.getElementById("extResultados");
   container.innerHTML = `
@@ -1367,6 +1433,8 @@ function extRenderResultados(data) {
   document.getElementById("extStep2").classList.remove("active");
   document.getElementById("extStep3").classList.add("active");
   document.getElementById("extBtnFacturar").style.display = "none";
+  const btnTodoR = document.getElementById("extBtnFacturarTodo");
+  if (btnTodoR) btnTodoR.style.display = "none";
 
   const container = document.getElementById("extResultados");
   const emitidas = (data.resultados || []).filter(r => r.ok && !r.skipped);
@@ -1430,6 +1498,8 @@ window.extReset = function() {
   btn.disabled = true;
   btn.style.display = "flex";
   btn.innerHTML = "⚡ FACTURAR SELECCIONADAS";
+  const btnTodoReset = document.getElementById("extBtnFacturarTodo");
+  if (btnTodoReset) { btnTodoReset.disabled = true; btnTodoReset.style.display = "none"; btnTodoReset.innerHTML = "🏦 FACTURAR TODO CON CUIT"; }
   const procBtn = document.getElementById("extBtnProcesar");
   procBtn.disabled = true;
   procBtn.innerHTML = "🔍 ANALIZAR CON IA";
