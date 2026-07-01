@@ -1185,6 +1185,29 @@
   </div>
 </div>
 
+<!-- Sheet revisión "Facturar Todo" -->
+<div class="modal-backdrop" id="revisionTodoBackdrop" onclick="cerrarRevisionTodo()"></div>
+<div class="bottom-sheet" id="revisionTodoSheet">
+  <div class="sheet-header">
+    <div>
+      <h2>Revisá antes de facturar</h2>
+      <span id="revisionTodoCount" style="font-size:12px;color:var(--muted);font-weight:600;"></span>
+    </div>
+    <button class="close-btn" onclick="cerrarRevisionTodo()">✕</button>
+  </div>
+  <div id="revisionTodoLista" style="flex:1;overflow-y:auto;padding:0 16px;"></div>
+  <div style="padding:16px;border-top:1px solid var(--border);background:var(--surface);">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
+      <span style="font-size:13px;color:var(--muted);font-weight:700;">TOTAL A FACTURAR</span>
+      <span id="revisionTodoTotal" style="font-size:20px;font-weight:900;color:var(--green);"></span>
+    </div>
+    <button id="revisionTodoConfirmar" onclick="extConfirmarTodo()"
+      style="width:100%;padding:16px;background:linear-gradient(135deg,#C97A3A 0%,#a85f28 100%);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;font-family:'Sora',sans-serif;cursor:pointer;min-height:54px;">
+      ⚡ CONFIRMAR Y FACTURAR
+    </button>
+  </div>
+</div>
+
 <!-- Modal Resumen Mensual -->
 <div class="resumen-modal" id="resumenModal">
   <div class="resumen-header">

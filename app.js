@@ -1324,24 +1324,72 @@ window.extFacturar = async function() {
   }
 };
 
-// ── Facturar TODO con CUIT (no solo chinos) ───────────────────
-window.extFacturarTodo = async function() {
-  const candidatas = extTodasTransferencias.filter(t =>
-    String(t.cuit || "").replace(/\D/g, "").length === 11 && !t.yaFacturado && Number(t.monto) > 0
-  );
-  if (candidatas.length === 0) return showToast("No hay transferencias con CUIT para facturar", "error");
+// ── Facturar TODO con CUIT — muestra revisión antes de emitir ─
+let extCandidatasTodo = [];
+
+window.extFacturarTodo = function() {
+  extCandidatasTodo = extTodasTransferencias
+    .filter(t => String(t.cuit || "").replace(/\D/g, "").length === 11 && !t.yaFacturado && Number(t.monto) > 0)
+    .map((t, i) => ({ ...t, _id: i, cuit: String(t.cuit || "").replace(/\D/g, "") }));
+
+  if (extCandidatasTodo.length === 0) return showToast("No hay transferencias con CUIT para facturar", "error");
 
   haptic();
+  extRenderRevisionTodo();
+  document.getElementById("revisionTodoBackdrop").classList.add("active");
+  document.getElementById("revisionTodoSheet").classList.add("active");
+};
+
+function extRenderRevisionTodo() {
+  const lista    = document.getElementById("revisionTodoLista");
+  const count    = document.getElementById("revisionTodoCount");
+  const totalEl  = document.getElementById("revisionTodoTotal");
+  const confirmar = document.getElementById("revisionTodoConfirmar");
+
+  const total = extCandidatasTodo.reduce((s, t) => s + Number(t.monto), 0);
+  count.textContent = `${extCandidatasTodo.length} transferencia${extCandidatasTodo.length !== 1 ? "s" : ""}`;
+  totalEl.textContent = `$${formatMoneyAR(total)}`;
+  confirmar.disabled = extCandidatasTodo.length === 0;
+  confirmar.style.opacity = confirmar.disabled ? "0.55" : "1";
+
+  lista.innerHTML = extCandidatasTodo.map(t => `
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);">
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:700;font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.nombre}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">${t.fecha || ""} · ${t.cuit}</div>
+      </div>
+      <div style="font-weight:800;font-size:15px;color:var(--green);white-space:nowrap;">$${formatMoneyAR(t.monto)}</div>
+      <button onclick="extQuitarCandidataTodo(${t._id})" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;font-size:14px;cursor:pointer;color:var(--red);flex-shrink:0;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+  `).join("") || `<div style="text-align:center;padding:32px;color:var(--muted);">Sin candidatas</div>`;
+}
+
+window.extQuitarCandidataTodo = function(id) {
+  haptic();
+  extCandidatasTodo = extCandidatasTodo.filter(t => t._id !== id);
+  extRenderRevisionTodo();
+};
+
+window.cerrarRevisionTodo = function() {
+  haptic();
+  document.getElementById("revisionTodoBackdrop").classList.remove("active");
+  document.getElementById("revisionTodoSheet").classList.remove("active");
+};
+
+window.extConfirmarTodo = async function() {
+  if (extCandidatasTodo.length === 0) return;
+
+  cerrarRevisionTodo();
+
   const btn = document.getElementById("extBtnFacturarTodo");
   btn.disabled = true;
   btn.innerHTML = `<div class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:#fff;width:18px;height:18px;"></div> Iniciando...`;
 
   try {
     const payload = {
-      transferencias: candidatas.map(t => {
-        const cuit = String(t.cuit || "").replace(/\D/g, "");
-        const savedEmail = cuit.length === 11 ? getEmailForCuit(cuit) : "";
-        const obj = { cuit, monto: t.monto, nombre: t.nombre, fecha: t.fecha || "" };
+      transferencias: extCandidatasTodo.map(t => {
+        const savedEmail = getEmailForCuit(t.cuit);
+        const obj = { cuit: t.cuit, monto: t.monto, nombre: t.nombre, fecha: t.fecha || "" };
         if (savedEmail) obj.email = savedEmail;
         return obj;
       }),
@@ -1365,7 +1413,8 @@ window.extFacturarTodo = async function() {
   } catch (e) {
     showToast("❌ " + (e.message || "Error"), "error");
     btn.disabled = false;
-    btn.innerHTML = `🏦 FACTURAR TODO CON CUIT`;
+    const n = extCandidatasTodo.length;
+    btn.innerHTML = `🏦 FACTURAR TODO (${n})`;
   }
 };
 
@@ -1500,6 +1549,9 @@ window.extReset = function() {
   btn.innerHTML = "⚡ FACTURAR SELECCIONADAS";
   const btnTodoReset = document.getElementById("extBtnFacturarTodo");
   if (btnTodoReset) { btnTodoReset.disabled = true; btnTodoReset.style.display = "none"; btnTodoReset.innerHTML = "🏦 FACTURAR TODO CON CUIT"; }
+  extCandidatasTodo = [];
+  document.getElementById("revisionTodoBackdrop")?.classList.remove("active");
+  document.getElementById("revisionTodoSheet")?.classList.remove("active");
   const procBtn = document.getElementById("extBtnProcesar");
   procBtn.disabled = true;
   procBtn.innerHTML = "🔍 ANALIZAR CON IA";
