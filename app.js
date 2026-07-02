@@ -1216,23 +1216,31 @@ function extRenderList() {
     const emailGuardado = t.cuitEdit.length === 11 ? getEmailForCuit(t.cuitEdit) : "";
     div.className = `transfer-card${sinCuit ? " sin-cuit" : ""}${!t.incluida ? " excluida" : ""}`;
 
+    const avatarLetter = (t.nombre || "?").trim().charAt(0).toUpperCase();
     div.innerHTML = `
-      <div class="transfer-nombre">${t.nombre}</div>
-      <div class="transfer-meta">${t.fecha || "Sin fecha"} · ${t.descripcion || ""}</div>
-      <div class="transfer-monto">$${formatMoneyAR(t.monto)}</div>
-      ${t.yaFacturado ? `<div style="font-size:11px;color:#64748b;font-weight:700;margin-top:4px;">✅ Ya facturada este mes — excluida por defecto</div>` : ""}
-      <div class="transfer-cuit-row">
-        <input class="transfer-cuit-input" type="tel" inputmode="numeric" maxlength="11"
-          placeholder="CUIT (11 dígitos)" value="${t.cuitEdit}"
-          onchange="extUpdateCuit(${t.id}, this.value)"
-          oninput="extUpdateCuit(${t.id}, this.value)" />
-        <button class="transfer-toggle${t.incluida ? " incluida" : ""}"
-          onclick="extToggleTransfer(${t.id})">
-          ${t.incluida ? "✓ Incluida" : "Excluida"}
-        </button>
+      <div class="tc-main">
+        <div class="tc-avatar">${avatarLetter}</div>
+        <div class="tc-info">
+          <div class="tc-nombre">${t.nombre}</div>
+          <div class="tc-meta">${t.fecha || "Sin fecha"}${t.descripcion ? " · " + t.descripcion : ""}</div>
+          ${t.yaFacturado ? `<div class="tc-ya-fac">✅ Ya facturada este mes — excluida por defecto</div>` : ""}
+        </div>
+        <div class="tc-monto">$${formatMoneyAR(t.monto)}</div>
       </div>
-      ${emailGuardado ? `<div style="font-size:11px;color:var(--green);font-weight:600;margin-top:5px;">📧 ${emailGuardado}</div>` : ""}
-      ${sinCuit && !t.yaFacturado ? `<div style="font-size:11px;color:var(--warn);font-weight:700;margin-top:6px;">⚠️ Ingresá el CUIT para incluir</div>` : ""}
+      <div class="tc-bottom">
+        <div class="tc-cuit-row">
+          <input class="transfer-cuit-input" type="tel" inputmode="numeric" maxlength="11"
+            placeholder="CUIT (11 dígitos)" value="${t.cuitEdit}"
+            onchange="extUpdateCuit(${t.id}, this.value)"
+            oninput="extUpdateCuit(${t.id}, this.value)" />
+          <button class="transfer-toggle${t.incluida ? " incluida" : ""}"
+            onclick="extToggleTransfer(${t.id})">
+            ${t.incluida ? "✓ Incluida" : "Excluida"}
+          </button>
+        </div>
+        ${emailGuardado ? `<div class="tc-email">📧 ${emailGuardado}</div>` : ""}
+        ${sinCuit && !t.yaFacturado ? `<div class="tc-alert">⚠️ Ingresá el CUIT para incluir</div>` : ""}
+      </div>
     `;
     list.appendChild(div);
   });
@@ -1352,16 +1360,19 @@ function extRenderRevisionTodo() {
   confirmar.disabled = extCandidatasTodo.length === 0;
   confirmar.style.opacity = confirmar.disabled ? "0.55" : "1";
 
-  lista.innerHTML = extCandidatasTodo.map(t => `
-    <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);">
-      <div style="flex:1;min-width:0;">
-        <div style="font-weight:700;font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.nombre}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px;">${t.fecha || ""} · ${t.cuit}</div>
+  lista.innerHTML = (extCandidatasTodo.length ? extCandidatasTodo.map(t => `
+    <div class="rev-card">
+      <div class="rev-avatar">${(t.nombre||"?").trim().charAt(0).toUpperCase()}</div>
+      <div class="rev-info">
+        <div class="rev-nombre">${t.nombre}</div>
+        <div class="rev-sub">${t.fecha || ""} · CUIT ${t.cuit}</div>
       </div>
-      <div style="font-weight:800;font-size:15px;color:var(--green);white-space:nowrap;">$${formatMoneyAR(t.monto)}</div>
-      <button onclick="extQuitarCandidataTodo(${t._id})" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;font-size:14px;cursor:pointer;color:var(--red);flex-shrink:0;display:flex;align-items:center;justify-content:center;">✕</button>
+      <div class="rev-right">
+        <div class="rev-monto">$${formatMoneyAR(t.monto)}</div>
+        <button class="rev-remove" onclick="extQuitarCandidataTodo(${t._id})">✕</button>
+      </div>
     </div>
-  `).join("") || `<div style="text-align:center;padding:32px;color:var(--muted);">Sin candidatas</div>`;
+  `).join("") : `<div style="text-align:center;padding:32px;color:var(--text2);font-size:13px;font-weight:600;">Sin candidatas</div>`);
 }
 
 window.extQuitarCandidataTodo = function(id) {
@@ -1431,11 +1442,11 @@ async function extMostrarProgreso(jobId, total) {
     <div style="text-align:center;padding:32px 16px;">
       <div class="spinner" style="width:44px;height:44px;border-width:4px;margin:0 auto 20px;border-color:rgba(52,199,89,0.3);border-top-color:#34C759;"></div>
       <div id="extProgresoTexto" style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px;">Iniciando proceso...</div>
-      <div id="extProgresoCount" style="font-size:13px;color:var(--muted);margin-bottom:16px;">0 / ${total}</div>
+      <div id="extProgresoCount" style="font-size:13px;color:var(--text2);margin-bottom:16px;">0 / ${total}</div>
       <div style="background:#e2e8f0;border-radius:8px;height:8px;overflow:hidden;margin-bottom:12px;">
         <div id="extProgresoBar" style="background:#34C759;height:100%;width:0%;transition:width 0.6s ease;border-radius:8px;"></div>
       </div>
-      <div id="extProgresoDetalle" style="font-size:12px;color:var(--muted);line-height:1.6;"></div>
+      <div id="extProgresoDetalle" style="font-size:12px;color:var(--text2);line-height:1.6;"></div>
       <div style="margin-top:16px;padding:12px;background:#F0FDF4;border-radius:10px;border:1px solid #BBF7D0;font-size:12px;color:#15803D;font-weight:600;">
         📱 Podés guardar el celular — el servidor sigue procesando
       </div>
@@ -1498,29 +1509,35 @@ function extRenderResultados(data) {
     ${omitidas.length > 0 ? `<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#64748B;font-weight:600;">
       ✅ ${omitidas.length} ya facturada${omitidas.length !== 1 ? "s" : ""} este mes — omitidas para no duplicar
     </div>` : ""}
-    <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;">Comprobantes emitidos</div>
+    <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;">Comprobantes emitidos</div>
   `;
 
   emitidas.forEach(r => {
+    const ini = (r.nombre||"?").trim().charAt(0).toUpperCase();
     html += `
-      <div class="ext-result-card">
-        <div style="font-weight:800;font-size:14px;">${r.nombre}</div>
-        <div style="font-size:12px;color:#8E8E93;margin-top:2px;">${r.comprobante} · CAE: ${r.cae}</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
-          <span style="font-weight:900;font-size:16px;color:var(--green);">$${formatMoneyAR(r.total)}</span>
-          ${r.pdfUrl ? `<button class="fact-mini-btn pdf" onclick="window.open('${r.pdfUrl}','_blank')">📄 PDF</button>` : ""}
+      <div class="ext-result-card" style="display:flex;align-items:center;gap:12px;">
+        <div style="width:42px;height:42px;border-radius:13px;flex-shrink:0;background:linear-gradient(135deg,#065f46,#059669);color:#FFF;font-size:18px;font-weight:800;display:flex;align-items:center;justify-content:center;">${ini}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:800;font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.nombre}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px;">${r.comprobante} · CAE ${r.cae}</div>
+          <div style="font-size:16px;font-weight:800;color:var(--green);margin-top:5px;">$${formatMoneyAR(r.total)}</div>
         </div>
+        ${r.pdfUrl ? `<button class="fact-mini-btn pdf" onclick="window.open('${r.pdfUrl}','_blank')" style="flex-shrink:0;">📄 PDF</button>` : ""}
       </div>`;
   });
 
   if (errores.length > 0) {
     html += `<div style="font-size:12px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:0.6px;margin:16px 0 8px;">Con error (${errores.length})</div>`;
     errores.forEach(r => {
+      const ini = (r.nombre||"?").trim().charAt(0).toUpperCase();
       html += `
-        <div class="ext-result-card error">
-          <div style="font-weight:800;font-size:14px;">${r.nombre}</div>
-          <div style="font-size:12px;color:#8E8E93;margin-top:2px;">CUIT: ${r.cuit}</div>
-          <div style="font-size:12px;color:var(--red);margin-top:6px;">❌ ${r.error}</div>
+        <div class="ext-result-card error" style="display:flex;align-items:center;gap:12px;">
+          <div style="width:42px;height:42px;border-radius:13px;flex-shrink:0;background:linear-gradient(135deg,#7f1d1d,#dc2626);color:#FFF;font-size:18px;font-weight:800;display:flex;align-items:center;justify-content:center;">${ini}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:800;font-size:14px;color:var(--text);">${r.nombre}</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:2px;">CUIT: ${r.cuit}</div>
+            <div style="font-size:12px;color:var(--red);margin-top:5px;font-weight:600;">❌ ${r.error}</div>
+          </div>
         </div>`;
     });
   }
@@ -1685,14 +1702,18 @@ function histRenderList(facturas, totalCount) {
       f.pdfUrl ? `<span class="hist-badge pdf">PDF ✓</span>` : "",
     ].filter(Boolean).join("");
 
+    const avatarInit = (f.nombre || f.cuit || "?").trim().charAt(0).toUpperCase();
     return `<div class="hist-card ${esNC ? "nc" : ""} ${esAnul ? "anulada" : ""}"
                  onclick="histAbrirDetalle(${facturas.indexOf(f)})">
-      <div class="hist-card-top">
-        <div class="hist-card-nombre">${f.nombre || f.cuit || "Sin nombre"}</div>
-        <div class="hist-card-total ${esNC ? "nc" : ""}">${esNC ? "−" : ""}${totalFmt}</div>
+      <div class="hc-avatar">${avatarInit}</div>
+      <div class="hc-body">
+        <div class="hc-top">
+          <div class="hc-nombre">${f.nombre || f.cuit || "Sin nombre"}</div>
+          <div class="hc-total ${esNC ? "nc" : ""}">${esNC ? "−" : ""}${totalFmt}</div>
+        </div>
+        <div class="hc-meta">CUIT ${f.cuit} · ${f.fecha}</div>
+        <div class="hc-badges">${badgesHtml}</div>
       </div>
-      <div class="hist-card-meta">CUIT ${f.cuit} · ${f.fecha}</div>
-      <div class="hist-card-badges">${badgesHtml}</div>
     </div>`;
   }).join("");
 
@@ -1757,7 +1778,7 @@ window.histAnular = function() {
   facturaAAnular = histFacturaActual;
   document.getElementById("anularTextoInfo").innerHTML =
     `Se va a anular <strong>${histFacturaActual.comprobante}</strong> · ${histFacturaActual.nombre || histFacturaActual.cuit}<br>` +
-    `<span style="color:var(--muted);font-size:12px;">Total: $${formatMoneyAR(histFacturaActual.total)}</span>`;
+    `<span style="color:var(--text2);font-size:12px;">Total: $${formatMoneyAR(histFacturaActual.total)}</span>`;
   document.getElementById("anularMotivo").value = "Factura emitida por error";
   document.getElementById("anularModal").classList.add("active");
 };
@@ -2026,7 +2047,7 @@ function emailRenderHistorial() {
             <div class="email-hist-mes">${MESES[h.mes] || "?"} ${h.anio}</div>
             <div class="email-hist-time">${fechaStr} ${horaStr}</div>
           </div>
-          <div class="email-hist-chips">${chips || "<span style='font-size:11px;color:var(--muted)'>Sin destinatarios</span>"}</div>
+          <div class="email-hist-chips">${chips || "<span style='font-size:11px;color:var(--text2)'>Sin destinatarios</span>"}</div>
         </div>`;
     }).join("");
   } catch { list.innerHTML = ""; }

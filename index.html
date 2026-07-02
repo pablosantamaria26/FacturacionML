@@ -527,18 +527,39 @@
     .ext-upload-zone h3 { color: var(--text); font-size: 16px; font-weight: 700; margin-bottom: 4px; }
     .ext-upload-zone p  { font-size: 12px; color: var(--text2); }
 
+    /* ── Transfer Card ───────────────────────────────────────── */
     .transfer-card {
-      background: var(--surface); border-radius: 14px;
-      padding: 14px 16px; margin-bottom: 10px;
+      background: var(--surface); border-radius: 18px;
+      padding: 16px; margin-bottom: 10px;
       border: 1px solid var(--border);
-      border-left: 3px solid var(--green);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
     }
-    .transfer-card.sin-cuit { border-left-color: var(--warn); }
-    .transfer-card.excluida { border-left-color: var(--text3); opacity: 0.45; }
-    .transfer-nombre { font-weight: 700; font-size: 14px; margin-bottom: 4px; color: var(--text); }
-    .transfer-meta { font-size: 11px; color: var(--text2); margin-bottom: 8px; }
-    .transfer-monto { font-size: 20px; font-weight: 800; color: var(--green); margin-bottom: 10px; letter-spacing: -0.5px; }
-    .transfer-cuit-row { display: flex; gap: 8px; align-items: center; }
+    .transfer-card.sin-cuit { border-top: 2.5px solid var(--warn); }
+    .transfer-card.excluida { opacity: 0.42; }
+
+    .tc-main { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .tc-avatar {
+      width: 42px; height: 42px; border-radius: 13px; flex-shrink: 0;
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      color: #FFF; font-size: 18px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .transfer-card.sin-cuit  .tc-avatar { background: linear-gradient(135deg, #92400e, #d97706); }
+    .transfer-card.excluida  .tc-avatar { background: linear-gradient(135deg, #4b5563, #6b7280); }
+
+    .tc-info { flex: 1; min-width: 0; }
+    .tc-nombre { font-weight: 700; font-size: 14px; color: var(--text); line-height: 1.3;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tc-meta { font-size: 11px; color: var(--text2); margin-top: 2px; }
+    .tc-ya-fac { font-size: 11px; color: #64748b; font-weight: 700; margin-top: 4px; }
+    .tc-monto { font-size: 17px; font-weight: 800; color: var(--green); white-space: nowrap; letter-spacing: -0.5px; }
+    .transfer-card.excluida .tc-monto { color: var(--text3); text-decoration: line-through; }
+
+    .tc-bottom { display: flex; flex-direction: column; gap: 7px; }
+    .tc-cuit-row { display: flex; gap: 8px; align-items: center; }
+    .tc-email { font-size: 11px; color: var(--green); font-weight: 600; margin-top: 1px; }
+    .tc-alert { font-size: 11px; color: var(--warn); font-weight: 700; margin-top: 1px; }
+
     .transfer-cuit-input {
       flex: 1; padding: 10px 12px; border: 1px solid var(--border2); border-radius: 10px;
       font-size: 14px; font-weight: 600; background: var(--surface2); font-family: monospace;
@@ -553,6 +574,31 @@
     }
     .transfer-toggle.incluida { background: var(--green-dim); border-color: rgba(52,211,153,0.3); color: var(--green); }
 
+    /* ── Revision Todo cards ─────────────────────────────────── */
+    .rev-card {
+      display: flex; align-items: center; gap: 11px; padding: 12px 14px;
+      background: var(--surface2); border-radius: 14px; margin-bottom: 8px;
+      border: 1px solid var(--border);
+    }
+    .rev-avatar {
+      width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0;
+      background: linear-gradient(135deg, #1e293b, #334155);
+      color: #FFF; font-size: 16px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .rev-info { flex: 1; min-width: 0; }
+    .rev-nombre { font-weight: 700; font-size: 13px; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rev-sub { font-size: 10px; color: var(--text2); margin-top: 2px; font-weight: 500; }
+    .rev-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+    .rev-monto { font-weight: 800; font-size: 14px; color: var(--green); white-space: nowrap; }
+    .rev-remove {
+      background: var(--red-dim); border: none; border-radius: 8px;
+      width: 26px; height: 26px; font-size: 11px; cursor: pointer; color: var(--red);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Sora', sans-serif; font-weight: 700;
+    }
+
     .ext-summary-bar {
       background: var(--surface); border-radius: 14px; padding: 16px 18px;
       margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;
@@ -560,14 +606,6 @@
     }
     .ext-summary-bar .lbl { font-size: 10px; color: var(--text2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
     .ext-summary-bar .val { font-size: 20px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
-
-    .ext-result-card {
-      background: var(--surface); border-radius: 13px; padding: 14px 16px;
-      margin-bottom: 8px; border-left: 3px solid var(--green);
-      border: 1px solid var(--border);
-      border-left-width: 3px;
-    }
-    .ext-result-card.error { border-left-color: var(--red); }
 
     #extBtnFacturar {
       width: 100%; padding: 16px;
@@ -648,23 +686,34 @@
 
     .hist-list { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
 
+    /* ── Historial Card ─────────────────────────────────────── */
     .hist-card {
-      background: var(--surface); border-radius: 16px; padding: 14px 16px;
+      background: var(--surface); border-radius: 18px; padding: 14px 16px;
       border: 1px solid var(--border);
-      border-left: 3px solid var(--accent);
-      cursor: pointer; transition: transform 0.12s;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.035);
+      cursor: pointer; transition: transform 0.12s, box-shadow 0.12s;
+      display: flex; align-items: center; gap: 13px;
     }
-    .hist-card:active { transform: scale(0.98); }
-    .hist-card.nc     { border-left-color: var(--warn); }
-    .hist-card.anulada{ border-left-color: var(--red); opacity: 0.5; }
+    .hist-card:active { transform: scale(0.985); box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .hist-card.anulada { opacity: 0.5; }
 
-    .hist-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
-    .hist-card-nombre { font-size: 14px; font-weight: 700; color: var(--text); flex: 1; margin-right: 10px; line-height: 1.3; }
-    .hist-card-total { font-size: 16px; font-weight: 800; color: var(--text); white-space: nowrap; }
-    .hist-card-total.nc { color: var(--warn); }
-    .hist-card-meta { font-size: 11px; color: var(--text2); font-weight: 500; margin-bottom: 10px; }
-    .hist-card-badges { display: flex; gap: 5px; flex-wrap: wrap; }
-    .hist-badge { padding: 3px 9px; border-radius: 7px; font-size: 10px; font-weight: 700; }
+    .hc-avatar {
+      width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--accent) 0%, #7A3010 100%);
+      color: #FFF; font-size: 19px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .hist-card.nc      .hc-avatar { background: linear-gradient(135deg, #D97706, #92400E); }
+    .hist-card.anulada .hc-avatar { background: linear-gradient(135deg, #6B7280, #374151); }
+
+    .hc-body { flex: 1; min-width: 0; }
+    .hc-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3px; }
+    .hc-nombre { font-size: 14px; font-weight: 700; color: var(--text); flex: 1; margin-right: 10px; line-height: 1.3; }
+    .hc-total { font-size: 16px; font-weight: 800; color: var(--text); white-space: nowrap; }
+    .hc-total.nc { color: var(--warn); }
+    .hc-meta { font-size: 11px; color: var(--text2); font-weight: 500; margin-bottom: 8px; }
+    .hc-badges { display: flex; gap: 5px; flex-wrap: wrap; }
+    .hist-badge { padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 700; }
     .hist-badge.comp { background: var(--accent-dim); color: var(--accent); }
     .hist-badge.nc   { background: rgba(251,191,36,0.12); color: var(--warn); }
     .hist-badge.anu  { background: var(--red-dim); color: var(--red); }
@@ -859,6 +908,39 @@
     .email-hist-chip.err { background: var(--red-dim); color: var(--red); }
     .email-hist-empty { text-align: center; padding: 30px; color: var(--text2); font-size: 12px; font-weight: 600; }
 
+    /* ── Cold Start Banner ───────────────────────────────────── */
+    #coldStartBanner {
+      position: fixed;
+      top: calc(var(--safe-t) + 62px);
+      left: 14px; right: 14px;
+      z-index: 600;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      border: 1px solid rgba(201,122,58,0.35);
+      border-radius: 16px; padding: 13px 16px;
+      display: none; align-items: center; gap: 13px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.28);
+      animation: slideDown 0.3s cubic-bezier(0.32,0.72,0,1);
+    }
+    #coldStartBanner.visible { display: flex; }
+    @keyframes slideDown { from { transform: translateY(-16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .cold-ring {
+      width: 22px; height: 22px; flex-shrink: 0;
+      border: 2.5px solid rgba(201,122,58,0.3); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+    }
+    .cold-txt { flex: 1; }
+    .cold-title { font-size: 13px; font-weight: 700; color: #FFF; }
+    .cold-sub   { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 2px; }
+
+    /* ── Result card in extStep3 ─────────────────────────────── */
+    .ext-result-card {
+      background: var(--surface); border-radius: 16px; padding: 14px 16px;
+      margin-bottom: 8px; border: 1px solid rgba(52,211,153,0.2);
+      border-left: 3px solid var(--green);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .ext-result-card.error { border-color: rgba(220,38,38,0.15); border-left-color: var(--red); }
+
   </style>
 </head>
 <body>
@@ -872,6 +954,15 @@
 </header>
 
 <div id="toast-container"></div>
+
+<!-- Cold Start Banner -->
+<div id="coldStartBanner">
+  <div class="cold-ring"></div>
+  <div class="cold-txt">
+    <div class="cold-title">Servidor iniciando…</div>
+    <div class="cold-sub">Primera conexión del día — listo en ~30 seg</div>
+  </div>
+</div>
 
 <!-- NC Loading — flotante, no bloquea la app -->
 <div id="ncLoadingOverlay">
@@ -1191,14 +1282,14 @@
   <div class="sheet-header">
     <div>
       <h2>Revisá antes de facturar</h2>
-      <span id="revisionTodoCount" style="font-size:12px;color:var(--muted);font-weight:600;"></span>
+      <span id="revisionTodoCount" style="font-size:12px;color:var(--text2);font-weight:600;"></span>
     </div>
     <button class="close-btn" onclick="cerrarRevisionTodo()">✕</button>
   </div>
-  <div id="revisionTodoLista" style="flex:1;overflow-y:auto;padding:0 16px;"></div>
+  <div id="revisionTodoLista" style="flex:1;overflow-y:auto;padding:12px 14px;"></div>
   <div style="padding:16px;border-top:1px solid var(--border);background:var(--surface);">
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
-      <span style="font-size:13px;color:var(--muted);font-weight:700;">TOTAL A FACTURAR</span>
+      <span style="font-size:13px;color:var(--text2);font-weight:700;">TOTAL A FACTURAR</span>
       <span id="revisionTodoTotal" style="font-size:20px;font-weight:900;color:var(--green);"></span>
     </div>
     <button id="revisionTodoConfirmar" onclick="extConfirmarTodo()"
@@ -1328,11 +1419,30 @@
     if (el) el.textContent = `${DIAS[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}`;
   })();
 
+  const MESES_NOM = ["","Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+  const fmtM = n => {
+    if (n >= 1000000) return "$" + (n/1000000).toFixed(1) + "M";
+    if (n >= 1000) return "$" + Math.round(n/1000) + "K";
+    return "$" + Math.round(n);
+  };
+
   async function loadHeroKPIs() {
+    const now = new Date();
+    const mes = now.getMonth() + 1;
+    const anio = now.getFullYear();
+
+    // Show cached data immediately if fresh (< 10 min, same month)
     try {
-      const now = new Date();
-      const mes = now.getMonth() + 1;
-      const anio = now.getFullYear();
+      const c = JSON.parse(localStorage.getItem("ml_kpis_cache") || "null");
+      if (c && c.mes === mes && c.anio === anio && (Date.now() - c.ts) < 600000) {
+        document.getElementById("kpiFacturas").textContent = c.facturas;
+        document.getElementById("kpiTotal").textContent    = c.total;
+        document.getElementById("kpiClientes").textContent = c.clientes;
+        document.getElementById("kpiMesLabel").textContent = c.mesLabel;
+      }
+    } catch {}
+
+    try {
       const r = await fetch(
         `https://api-mercadolimpio.onrender.com/admin/facturas-mes?mes=${mes}&anio=${anio}`,
         { signal: AbortSignal.timeout(15000) }
@@ -1340,31 +1450,38 @@
       if (!r.ok) return;
       const j = await r.json();
       const facturas = (j.facturas || []).filter(f => f.tipoCbte === "FA" && !f.anulado);
-      const total = facturas.reduce((s, f) => s + (Number(f.total) || 0), 0);
+      const total    = facturas.reduce((s, f) => s + (Number(f.total) || 0), 0);
       const clientes = new Set(facturas.map(f => f.cuit)).size;
-      const fmtM = n => {
-        if (n >= 1000000) return "$" + (n/1000000).toFixed(1) + "M";
-        if (n >= 1000) return "$" + Math.round(n/1000) + "K";
-        return "$" + Math.round(n);
-      };
-      const MESES_NOM = ["","Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+      const mesLabel = MESES_NOM[mes] + " " + anio;
       document.getElementById("kpiFacturas").textContent  = facturas.length || "0";
       document.getElementById("kpiTotal").textContent     = fmtM(total);
       document.getElementById("kpiClientes").textContent  = clientes || "0";
-      document.getElementById("kpiMesLabel").textContent  = MESES_NOM[mes] + " " + anio;
+      document.getElementById("kpiMesLabel").textContent  = mesLabel;
+      // Save to cache
+      try { localStorage.setItem("ml_kpis_cache", JSON.stringify({ ts: Date.now(), mes, anio, facturas: facturas.length || "0", total: fmtM(total), clientes: clientes || "0", mesLabel })); } catch {}
     } catch(_) {}
   }
 
+  let _coldTimer = null;
   async function checkServer() {
-    const dot   = document.getElementById("statusDot");
-    const label = document.getElementById("statusLabel");
+    const dot    = document.getElementById("statusDot");
+    const label  = document.getElementById("statusLabel");
+    const banner = document.getElementById("coldStartBanner");
     try {
       dot.className = "status-dot waking"; label.textContent = "…";
+      // Show cold-start banner after 4 seconds if still waking
+      clearTimeout(_coldTimer);
+      _coldTimer = setTimeout(() => { if (banner) banner.classList.add("visible"); }, 4000);
       const r = await fetch("https://api-mercadolimpio.onrender.com/health", { signal: AbortSignal.timeout(12000) });
-      if (r.ok) { dot.className = "status-dot online"; label.textContent = "Online"; }
-      else throw new Error();
+      clearTimeout(_coldTimer);
+      if (r.ok) {
+        dot.className = "status-dot online"; label.textContent = "Online";
+        if (banner) banner.classList.remove("visible");
+      } else throw new Error();
     } catch {
+      clearTimeout(_coldTimer);
       dot.className = "status-dot offline"; label.textContent = "Sin señal";
+      if (banner) banner.classList.remove("visible");
     }
   }
 
