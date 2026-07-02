@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#F5F0EA">
+  <meta name="theme-color" content="#EEF2F7">
   <title>Mercado Limpio</title>
   <link rel="manifest" href="manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,47 +13,56 @@
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg:       #F5F0EA;
-      --surface:  #FFFFFF;
-      --surface2: #FAF7F3;
-      --surface3: #F0EAE0;
-      --accent:   #C97A3A;
-      --accent2:  #E08C45;
-      --accent-dim: rgba(201,122,58,0.10);
-      --accent-glow: rgba(201,122,58,0.22);
-      --green:    #16A34A;
-      --green-dim: rgba(22,163,74,0.08);
-      --red:      #DC2626;
-      --red-dim:  rgba(220,38,38,0.08);
-      --warn:     #D97706;
-      --text:     #1A1512;
-      --text2:    #7A6555;
-      --text3:    #C0A898;
-      --border:   rgba(0,0,0,0.06);
-      --border2:  rgba(0,0,0,0.10);
-      --safe-b:   env(safe-area-inset-bottom, 20px);
-      --safe-t:   env(safe-area-inset-top, 44px);
+      --bg:          #EEF2F7;
+      --surface:     rgba(255,255,255,0.76);
+      --surface2:    rgba(241,245,249,0.82);
+      --surface3:    rgba(226,232,240,0.75);
+      --glass-border: rgba(255,255,255,0.62);
+      --glass-hi:    inset 0 1px 0 rgba(255,255,255,0.82);
+      --glass-shadow: 0 4px 28px rgba(15,23,42,0.08);
+      --accent:      #C97A3A;
+      --accent2:     #E08C45;
+      --accent-dim:  rgba(201,122,58,0.10);
+      --accent-glow: rgba(201,122,58,0.25);
+      --green:       #16A34A;
+      --green-dim:   rgba(22,163,74,0.09);
+      --red:         #DC2626;
+      --red-dim:     rgba(220,38,38,0.09);
+      --warn:        #D97706;
+      --text:        #0F172A;
+      --text2:       #64748B;
+      --text3:       #94A3B8;
+      --border:      rgba(15,23,42,0.07);
+      --border2:     rgba(15,23,42,0.12);
+      --safe-b:      env(safe-area-inset-bottom, 20px);
+      --safe-t:      env(safe-area-inset-top, 44px);
     }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
 
     body {
       font-family: 'Sora', -apple-system, sans-serif;
-      background: var(--bg);
+      background:
+        radial-gradient(ellipse 90% 45% at 10% -5%, rgba(99,102,241,0.09) 0%, transparent 65%),
+        radial-gradient(ellipse 70% 55% at 90% 105%, rgba(201,122,58,0.09) 0%, transparent 65%),
+        radial-gradient(ellipse 50% 40% at 55% 50%, rgba(20,184,166,0.04) 0%, transparent 70%),
+        #EEF2F7;
       color: var(--text);
       padding-bottom: calc(88px + var(--safe-b));
       overscroll-behavior-y: none;
       -webkit-font-smoothing: antialiased;
+      min-height: 100dvh;
     }
 
     /* ── Header ─────────────────────────────────────── */
     header {
       position: sticky; top: 0; z-index: 50;
-      background: rgba(245,240,234,0.94);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      background: rgba(238,242,247,0.78);
+      backdrop-filter: blur(32px) saturate(200%) brightness(103%);
+      -webkit-backdrop-filter: blur(32px) saturate(200%) brightness(103%);
       padding: calc(var(--safe-t) + 6px) 18px 12px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid rgba(255,255,255,0.55);
+      box-shadow: 0 1px 0 rgba(15,23,42,0.05), var(--glass-hi);
       display: flex; justify-content: space-between; align-items: center;
     }
     .header-left { display: flex; align-items: center; gap: 12px; }
@@ -97,7 +106,7 @@
     }
     .skeleton {
       border-radius: 10px; height: 18px;
-      background: linear-gradient(90deg, #EDE8E0 25%, #F5F0EA 50%, #EDE8E0 75%);
+      background: linear-gradient(90deg, rgba(203,213,225,0.55) 25%, rgba(255,255,255,0.85) 50%, rgba(203,213,225,0.55) 75%);
       background-size: 800px 100%;
       animation: shimmer 1.4s infinite;
     }
@@ -106,9 +115,12 @@
     .container { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
     .card {
       background: var(--surface);
-      border-radius: 18px;
+      backdrop-filter: blur(24px) saturate(180%) brightness(102%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%) brightness(102%);
+      border-radius: 22px;
       padding: 18px;
-      border: 1px solid var(--border);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow), var(--glass-hi);
     }
     .card-label {
       font-size: 10px; font-weight: 700; color: var(--text2);
@@ -149,12 +161,13 @@
     }
     input, select, textarea {
       width: 100%; padding: 13px 14px;
-      border: 1px solid var(--border2);
-      border-radius: 12px;
-      font-size: 15px; background: var(--surface2); color: var(--text); font-weight: 500;
+      border: 1px solid rgba(15,23,42,0.12);
+      border-radius: 14px;
+      font-size: 15px; background: rgba(255,255,255,0.82); color: var(--text); font-weight: 500;
       appearance: none; -webkit-appearance: none;
       transition: border 0.18s, box-shadow 0.18s;
       font-family: 'Sora', sans-serif;
+      box-shadow: inset 0 1px 3px rgba(15,23,42,0.06);
     }
     input::placeholder, textarea::placeholder { color: var(--text3); }
     input:focus, select:focus, textarea:focus {
@@ -166,7 +179,7 @@
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='%238A7E74' d='M0 0l6 8 6-8z'/%3E%3C/svg%3E");
       background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
     }
-    select option { background: #221E19; }
+    select option { background: #1e293b; }
 
     .tags-scroll { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 3px; scrollbar-width: none; }
     .tags-scroll::-webkit-scrollbar { display: none; }
@@ -213,40 +226,48 @@
     .danger-btn:active { transform: scale(0.96); opacity: 0.82; }
     .danger-btn:disabled { opacity: 0.45; }
 
-    /* ── Tab bar ─────────────────────────────────────── */
+    /* ── Tab bar — iOS 26 Floating Pill ─────────────── */
     .tab-bar {
       position: fixed; bottom: 0; left: 0; width: 100%;
-      background: rgba(245,240,234,0.96);
-      backdrop-filter: blur(24px) saturate(180%);
-      -webkit-backdrop-filter: blur(24px) saturate(180%);
-      border-top: 1px solid var(--border);
+      background: transparent;
       z-index: 100;
       display: flex; flex-direction: column;
       padding-bottom: var(--safe-b);
+      pointer-events: none;
     }
     .tab-buttons {
-      display: flex; border-bottom: 1px solid var(--border);
+      display: flex;
+      background: rgba(10,15,28,0.88);
+      backdrop-filter: blur(36px) saturate(200%);
+      -webkit-backdrop-filter: blur(36px) saturate(200%);
+      border-radius: 30px;
+      border: 1px solid rgba(255,255,255,0.13);
+      box-shadow: 0 10px 44px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.2);
+      margin: 0 18px;
+      padding: 5px;
+      pointer-events: auto;
     }
     .tab-btn {
-      flex: 1; padding: 10px 8px 8px; border: none; background: none;
-      font-size: 9px; font-weight: 700; color: var(--text2);
-      display: flex; flex-direction: column; align-items: center; gap: 4px;
-      cursor: pointer; transition: color 0.15s;
+      flex: 1; padding: 9px 6px 8px; border: none; background: none;
+      font-size: 8.5px; font-weight: 700; color: rgba(255,255,255,0.38);
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      cursor: pointer; transition: color 0.18s, background 0.18s;
       text-transform: uppercase; letter-spacing: 0.7px;
       font-family: 'Sora', sans-serif;
+      border-radius: 24px;
     }
-    .tab-btn .tab-icon { font-size: 20px; line-height: 1; }
-    .tab-btn.active { color: var(--accent); }
+    .tab-btn .tab-icon { font-size: 19px; line-height: 1; }
+    .tab-btn.active { color: #FFFFFF; background: rgba(255,255,255,0.16); }
 
     /* ── Bottom bar ─────────────────────────────── */
-    .bottom-bar { padding: 10px 14px 8px; }
+    .bottom-bar { padding: 8px 14px 8px; pointer-events: auto; }
     .main-btn {
       width: 100%; padding: 16px;
       background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
       color: #FFF;
-      border: none; border-radius: 14px; font-size: 15px; font-weight: 700;
+      border: none; border-radius: 18px; font-size: 15px; font-weight: 700;
       display: flex; align-items: center; justify-content: center; gap: 9px;
-      box-shadow: 0 6px 22px var(--accent-glow);
+      box-shadow: 0 6px 24px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.22);
       cursor: pointer; font-family: 'Sora', sans-serif;
       transition: transform 0.12s, opacity 0.12s; min-height: 54px;
       letter-spacing: -0.2px;
@@ -255,7 +276,7 @@
     .main-btn:disabled { opacity: .5; pointer-events: none; }
     .main-btn.btn-success {
       background: linear-gradient(135deg, #34D399 0%, #059669 100%);
-      box-shadow: 0 6px 20px rgba(52,211,153,0.28);
+      box-shadow: 0 6px 20px rgba(52,211,153,0.3), inset 0 1px 0 rgba(255,255,255,0.22);
     }
     .main-btn.btn-loading {
       background: var(--surface3); box-shadow: none; color: var(--text2);
@@ -275,13 +296,15 @@
       bottom: calc(94px + var(--safe-b));
       left: 14px; right: 14px;
       z-index: 9000;
-      background: #1A1512;
-      border: 1px solid rgba(201,122,58,0.4);
-      border-radius: 18px;
+      background: rgba(10,15,28,0.92);
+      backdrop-filter: blur(32px) saturate(200%);
+      -webkit-backdrop-filter: blur(32px) saturate(200%);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
       padding: 16px 20px;
       display: none;
       align-items: center; gap: 16px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+      box-shadow: 0 12px 48px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.14);
     }
     #ncLoadingOverlay.active { display: flex; }
     .nc-spinner-ring {
@@ -320,24 +343,28 @@
 
     /* ── Modal preview ──────────────────────────────── */
     .modal-backdrop {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+      position: fixed; inset: 0; background: rgba(10,15,28,0.6);
+      backdrop-filter: blur(14px) saturate(160%); -webkit-backdrop-filter: blur(14px) saturate(160%);
       z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.22s;
     }
     .modal-backdrop.active { opacity: 1; pointer-events: auto; }
     .bottom-sheet {
       position: fixed; bottom: 0; left: 0; width: 100%; height: 91vh;
-      background: var(--surface); border-radius: 22px 22px 0 0;
+      background: rgba(238,242,247,0.92);
+      backdrop-filter: blur(40px) saturate(180%);
+      -webkit-backdrop-filter: blur(40px) saturate(180%);
+      border-radius: 26px 26px 0 0;
       z-index: 1001; transform: translateY(100%);
       transition: transform 0.38s cubic-bezier(0.32,0.72,0,1);
       display: flex; flex-direction: column; overflow: hidden;
-      border-top: 1px solid var(--border);
+      border-top: 1px solid rgba(255,255,255,0.7);
+      box-shadow: 0 -8px 48px rgba(15,23,42,0.14);
     }
     .bottom-sheet.active { transform: translateY(0); }
     .sheet-header {
-      padding: 14px 18px; background: var(--surface2);
+      padding: 14px 18px; background: rgba(255,255,255,0.5);
       display: flex; justify-content: space-between; align-items: center;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid rgba(255,255,255,0.5);
     }
     .sheet-header h2 { font-size: 16px; font-weight: 700; color: var(--text); }
     .close-btn {
@@ -360,7 +387,11 @@
 
     /* ── Modal Resumen Mensual ───────────────────────── */
     .resumen-modal {
-      position: fixed; inset: 0; background: var(--bg); z-index: 2000;
+      position: fixed; inset: 0;
+      background: rgba(238,242,247,0.92);
+      backdrop-filter: blur(40px) saturate(180%);
+      -webkit-backdrop-filter: blur(40px) saturate(180%);
+      z-index: 2000;
       transform: translateY(100%);
       transition: transform 0.38s cubic-bezier(0.32,0.72,0,1);
       display: flex; flex-direction: column; overflow: hidden;
@@ -368,10 +399,12 @@
     .resumen-modal.active { transform: translateY(0); }
 
     .resumen-header {
-      background: var(--surface);
+      background: rgba(255,255,255,0.55);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
       padding: calc(var(--safe-t) + 12px) 20px 16px;
       flex-shrink: 0;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid rgba(255,255,255,0.55);
     }
     .resumen-header-top {
       display: flex; justify-content: space-between; align-items: center;
@@ -447,7 +480,11 @@
 
     /* ── Modal éxito ────────────────────────────────── */
     .success-modal {
-      position: fixed; inset: 0; background: var(--bg); z-index: 2001;
+      position: fixed; inset: 0;
+      background: rgba(238,242,247,0.94);
+      backdrop-filter: blur(40px) saturate(180%);
+      -webkit-backdrop-filter: blur(40px) saturate(180%);
+      z-index: 2001;
       transform: translateY(100%);
       transition: transform 0.38s cubic-bezier(0.32,0.72,0,1);
       display: flex; flex-direction: column; overflow-y: auto;
@@ -479,8 +516,8 @@
     /* ── Modal centrado ─────────────────────────────── */
     .modal-center-backdrop {
       position: fixed; inset: 0;
-      background: rgba(0,0,0,0.75);
-      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      background: rgba(10,15,28,0.62);
+      backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%);
       z-index: 3000; display: none;
       align-items: flex-end; justify-content: center;
       padding: 0;
@@ -489,9 +526,13 @@
 
     .modal-center-card {
       width: 100%; max-width: 600px;
-      background: var(--surface); border-radius: 22px 22px 0 0;
+      background: rgba(238,242,247,0.94);
+      backdrop-filter: blur(40px) saturate(180%);
+      -webkit-backdrop-filter: blur(40px) saturate(180%);
+      border-radius: 26px 26px 0 0;
       padding: 20px 18px calc(20px + var(--safe-b));
-      border-top: 1px solid var(--border);
+      border-top: 1px solid rgba(255,255,255,0.7);
+      box-shadow: 0 -8px 48px rgba(15,23,42,0.14);
       animation: sheetUp 0.30s cubic-bezier(0.32,0.72,0,1);
       max-height: 90vh; overflow-y: auto;
     }
@@ -517,7 +558,10 @@
     #tabFacturar { display: block; }
 
     .ext-upload-zone {
-      background: var(--surface2); border: 1.5px dashed var(--border2); border-radius: 16px;
+      background: rgba(255,255,255,0.55);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1.5px dashed rgba(15,23,42,0.18); border-radius: 18px;
       padding: 30px 20px; text-align: center; position: relative; transition: all 0.18s;
       cursor: pointer;
     }
@@ -529,10 +573,13 @@
 
     /* ── Transfer Card ───────────────────────────────────────── */
     .transfer-card {
-      background: var(--surface); border-radius: 18px;
+      background: var(--surface);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-radius: 20px;
       padding: 16px; margin-bottom: 10px;
-      border: 1px solid var(--border);
-      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow), var(--glass-hi);
     }
     .transfer-card.sin-cuit { border-top: 2.5px solid var(--warn); }
     .transfer-card.excluida { opacity: 0.42; }
@@ -600,9 +647,13 @@
     }
 
     .ext-summary-bar {
-      background: var(--surface); border-radius: 14px; padding: 16px 18px;
+      background: var(--surface);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-radius: 18px; padding: 16px 18px;
       margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;
-      border: 1px solid var(--border);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow), var(--glass-hi);
     }
     .ext-summary-bar .lbl { font-size: 10px; color: var(--text2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
     .ext-summary-bar .val { font-size: 20px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
@@ -645,10 +696,10 @@
 
     .hist-header {
       position: sticky; top: calc(var(--safe-t) + 54px); z-index: 40;
-      background: rgba(245,240,234,0.96);
-      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      background: rgba(238,242,247,0.82);
+      backdrop-filter: blur(28px) saturate(180%); -webkit-backdrop-filter: blur(28px) saturate(180%);
       padding: 12px 14px 10px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid rgba(255,255,255,0.55);
     }
 
     .hist-mes-nav {
@@ -688,13 +739,16 @@
 
     /* ── Historial Card ─────────────────────────────────────── */
     .hist-card {
-      background: var(--surface); border-radius: 18px; padding: 14px 16px;
-      border: 1px solid var(--border);
-      box-shadow: 0 2px 10px rgba(0,0,0,0.035);
+      background: var(--surface);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-radius: 20px; padding: 14px 16px;
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow), var(--glass-hi);
       cursor: pointer; transition: transform 0.12s, box-shadow 0.12s;
       display: flex; align-items: center; gap: 13px;
     }
-    .hist-card:active { transform: scale(0.985); box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .hist-card:active { transform: scale(0.985); box-shadow: 0 1px 8px rgba(15,23,42,0.06); }
     .hist-card.anulada { opacity: 0.5; }
 
     .hc-avatar {
@@ -727,8 +781,13 @@
 
     .hist-stat-bar { display: flex; gap: 10px; padding: 0 14px 12px; }
     .hist-stat {
-      flex: 1; background: var(--surface); border-radius: 12px; padding: 12px;
-      text-align: center; border: 1px solid var(--border);
+      flex: 1;
+      background: var(--surface);
+      backdrop-filter: blur(16px) saturate(160%);
+      -webkit-backdrop-filter: blur(16px) saturate(160%);
+      border-radius: 14px; padding: 12px;
+      text-align: center; border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow), var(--glass-hi);
     }
     .hist-stat .num { font-size: 18px; font-weight: 800; color: var(--text); }
     .hist-stat .lbl { font-size: 9px; color: var(--text2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
@@ -736,17 +795,21 @@
     /* Sheet detalle historial */
     #histDetailSheet {
       position: fixed; bottom: 0; left: 0; width: 100%;
-      background: var(--surface); border-radius: 22px 22px 0 0;
+      background: rgba(238,242,247,0.94);
+      backdrop-filter: blur(40px) saturate(180%);
+      -webkit-backdrop-filter: blur(40px) saturate(180%);
+      border-radius: 26px 26px 0 0;
       z-index: 2000; transform: translateY(100%);
       transition: transform 0.35s cubic-bezier(0.32,0.72,0,1);
       max-height: 88vh; overflow-y: auto;
       padding-bottom: calc(24px + var(--safe-b));
-      border-top: 1px solid var(--border);
+      border-top: 1px solid rgba(255,255,255,0.7);
+      box-shadow: 0 -8px 48px rgba(15,23,42,0.14);
     }
     #histDetailSheet.active { transform: translateY(0); }
     #histDetailBackdrop {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.75);
-      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+      position: fixed; inset: 0; background: rgba(10,15,28,0.6);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       z-index: 1999; opacity: 0; pointer-events: none; transition: opacity 0.25s;
     }
     #histDetailBackdrop.active { opacity: 1; pointer-events: auto; }
@@ -787,8 +850,8 @@
     .hist-action-btn.email{ background: var(--green-dim); color: var(--green); border: 1px solid rgba(52,211,153,0.2); }
     .hist-action-btn.anular { background: var(--red-dim); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
 
-    .hist-skel { border-radius: 16px; height: 88px;
-      background: linear-gradient(90deg, #EDE8E0 25%, #F5F0EA 50%, #EDE8E0 75%);
+    .hist-skel { border-radius: 20px; height: 88px;
+      background: linear-gradient(90deg, rgba(203,213,225,0.5) 25%, rgba(255,255,255,0.82) 50%, rgba(203,213,225,0.5) 75%);
       background-size: 800px 100%; animation: shimmer 1.4s infinite;
     }
 
@@ -797,10 +860,10 @@
 
     .email-sticky-header {
       position: sticky; top: calc(var(--safe-t) + 54px); z-index: 40;
-      background: rgba(245,240,234,0.96);
-      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      background: rgba(238,242,247,0.82);
+      backdrop-filter: blur(28px) saturate(180%); -webkit-backdrop-filter: blur(28px) saturate(180%);
       padding: 12px 14px 10px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid rgba(255,255,255,0.55);
     }
     .email-mes-nav { display: flex; align-items: center; justify-content: space-between; }
     #emailMesLabel { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
@@ -835,8 +898,12 @@
     .email-preview-stat .l { font-size: 9px; color: rgba(255,255,255,0.55); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
 
     .email-compose-card {
-      background: var(--surface); border-radius: 18px; padding: 18px;
-      border: 1px solid var(--border);
+      background: var(--surface);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-radius: 22px; padding: 18px;
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow), var(--glass-hi);
     }
     .email-section-label {
       font-size: 10px; font-weight: 700; color: var(--text2);
@@ -977,35 +1044,37 @@
 <main class="container" id="tabFacturar">
 
   <!-- Dashboard Header -->
-  <div style="background:linear-gradient(135deg,#1A1512 0%,#3A2010 100%);border-radius:22px;padding:20px;position:relative;overflow:hidden;">
-    <div style="position:absolute;top:-40px;right:-30px;width:160px;height:160px;border-radius:50%;background:rgba(201,122,58,0.12);pointer-events:none;"></div>
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+  <div style="background:linear-gradient(145deg,#060d1f 0%,#0f172a 45%,#1a1030 100%);border-radius:26px;padding:22px;position:relative;overflow:hidden;box-shadow:0 12px 48px rgba(10,15,40,0.28),inset 0 1px 0 rgba(255,255,255,0.08);">
+    <!-- Liquid Glass orbs -->
+    <div style="position:absolute;top:-50px;right:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(201,122,58,0.18) 0%,transparent 70%);pointer-events:none;filter:blur(2px);"></div>
+    <div style="position:absolute;bottom:-60px;left:-30px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,0.12) 0%,transparent 70%);pointer-events:none;filter:blur(4px);"></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;">
       <div>
-        <div style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;" id="heroFecha">—</div>
-        <div style="font-size:19px;font-weight:800;color:#FFF;letter-spacing:-0.4px;">Mercado Limpio</div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:2px;font-weight:500;">Sistema de Facturación ARCA</div>
+        <div style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:5px;" id="heroFecha">—</div>
+        <div style="font-size:20px;font-weight:800;color:#FFF;letter-spacing:-0.5px;line-height:1.1;">Mercado Limpio</div>
+        <div style="font-size:11.5px;color:rgba(255,255,255,0.4);margin-top:3px;font-weight:500;letter-spacing:0.1px;">Sistema de Facturación ARCA</div>
       </div>
-      <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.07);border-radius:20px;padding:6px 10px;border:1px solid rgba(255,255,255,0.08);">
+      <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.07);backdrop-filter:blur(16px);border-radius:20px;padding:7px 11px;border:1px solid rgba(255,255,255,0.1);box-shadow:inset 0 1px 0 rgba(255,255,255,0.12);">
         <div class="status-dot waking" id="statusDot" style="width:7px;height:7px;"></div>
-        <span id="statusLabel" style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.7);">…</span>
+        <span id="statusLabel" style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.65);">…</span>
       </div>
     </div>
-    <!-- KPI row -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-      <div style="background:rgba(255,255,255,0.07);border-radius:14px;padding:12px 10px;border:1px solid rgba(255,255,255,0.07);text-align:center;">
-        <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Facturas</div>
-        <div style="font-size:24px;font-weight:800;color:#FFF;letter-spacing:-1px;line-height:1;" id="kpiFacturas">—</div>
-        <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-top:4px;font-weight:500;" id="kpiMesLabel">este mes</div>
+    <!-- KPI row — glass cards -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;">
+      <div style="background:rgba(255,255,255,0.07);backdrop-filter:blur(16px);border-radius:16px;padding:13px 10px;border:1px solid rgba(255,255,255,0.1);text-align:center;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12);">
+        <div style="font-size:8.5px;font-weight:700;color:rgba(255,255,255,0.38);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:7px;">Facturas</div>
+        <div style="font-size:26px;font-weight:800;color:#FFF;letter-spacing:-1.2px;line-height:1;" id="kpiFacturas">—</div>
+        <div style="font-size:9px;color:rgba(255,255,255,0.28);margin-top:5px;font-weight:500;" id="kpiMesLabel">este mes</div>
       </div>
-      <div style="background:rgba(201,122,58,0.18);border-radius:14px;padding:12px 10px;border:1px solid rgba(201,122,58,0.25);text-align:center;">
-        <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Total</div>
-        <div style="font-size:14px;font-weight:800;color:var(--accent2);letter-spacing:-0.5px;line-height:1.2;" id="kpiTotal">—</div>
-        <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-top:4px;font-weight:500;">facturado</div>
+      <div style="background:rgba(201,122,58,0.16);backdrop-filter:blur(16px);border-radius:16px;padding:13px 10px;border:1px solid rgba(201,122,58,0.28);text-align:center;box-shadow:inset 0 1px 0 rgba(255,201,100,0.15);">
+        <div style="font-size:8.5px;font-weight:700;color:rgba(255,255,255,0.38);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:7px;">Total</div>
+        <div style="font-size:14px;font-weight:800;color:#E08C45;letter-spacing:-0.5px;line-height:1.2;" id="kpiTotal">—</div>
+        <div style="font-size:9px;color:rgba(255,255,255,0.28);margin-top:5px;font-weight:500;">facturado</div>
       </div>
-      <div style="background:rgba(255,255,255,0.07);border-radius:14px;padding:12px 10px;border:1px solid rgba(255,255,255,0.07);text-align:center;">
-        <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Clientes</div>
-        <div style="font-size:24px;font-weight:800;color:#FFF;letter-spacing:-1px;line-height:1;" id="kpiClientes">—</div>
-        <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-top:4px;font-weight:500;">únicos</div>
+      <div style="background:rgba(255,255,255,0.07);backdrop-filter:blur(16px);border-radius:16px;padding:13px 10px;border:1px solid rgba(255,255,255,0.1);text-align:center;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12);">
+        <div style="font-size:8.5px;font-weight:700;color:rgba(255,255,255,0.38);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:7px;">Clientes</div>
+        <div style="font-size:26px;font-weight:800;color:#FFF;letter-spacing:-1.2px;line-height:1;" id="kpiClientes">—</div>
+        <div style="font-size:9px;color:rgba(255,255,255,0.28);margin-top:5px;font-weight:500;">únicos</div>
       </div>
     </div>
   </div>
