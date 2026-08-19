@@ -1299,7 +1299,7 @@ window.extFacturar = async function() {
     const payload = {
       transferencias: incluidas.map(t => {
         const savedEmail = getEmailForCuit(t.cuitEdit);
-        const obj = { cuit: t.cuitEdit, monto: t.monto, nombre: t.nombre, fecha: t.fecha || "" };
+        const obj = { cuit: t.cuitEdit, monto: t.monto, nombre: t.nombre, fecha: t.fecha || "", referencia: t.referencia || "" };
         if (savedEmail) obj.email = savedEmail;
         return obj;
       }),
@@ -1307,7 +1307,8 @@ window.extFacturar = async function() {
         cuit:   t.cuit   || "",
         monto:  t.monto  || 0,
         nombre: t.nombre || "",
-        fecha:  t.fecha  || ""
+        fecha:  t.fecha  || "",
+        referencia: t.referencia || ""
       })),
       condicionVenta: "Transferencia Bancaria",
       emailReporte: "santamariapablodaniel@gmail.com"
@@ -1400,12 +1401,12 @@ window.extConfirmarTodo = async function() {
     const payload = {
       transferencias: extCandidatasTodo.map(t => {
         const savedEmail = getEmailForCuit(t.cuit);
-        const obj = { cuit: t.cuit, monto: t.monto, nombre: t.nombre, fecha: t.fecha || "" };
+        const obj = { cuit: t.cuit, monto: t.monto, nombre: t.nombre, fecha: t.fecha || "", referencia: t.referencia || "" };
         if (savedEmail) obj.email = savedEmail;
         return obj;
       }),
       todasTransferencias: extTodasTransferencias.map(t => ({
-        cuit: t.cuit || "", monto: t.monto || 0, nombre: t.nombre || "", fecha: t.fecha || ""
+        cuit: t.cuit || "", monto: t.monto || 0, nombre: t.nombre || "", fecha: t.fecha || "", referencia: t.referencia || ""
       })),
       condicionVenta: "Transferencia Bancaria",
       emailReporte: "santamariapablodaniel@gmail.com"
