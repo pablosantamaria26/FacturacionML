@@ -852,11 +852,11 @@ function showSuccessModal(data) {
   if (facturas.length > 0) {
     const factLines = facturas.map(f => `• ${f.comprobante || ""} · $${formatMoneyAR(f.total)}`).join("\n");
     const msgOficina =
-      `✅ *Factura emitida - Mercado Limpio*\n` +
+      `*Factura emitida - Mercado Limpio*\n` +
       `Cliente: ${nombreUsado}\n` +
       `CUIT: ${cuitUsado}\n` +
       `${factLines}\n` +
-      (emailUsado ? `📧 Email enviado a: ${emailUsado}` : `📧 Sin email registrado`);
+      (emailUsado ? `Email: ${emailUsado}` : `Sin email registrado`);
     const btnOficina = document.createElement("a");
     btnOficina.className = "action-btn btn-wa";
     btnOficina.style.marginTop = "4px";
