@@ -1,4 +1,4 @@
-const CACHE_NAME = "mercadolimpio-v44";
+const CACHE_NAME = "mercadolimpio-v45";
 const BASE = "https://api-mercadolimpio.onrender.com";
 const STATIC = ["./", "./index.html", "./app.js", "./manifest.json"];
 
@@ -16,7 +16,16 @@ self.addEventListener("activate", e => {
 
 self.addEventListener("fetch", e => {
   const url = new URL(e.request.url);
-  if (url.origin === new URL(BASE).origin) { e.respondWith(fetch(e.request)); return; }
+
+  // NO interceptar la API. Hacer respondWith(fetch(e.request)) sobre un POST
+  // con body multipart/FormData en iOS Safari trunca el cuerpo → el servidor
+  // recibe el form incompleto y tira "Unexpected end of form". Dejamos que el
+  // navegador maneje esas requests de forma nativa.
+  if (url.origin === new URL(BASE).origin) return;
+
+  // Solo cachear GET de assets estáticos propios; el resto, nativo.
+  if (e.request.method !== "GET") return;
+
   e.respondWith(caches.match(e.request).then(c => c || fetch(e.request)));
 });
 
