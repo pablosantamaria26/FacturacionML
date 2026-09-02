@@ -1556,6 +1556,12 @@ function extRenderResultados(data) {
       <div><div class="lbl">Facturas emitidas</div><div class="val">${emitidas.length}</div></div>
       <div style="text-align:right;"><div class="lbl">Total facturado</div><div class="val">$${formatMoneyAR(data.totalFacturado || 0)}</div></div>
     </div>
+    ${data.interrumpido ? `<div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#92400E;font-weight:600;">
+      ⚠️ El proceso se cortó a mitad. Volvé a facturar el extracto: lo ya emitido se omite solo.
+    </div>` : ""}
+    ${data.avisoSecuencia ? `<div style="background:#FEE2E2;border:1px solid #FCA5A5;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#991B1B;font-weight:600;">
+      ⚠️ ${data.avisoSecuencia}
+    </div>` : ""}
     ${omitidas.length > 0 ? `<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#64748B;font-weight:600;">
       ✅ ${omitidas.length} ya facturada${omitidas.length !== 1 ? "s" : ""} este mes — omitidas para no duplicar
     </div>` : ""}
