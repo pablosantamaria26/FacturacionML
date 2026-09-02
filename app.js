@@ -175,12 +175,33 @@ async function pingServer() {
       if (label) label.textContent = "Servidor activo";
     } else throw new Error();
   } catch {
+    serverAwake = false;
     if (dot)   dot.className     = "status-dot offline";
     if (label) label.textContent = "Sin conexión";
   }
 }
 pingServer();
 setInterval(pingServer, 9 * 60 * 1000);
+
+// Despierta el servidor (Render free se duerme a los 15 min) ANTES de subir un
+// archivo. Si se sube con el server frío, el arranque supera el timeout, la
+// conexión se corta a mitad del multipart y el backend tira "Unexpected end of
+// form". Esto reintenta /health hasta ~75s antes de dar por muerto el intento.
+async function wakeServer(onWait) {
+  try {
+    const r = await fetch(`${BASE}/health`, { signal: AbortSignal.timeout(5000) });
+    if (r.ok) { serverAwake = true; return true; }
+  } catch {}
+  if (onWait) onWait();
+  for (let i = 0; i < 14; i++) {
+    await new Promise(res => setTimeout(res, 5000));
+    try {
+      const r = await fetch(`${BASE}/health`, { signal: AbortSignal.timeout(8000) });
+      if (r.ok) { serverAwake = true; pingServer(); return true; }
+    } catch {}
+  }
+  return false;
+}
 
 // ============================================
 // REFERENCIAS AL DOM
@@ -1082,6 +1103,14 @@ window.extProcesar = async function() {
   btn.innerHTML = `<div class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:#fff;width:18px;height:18px;"></div> Subiendo...`;
 
   try {
+    // Despertar el server antes de subir — evita "Unexpected end of form"
+    const despierto = await wakeServer(() => {
+      btn.innerHTML = `<div class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:#fff;width:18px;height:18px;"></div> Despertando servidor...`;
+      showToast("⏳ Despertando el servidor, aguantá unos segundos...", "success");
+    });
+    if (!despierto) throw new Error("El servidor no responde. Probá de nuevo en un minuto.");
+
+    btn.innerHTML = `<div class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:#fff;width:18px;height:18px;"></div> Subiendo...`;
     const formData = new FormData();
     formData.append("extracto", file);
 
@@ -1089,7 +1118,7 @@ window.extProcesar = async function() {
     const r = await fetchWithRetry(
       `${BASE}/procesar-extracto`,
       { method: "POST", body: formData },
-      { maxRetries: 2, timeoutMs: 20000 }
+      { maxRetries: 3, timeoutMs: 60000 }
     );
     const j = await r.json();
     if (!r.ok || !j.ok) throw new Error(j.message || "Error al subir");
@@ -1314,11 +1343,18 @@ window.extFacturar = async function() {
       emailReporte: "santamariapablodaniel@gmail.com"
     };
 
-    // El servidor responde con jobId inmediatamente
+    const despierto = await wakeServer(() => {
+      btn.innerHTML = `<div class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:#fff;width:18px;height:18px;"></div> Despertando servidor...`;
+    });
+    if (!despierto) throw new Error("El servidor no responde. Probá de nuevo en un minuto.");
+
+    // El servidor responde con jobId inmediatamente.
+    // maxRetries:1 a propósito: si el POST llegó pero se perdió la respuesta,
+    // reintentar dispararía DOS jobs sobre las mismas transferencias.
     const r = await fetchWithRetry(
       `${BASE}/facturar-extracto`,
       { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) },
-      { maxRetries: 1, timeoutMs: 15000 }
+      { maxRetries: 1, timeoutMs: 30000 }
     );
     const j = await r.json();
     if (!r.ok || !j.ok) throw new Error(j.message || "Error al iniciar");
@@ -1412,10 +1448,17 @@ window.extConfirmarTodo = async function() {
       emailReporte: "santamariapablodaniel@gmail.com"
     };
 
+    const despierto = await wakeServer(() => {
+      btn.innerHTML = `<div class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:#fff;width:18px;height:18px;"></div> Despertando servidor...`;
+    });
+    if (!despierto) throw new Error("El servidor no responde. Probá de nuevo en un minuto.");
+
+    // maxRetries:1 a propósito (ver nota en extFacturar): un reintento podría
+    // disparar dos jobs sobre las mismas transferencias.
     const r = await fetchWithRetry(
       `${BASE}/facturar-extracto`,
       { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) },
-      { maxRetries: 1, timeoutMs: 15000 }
+      { maxRetries: 1, timeoutMs: 30000 }
     );
     const j = await r.json();
     if (!r.ok || !j.ok) throw new Error(j.message || "Error al iniciar");
@@ -1468,15 +1511,21 @@ async function extMostrarProgreso(jobId, total) {
       const cntEl   = document.getElementById("extProgresoCount");
       const detEl   = document.getElementById("extProgresoDetalle");
       if (barEl) barEl.style.width = pct + "%";
-      if (txtEl) txtEl.textContent = estado.estado === "terminado" ? "✅ Proceso completado" : `Procesando... ${pct}%`;
+      if (txtEl) txtEl.textContent =
+        estado.estado === "terminado"   ? "✅ Proceso completado" :
+        estado.estado === "interrumpido" ? "⚠️ Proceso interrumpido" :
+        `Procesando... ${pct}%`;
       if (cntEl) cntEl.textContent = `${estado.progreso} / ${estado.total}`;
       if (detEl) detEl.innerHTML =
         `${estado.facturasEmitidas || 0} emitidas · ${estado.omitidas || 0} ya facturadas · ${estado.errores || 0} errores`;
 
       fallos = 0;
 
-      if (estado.estado === "terminado" || estado.estado === "error") {
-        haptic("success");
+      if (estado.estado === "terminado" || estado.estado === "error" || estado.estado === "interrumpido") {
+        haptic(estado.estado === "terminado" ? "success" : "warning");
+        if (estado.estado === "interrumpido") {
+          showToast("El servidor se reinició a mitad de proceso. Volvé a facturar el extracto: lo ya emitido se omite automáticamente.", "error");
+        }
         extRenderResultados(estado);
         return;
       }
