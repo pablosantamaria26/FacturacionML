@@ -3,7 +3,18 @@
 // Navegación de meses · Overlay NC · iPhone 14 Pro
 // ============================================
 
-const BASE = "https://api-mercadolimpio.onrender.com";
+const BASE = (window.ML_CONFIG && window.ML_CONFIG.BASE) || "https://api-mercadolimpio.onrender.com";
+
+// Ícono SVG del sprite de index.html
+const ico = (name, cls = "") => `<svg class="ic ${cls}"><use href="#i-${name}"/></svg>`;
+const escHtml = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+// Objeto JSON seguro para un atributo onclick='…'
+const attrJson = (o) => JSON.stringify(o).replace(/&/g, "&amp;").replace(/'/g, "&#39;").replace(/</g, "&lt;");
+const letraDeComprobante = (comp) => {
+  const s = String(comp || "").toUpperCase();
+  if (s.startsWith("NC-")) return "NC";
+  return (s.match(/^(?:FA-)?([ABM])-/) || [])[1] || "";
+};
 
 let itemsGlobal = [];
 let domicilioRemitoGlobal = "";
@@ -119,7 +130,9 @@ function showToast(msg, type = "success") {
   if (!container) return;
   const t = document.createElement("div");
   t.className = `toast ${type}`;
-  t.innerText = msg;
+  // Los mensajes traen emojis históricos al inicio: se reemplazan por un ícono uniforme
+  const limpio = String(msg).replace(/^[\p{Extended_Pictographic}️‍⚠️✅❌⏳⏱🔄\s]+/u, "");
+  t.innerHTML = ico(type === "error" ? "alert" : "check-circle") + `<span>${escHtml(limpio)}</span>`;
   container.appendChild(t);
   setTimeout(() => t.classList.add("show"), 10);
   setTimeout(() => { t.classList.remove("show"); setTimeout(() => t.remove(), 300); }, 4000);
@@ -164,20 +177,22 @@ async function fetchWithRetry(url, options = {}, { maxRetries = 3, timeoutMs = 9
 // ============================================
 // KEEP-ALIVE
 // ============================================
+function setServerStatus(estado) {
+  const txt = { online: ["Servidor activo", "Sistema ARCA conectado"], offline: ["Sin conexión", "El servidor no responde"], waking: ["Conectando…", "Despertando el servidor"] }[estado];
+  document.querySelectorAll("[data-status-dot]").forEach(d => { d.className = `status-dot ${estado}`; });
+  document.querySelectorAll("[data-status-label]").forEach(l => { l.textContent = txt[0]; });
+  document.querySelectorAll("[data-status-sub]").forEach(l => { l.textContent = txt[1]; });
+}
 async function pingServer() {
-  const dot   = document.getElementById("statusDot");
-  const label = document.getElementById("statusLabel");
   try {
     const r = await fetch(`${BASE}/health`, { signal: AbortSignal.timeout(8000) });
     if (r.ok) {
       serverAwake = true;
-      if (dot)   dot.className     = "status-dot online";
-      if (label) label.textContent = "Servidor activo";
+      setServerStatus("online");
     } else throw new Error();
   } catch {
     serverAwake = false;
-    if (dot)   dot.className     = "status-dot offline";
-    if (label) label.textContent = "Sin conexión";
+    setServerStatus("offline");
   }
 }
 pingServer();
@@ -217,14 +232,15 @@ const btnOpenPreview = document.getElementById("btnOpenPreview");
 // PASOS DE PROGRESO — animación durante emisión
 // ============================================
 const PASOS = [
-  { icon: "📡", text: "Conectando con el servidor",    sub: "Verificando disponibilidad...",    color: "#636366" },
-  { icon: "📋", text: "Preparando el comprobante",     sub: "Validando ítems y totales...",      color: "#007AFF" },
-  { icon: "🏛️", text: "Enviando a AFIP / ARCA",       sub: "Transmitiendo datos fiscales...",   color: "#5856D6" },
-  { icon: "⚙️", text: "ARCA está procesando",         sub: "Esto puede tomar unos segundos...", color: "#FF9500" },
-  { icon: "🔐", text: "Solicitando autorización CAE", sub: "Esperando firma digital...",         color: "#FF6B00" },
-  { icon: "📄", text: "Generando PDF oficial",         sub: "Creando el comprobante...",         color: "#34C759" },
-  { icon: "📬", text: "Enviando por email",            sub: "Casi listo...",                     color: "#30B0C7" },
+  { text: "Conectando con el servidor",    sub: "Verificando disponibilidad" },
+  { text: "Preparando el comprobante",     sub: "Validando ítems y totales" },
+  { text: "Enviando a ARCA",               sub: "Transmitiendo datos fiscales" },
+  { text: "ARCA está procesando",          sub: "Puede tardar unos segundos" },
+  { text: "Solicitando el CAE",            sub: "Esperando la autorización" },
+  { text: "Generando el PDF",              sub: "Armando el comprobante" },
+  { text: "Enviando por email",            sub: "Casi listo" },
 ];
+const BTN_EMITIR_HTML = `${ico("zap")}Emitir factura`;
 
 let _pasoInterval = null;
 let _pasoActual   = 0;
@@ -247,38 +263,30 @@ function startEmisionProgress() {
 function renderPaso(idx) {
   _pasoActual = idx;
   const p = PASOS[Math.min(idx, PASOS.length - 1)];
-  btnEmitir.style.background = p.color;
-  btnEmitir.style.boxShadow  = `0 8px 24px ${p.color}55`;
   btnEmitir.innerHTML = `
-    <div class="spinner"></div>
-    <div style="display:flex;flex-direction:column;align-items:flex-start;gap:1px;">
-      <span style="font-size:14px;font-weight:800;letter-spacing:-0.2px;">${p.icon} ${p.text}</span>
-      <span style="font-size:11px;opacity:0.72;font-weight:500;">${p.sub} · paso ${idx+1}/${PASOS.length}</span>
-    </div>
+    <span class="spinner"></span>
+    <span class="paso"><span>${p.text}</span><small>${p.sub} · paso ${idx+1} de ${PASOS.length}</small></span>
   `;
 }
 
 function stopEmisionProgress() {
   clearInterval(_pasoInterval); _pasoInterval = null;
-  btnEmitir.style.background = "";
-  btnEmitir.style.boxShadow  = "";
 }
 
 function setBtnState(state, text) {
   stopEmisionProgress();
   btnEmitir.className = "main-btn";
   btnEmitir.disabled  = true;
-  btnEmitir.style.background = "";
-  btnEmitir.style.boxShadow  = "";
+  const limpio = String(text || "").replace(/^[\p{Extended_Pictographic}️\s]+/u, "");
   if (state === "loading") {
     btnEmitir.classList.add("btn-loading");
-    btnEmitir.innerHTML = `<div class="spinner"></div> ${text || "Procesando..."}`;
+    btnEmitir.innerHTML = `<span class="spinner"></span>${escHtml(limpio || "Procesando…")}`;
   } else if (state === "success") {
     btnEmitir.classList.add("btn-success");
-    btnEmitir.innerHTML = `✅ ${text || "¡Completado!"}`;
+    btnEmitir.innerHTML = `${ico("check-circle")}${escHtml(limpio || "Completado")}`;
     btnEmitir.disabled = false;
   } else {
-    btnEmitir.innerHTML = text || "⚡ EMITIR FACTURA";
+    btnEmitir.innerHTML = /reintentar/i.test(limpio) ? `${ico("refresh")}Reintentar emisión` : BTN_EMITIR_HTML;
     btnEmitir.disabled = false;
   }
 }
@@ -334,7 +342,7 @@ async function leerPDF(event) {
   if (!files || files.length === 0) return;
   haptic();
   const fileBadge = document.getElementById("file-badge");
-  if (fileBadge) { fileBadge.style.display = "block"; fileBadge.textContent = `📎 ${files.length} archivo(s) cargado(s)`; }
+  if (fileBadge) { fileBadge.style.display = "flex"; fileBadge.innerHTML = `${ico("file", "ic-sm")}${files.length} archivo${files.length !== 1 ? "s" : ""} cargado${files.length !== 1 ? "s" : ""}`; }
   setBtnState("loading", "Analizando PDF con IA...");
   const formData = new FormData();
   for (let i = 0; i < files.length; i++) formData.append("remito", files[i]);
@@ -371,13 +379,13 @@ function mostrarResumenExtraccion(res) {
   const box = document.getElementById("resumenExtraccion");
   if (!box) return;
   const items = Array.isArray(res.items) ? res.items : [];
-  let html = `<strong>📋 Extracción del remito</strong><br>`;
-  if (res.cuit) html += `CUIT: <strong>${res.cuit}</strong><br>`;
+  let html = `<strong>Datos leídos del remito</strong><br>`;
+  if (res.cuit) html += `CUIT: <strong>${escHtml(res.cuit)}</strong><br>`;
   html += `Ítems: <strong>${items.length}</strong>`;
   if (subtotalBrutoGlobal > 0 && descuentoImporteGlobal > 0)
-    html += ` · Subtotal: <strong>$${formatMoneyAR(subtotalBrutoGlobal)}</strong> · Dto: <strong>-$${formatMoneyAR(descuentoImporteGlobal)}</strong>`;
+    html += ` · Subtotal: <strong>$${formatMoneyAR(subtotalBrutoGlobal)}</strong> · Descuento: <strong>-$${formatMoneyAR(descuentoImporteGlobal)}</strong>`;
   if (totalFinalGlobal > 0) html += `<div class="summary-total">Total: $${formatMoneyAR(totalFinalGlobal)}</div>`;
-  if (res.domicilioRemito) html += `<div class="domicilio-pdf">📍 ${res.domicilioRemito}</div>`;
+  if (res.domicilioRemito) html += `<div class="muted">Entrega: ${escHtml(res.domicilioRemito)}</div>`;
   box.innerHTML = html;
   box.style.display = "block";
 }
@@ -400,15 +408,16 @@ async function generarVistaPrevia() {
     const m = parseMontoInput();
     if (m > 0) items = [{ descripcion: detalleManual || "Artículos varios", cantidad: 1, precioConIva: round2(m), subtotalConIva: round2(m) }];
   }
+  const totalComputed = round2(items.reduce((a, x) => a + Number(x.subtotalConIva || 0), 0));
+  const totalToSend   = totalFinalGlobal > 0 ? totalFinalGlobal : totalComputed;
+  if (window.UI?.resumenPrevia) window.UI.resumenPrevia({ cuit, items, total: totalToSend });
   if (items.length === 0 && (!cuit || cuit.length < 11)) { btnOpenPreview.disabled = true; return; }
 
   computeTotalPartes();
   btnOpenPreview.disabled = false;
-  btnOpenPreview.innerHTML = `👁️ Vista Previa (Parte ${parteActual}/${totalPartes})`;
+  btnOpenPreview.innerHTML = `${ico("eye", "ic-sm")}Ver PDF de vista previa${totalPartes > 1 ? ` (parte ${parteActual} de ${totalPartes})` : ""}`;
 
   try {
-    const totalComputed = round2(items.reduce((a, x) => a + Number(x.subtotalConIva || 0), 0));
-    const totalToSend   = totalFinalGlobal > 0 ? totalFinalGlobal : totalComputed;
     const r = await fetchWithRetry(
       `${BASE}/debug/preview`,
       { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
@@ -424,14 +433,29 @@ async function generarVistaPrevia() {
       const html = await r.text();
       const doc  = document.getElementById("previewFrame").contentWindow.document;
       doc.open(); doc.write(html); doc.close();
+      ajustarPreview();
     }
   } catch (e) { console.warn("Preview:", e.message); }
 }
+
+// Muestra la hoja A4 real (820 px) escalada al ancho disponible
+function ajustarPreview() {
+  const frame = document.getElementById("previewFrame");
+  const doc = frame?.contentWindow?.document;
+  if (!doc || !doc.body) return;
+  let st = doc.getElementById("ml-fit");
+  if (!st) { st = doc.createElement("style"); st.id = "ml-fit"; doc.head.appendChild(st); }
+  const w = frame.clientWidth || 820;
+  const k = Math.min(1, (w - 8) / 880);
+  st.textContent = `html,body{overflow-x:hidden} .page{width:880px!important;padding:30px!important;zoom:${k}!important;margin:0!important}`;
+}
+window.addEventListener("resize", ajustarPreview);
 
 window.openPreview = function () {
   haptic();
   document.getElementById("previewBackdrop").classList.add("active");
   document.getElementById("previewSheet").classList.add("active");
+  setTimeout(ajustarPreview, 320);
 };
 window.closePreview = function () {
   haptic();
@@ -634,12 +658,14 @@ window.abrirResumen = async function () {
   resumenAnio = hoy.getFullYear();
   resumenMes  = hoy.getMonth() + 1;
   actualizarNavMes();
+  document.getElementById("resumenBackdrop")?.classList.add("active");
   document.getElementById("resumenModal").classList.add("active");
   await renderResumen();
 };
 
 window.cerrarResumen = function () {
   haptic();
+  document.getElementById("resumenBackdrop")?.classList.remove("active");
   document.getElementById("resumenModal").classList.remove("active");
 };
 
@@ -649,14 +675,8 @@ async function renderResumen() {
 
   // Skeleton loader mientras carga
   contenido.innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:10px;margin-bottom:20px;">
-      ${[1,2,3].map(() => `
-        <div style="background:#fff;border-radius:16px;padding:18px 10px;box-shadow:0 2px 10px rgba(0,0,0,0.05);">
-          <div class="skeleton" style="width:50%;margin:0 auto 8px;height:22px;"></div>
-          <div class="skeleton" style="width:70%;margin:0 auto;height:10px;"></div>
-        </div>`).join("")}
-    </div>
-    ${[1,2,3].map(() => `<div class="skeleton" style="height:82px;border-radius:16px;margin-bottom:9px;"></div>`).join("")}
+    <div class="res-kpis">${[1,2,3].map(() => `<div class="skeleton" style="height:64px;"></div>`).join("")}</div>
+    ${[1,2,3,4].map(() => `<div class="skeleton" style="height:70px;margin-bottom:8px;"></div>`).join("")}
   `;
 
   const mesKey = getMesKey(resumenAnio, resumenMes);
@@ -722,32 +742,20 @@ async function renderResumen() {
 
   if (facturas.length === 0) {
     contenido.innerHTML = `
-      <div style="text-align:center;padding:60px 20px;color:#8E8E93;">
-        <div style="font-size:52px;margin-bottom:14px;">📋</div>
-        <div style="font-size:17px;font-weight:700;color:#1C1C1E;">Sin facturas en ${MESES[resumenMes]} ${resumenAnio}</div>
-        <div style="font-size:14px;margin-top:6px;color:#8E8E93;">
-          ${origen === "local" ? "Sin datos en servidor ni en este dispositivo" : "No hay comprobantes registrados para este mes"}
-        </div>
+      <div class="vacio">${ico("file")}
+        <p>Sin comprobantes en ${MESES[resumenMes]} ${resumenAnio}</p>
+        <small>${origen === "local" ? "Sin datos en el servidor ni en este dispositivo" : "No hay comprobantes registrados para este mes"}</small>
       </div>`;
     return;
   }
 
   let html = `
-    <div class="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-num">${facturas.length}</div>
-        <div class="kpi-label">Comprobantes</div>
-      </div>
-      <div class="kpi-card kpi-green">
-        <div class="kpi-num-sm">$${formatMoneyAR(totalMes)}</div>
-        <div class="kpi-label">Total del mes</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-num">${cuitsSet.size}</div>
-        <div class="kpi-label">Clientes</div>
-      </div>
+    <div class="res-kpis">
+      <div class="kpi"><div class="kpi-body"><div class="kpi-num">${facturas.length}</div><div class="kpi-label">Comprobantes</div></div></div>
+      <div class="kpi"><div class="kpi-body"><div class="kpi-num">$${formatMoneyAR(totalMes)}</div><div class="kpi-label">Total del mes</div></div></div>
+      <div class="kpi"><div class="kpi-body"><div class="kpi-num">${cuitsSet.size}</div><div class="kpi-label">Clientes</div></div></div>
     </div>
-    <div class="section-label">Comprobantes · ${origen === "server" ? "sincronizado" : "cache local"}</div>
+    <div class="sec-tit">Comprobantes · ${origen === "server" ? "sincronizado" : "guardado en este dispositivo"}</div>
   `;
 
   for (const f of [...facturas].reverse()) {
@@ -760,48 +768,37 @@ async function renderResumen() {
     const pdfUrl      = f.pdfUrl || f.pdf_url || "";
     const nombre      = f.nombre || f.nombreCliente || f.nombre_cliente || "Sin nombre";
     const cuit        = f.cuit || f.cuitCliente || f.cuit_cliente || "";
+    const letra       = letraDeComprobante(comprobante);
 
     const emailTo   = f.emailTo || f.email_to || "";
-    const factData = JSON.stringify({ comprobante, nombre, total: totalNum, nro, nroFactura: nro, puntoVenta: pv, cuit, emailTo }).replace(/'/g, "&apos;");
+    const factData = attrJson({ comprobante, nombre, total: totalNum, nro, nroFactura: nro, puntoVenta: pv, cuit, emailTo });
 
     html += `
       <div class="fact-row${estaAnulado ? " anulada" : ""}">
+        <span class="letra-badge letra-${letra || "M"}">${letra || "—"}</span>
         <div style="flex:1;min-width:0;">
-          <div style="font-weight:800;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:6px;">
-            <span style="overflow:hidden;text-overflow:ellipsis;">${nombre}</span>
-            ${estaAnulado ? `<span style="flex-shrink:0;font-size:10px;font-weight:800;color:#FF3B30;background:#FFF1F0;padding:2px 7px;border-radius:999px;">ANULADA</span>` : ""}
-            ${esNC ? `<span style="flex-shrink:0;font-size:10px;font-weight:800;color:#5856D6;background:#EEEEFF;padding:2px 7px;border-radius:999px;">NC</span>` : ""}
-          </div>
-          <div style="font-size:12px;color:#8E8E93;margin-top:3px;">${f.fecha || ""} · ${comprobante}</div>
-          <div style="font-size:11px;color:#A0AEC0;font-family:monospace;margin-top:1px;">CAE: ${f.cae || "—"}</div>
+          <div class="fr-nombre"><span>${escHtml(nombre)}</span>${estaAnulado ? `<span class="tag tag-red">Anulada</span>` : ""}</div>
+          <div class="fr-sub">${escHtml(String(f.fecha || "").split("-").reverse().join("/"))} · ${escHtml(comprobante)}</div>
+          <div class="fr-cae">CAE ${escHtml(f.cae || "—")}</div>
           <div class="fact-actions">
-            ${pdfUrl ? `<button class="fact-mini-btn pdf" onclick="window.open('${pdfUrl}','_blank')">📄 PDF</button>` : ""}
-            ${!esNC && !estaAnulado && totalNum > 0 ? `<button class="fact-mini-btn anular" onclick='abrirModalAnular(${factData})'>⛔ NC</button>` : ""}
-            ${!estaAnulado ? `<button class="fact-mini-btn" style="background:#EFF6FF;color:#1D4ED8;" onclick='abrirModalReenviarEmail(${factData})'>📧 Email</button>` : ""}
+            ${pdfUrl ? `<a class="mini-btn" href="${escHtml(pdfUrl)}" target="_blank" rel="noopener">${ico("download")}PDF</a>` : ""}
+            ${!estaAnulado ? `<button class="mini-btn" onclick='abrirModalReenviarEmail(${factData})'>${ico("mail")}Email</button>` : ""}
+            ${!esNC && !estaAnulado && totalNum > 0 ? `<button class="mini-btn danger" onclick='abrirModalAnular(${factData})'>${ico("file-minus")}Nota de crédito</button>` : ""}
           </div>
         </div>
-        <div style="text-align:right;flex-shrink:0;margin-left:12px;">
-          <div style="font-weight:900;font-size:15px;color:${totalNum < 0 ? "#FF3B30" : "#1C1C1E"};">
-            ${totalNum < 0 ? "-" : ""}$${formatMoneyAR(Math.abs(totalNum))}
-          </div>
-        </div>
+        <div class="fr-monto${totalNum < 0 ? " neg" : ""}">${totalNum < 0 ? "−" : ""}$${formatMoneyAR(Math.abs(totalNum))}</div>
       </div>`;
   }
 
   if (clientes.length > 1) {
-    html += `<div class="section-label" style="margin-top:20px;">Por cliente</div>`;
+    html += `<div class="sec-tit">Por cliente</div>`;
     for (const c of clientes) {
       const pct = totalMes > 0 ? Math.round((c.total / totalMes) * 100) : 0;
       html += `
-        <div style="margin-bottom:14px;">
-          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
-            <span style="font-weight:700;font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.nombre}</span>
-            <span style="font-weight:900;font-size:13px;margin-left:8px;flex-shrink:0;">$${formatMoneyAR(c.total)}</span>
-          </div>
-          <div style="background:#F2F2F7;border-radius:6px;height:7px;overflow:hidden;">
-            <div style="background:linear-gradient(90deg,#007AFF,#5856D6);height:100%;width:${pct}%;border-radius:6px;transition:width 0.8s cubic-bezier(.4,0,.2,1);"></div>
-          </div>
-          <div style="font-size:11px;color:#8E8E93;margin-top:3px;">${c.cant} comprobante(s) · ${pct}% del total</div>
+        <div class="rank">
+          <div class="rank-top"><span>${escHtml(c.nombre)}</span><strong>$${formatMoneyAR(c.total)}</strong></div>
+          <div class="rank-bar"><div style="width:${Math.max(0, Math.min(100, pct))}%"></div></div>
+          <div class="rank-sub">${c.cant} comprobante${c.cant !== 1 ? "s" : ""} · ${pct}% del total</div>
         </div>`;
     }
   }
@@ -810,37 +807,64 @@ async function renderResumen() {
 }
 
 // ============================================
-// PANTALLA DE ÉXITO
+// CONFIRMACIÓN DE EMISIÓN
 // ============================================
 function showSuccessModal(data) {
   const modal      = document.getElementById("successModal");
   const actionsBox = document.getElementById("successActions");
+  const simulado   = !!data.simulado;
+  modal.classList.toggle("sim", simulado);
+  document.getElementById("successTitulo").textContent = simulado ? "Simulación: no se emitió en ARCA" : "Factura autorizada por ARCA";
   document.getElementById("successMsgText").innerText =
     data.mensaje || "Factura emitida correctamente. Podés descargar el PDF aunque el email falle.";
-  actionsBox.innerHTML = "";
 
   const cuitUsado   = document.getElementById("cuit")?.value?.trim()  || data.receptor?.cuit  || "";
   const emailUsado  = document.getElementById("email")?.value?.trim() || "";
   const nombreUsado = data.receptor?.nombre || (cuitUsado ? `CUIT ${cuitUsado}` : "");
-
   const facturas = Array.isArray(data.facturas) ? data.facturas : [];
 
-  if (data.waLink) {
-    const btn = document.createElement("a");
-    btn.className = "action-btn btn-wa";
-    btn.href = data.waLink; btn.target = "_blank";
-    btn.innerHTML = `📱 Enviar resumen por WhatsApp`;
-    actionsBox.appendChild(btn);
-  }
+  // La factura queda autorizada aunque el email falle: se muestran por separado
+  const estadoEmail = data.emailEnviado
+    ? `<span class="tag tag-green tag-dot">Enviado${emailUsado ? " a " + escHtml(emailUsado) : ""}</span>`
+    : `<span class="tag tag-amber tag-dot">No enviado${data.emailError ? ": " + escHtml(data.emailError) : ""}</span>`;
+
+  let html = "";
+  facturas.forEach((f, idx) => {
+    const letra = letraDeComprobante(f.comprobante);
+    html += `
+      <div class="comp-card">
+        <div class="comp-card-head">
+          <div style="display:flex;align-items:center;gap:8px;min-width:0;"><span class="letra-badge letra-${letra || "A"}">${letra || "—"}</span><strong>${escHtml(f.comprobante || "")}</strong></div>
+          ${simulado ? `<span class="tag tag-amber">Simulada</span>` : `<span class="tag tag-green tag-dot">Autorizada</span>`}
+        </div>
+        <dl class="comp-rows">
+          ${facturas.length > 1 ? `<div><dt>Parte</dt><dd>${idx + 1} de ${facturas.length}</dd></div>` : ""}
+          <div><dt>Cliente</dt><dd>${escHtml(nombreUsado)}</dd></div>
+          <div><dt>CUIT</dt><dd>${escHtml(cuitUsado)}</dd></div>
+          <div><dt>Monto</dt><dd>$${formatMoneyAR(f.total)}</dd></div>
+          <div><dt>CAE</dt><dd class="mono">${escHtml(f.cae || "—")}</dd></div>
+          <div><dt>Email</dt><dd>${estadoEmail}</dd></div>
+        </dl>
+      </div>`;
+  });
+  html += `<div class="success-actions" id="successBtns"></div>`;
+  actionsBox.innerHTML = html;
+  const btns = actionsBox.querySelector("#successBtns");
+  const mk = (tag, cls, icon, text, attrs = {}) => {
+    const el = document.createElement(tag);
+    el.className = cls;
+    el.innerHTML = ico(icon, "ic-sm") + escHtml(text);
+    Object.assign(el, attrs);
+    btns.appendChild(el);
+    return el;
+  };
 
   facturas.forEach((f, idx) => {
     if (!f.pdfUrl) return;
-
+    const sufijo = facturas.length > 1 ? ` (parte ${idx + 1})` : "";
+    mk("a", "btn btn-secondary", "download", `Abrir PDF${sufijo}`, { href: f.pdfUrl, target: "_blank", download: `Factura_${f.nroFactura || idx + 1}.pdf` });
     if (navigator.share) {
-      const btnShare = document.createElement("button");
-      btnShare.className = "action-btn btn-download";
-      btnShare.innerHTML = `📤 Compartir PDF${facturas.length > 1 ? ` (Parte ${idx+1})` : ""} · $${formatMoneyAR(f.total)}`;
-      btnShare.onclick = async () => {
+      mk("button", "btn btn-secondary", "share", `Compartir${sufijo}`).onclick = async () => {
         haptic();
         try {
           const resp = await fetch(f.pdfUrl);
@@ -853,24 +877,19 @@ function showSuccessModal(data) {
           }
         } catch (e) { if (e.name !== "AbortError") window.open(f.pdfUrl, "_blank"); }
       };
-      actionsBox.appendChild(btnShare);
     }
-
-    const btnPdf = document.createElement("a");
-    btnPdf.className = "action-btn btn-download";
-    btnPdf.href = f.pdfUrl; btnPdf.target = "_blank"; btnPdf.download = `Factura_${f.nroFactura||idx+1}.pdf`;
-    btnPdf.innerHTML = `📄 Abrir PDF${facturas.length > 1 ? ` (Parte ${idx+1})` : ""} · $${formatMoneyAR(f.total)}`;
-    actionsBox.appendChild(btnPdf);
-
-    const btnWaPdf = document.createElement("a");
-    btnWaPdf.className = "action-btn btn-wa"; btnWaPdf.style.opacity = "0.82";
-    btnWaPdf.href = `https://wa.me/?text=${encodeURIComponent(`Factura Mercado Limpio\nTotal: $${formatMoneyAR(f.total)}\nCAE: ${f.cae}\nPDF: ${f.pdfUrl}`)}`;
-    btnWaPdf.target = "_blank";
-    btnWaPdf.innerHTML = `💬 Enviar link PDF por WhatsApp${facturas.length > 1 ? ` (Parte ${idx+1})` : ""}`;
-    actionsBox.appendChild(btnWaPdf);
+    mk("a", "btn btn-wa", "chat", `Link del PDF por WhatsApp${sufijo}`, { href: `https://wa.me/?text=${encodeURIComponent(`Factura Mercado Limpio\nTotal: $${formatMoneyAR(f.total)}\nCAE: ${f.cae}\nPDF: ${f.pdfUrl}`)}`, target: "_blank" });
   });
 
-  if (facturas.length > 0) {
+  if (facturas.length > 0 && !simulado) {
+    const f0 = facturas[0];
+    mk("button", "btn btn-secondary", "mail", "Reenviar email").onclick = () => {
+      abrirModalReenviarEmail({ comprobante: f0.comprobante, nombre: nombreUsado, total: f0.total, cuit: cuitUsado, emailTo: emailUsado });
+    };
+  }
+  if (data.waLink) mk("a", "btn btn-wa", "chat", "Resumen por WhatsApp", { href: data.waLink, target: "_blank" });
+
+  if (facturas.length > 0 && !simulado) {
     const factLines = facturas.map(f => `• ${f.comprobante || ""} · $${formatMoneyAR(f.total)}`).join("\n");
     const msgOficina =
       `*Factura emitida - Mercado Limpio*\n` +
@@ -878,28 +897,13 @@ function showSuccessModal(data) {
       `CUIT: ${cuitUsado}\n` +
       `${factLines}\n` +
       (emailUsado ? `Email: ${emailUsado}` : `Sin email registrado`);
-    const btnOficina = document.createElement("a");
-    btnOficina.className = "action-btn btn-wa";
-    btnOficina.style.marginTop = "4px";
-    btnOficina.href = `https://wa.me/5491133395487?text=${encodeURIComponent(msgOficina)}`;
-    btnOficina.target = "_blank";
-    btnOficina.innerHTML = `📲 Avisar a Oficina`;
-    actionsBox.appendChild(btnOficina);
-
-    const info = document.createElement("div");
-    info.style = "margin:14px 0 6px;padding:14px;background:#F8FAFC;border-radius:14px;font-size:12px;color:#475569;line-height:1.9;font-family:monospace;border:1px solid #E2E8F0;";
-    info.innerHTML = facturas.map((f, i) =>
-      `<strong>Parte ${i+1}:</strong> Nro ${String(f.nroFactura||"").padStart(8,"0")} · CAE: ${f.cae} · $${formatMoneyAR(f.total)}`
-    ).join("<br>");
-    actionsBox.appendChild(info);
+    const oficina = (window.ML_CONFIG && window.ML_CONFIG.OFICINA_WA) || "5491133395487";
+    mk("a", "btn btn-wa full", "phone", "Avisar a Oficina", { href: `https://wa.me/${oficina}?text=${encodeURIComponent(msgOficina)}`, target: "_blank" });
   }
 
-  const btnReset = document.createElement("button");
-  btnReset.className = "action-btn btn-close-success";
-  btnReset.innerHTML = "📋 Emitir Otra Factura";
-  btnReset.onclick = () => { haptic(); window.location.reload(); };
-  actionsBox.appendChild(btnReset);
+  mk("button", "main-btn full", "plus", "Emitir otra factura").onclick = () => { haptic(); window.location.reload(); };
 
+  document.getElementById("successBackdrop")?.classList.add("active");
   modal.classList.add("active");
 }
 
@@ -977,6 +981,8 @@ window.confirmarAnulacion = async function() {
     hideNcLoading();
     haptic("success");
     showToast("✅ Nota de Crédito emitida con éxito", "success");
+    histMesCargado = "";
+    if (document.getElementById("tabHistorial").classList.contains("active")) histCargar();
 
     if (j.notaCredito?.pdfUrl) setTimeout(() => window.open(j.notaCredito.pdfUrl, "_blank"), 400);
 
@@ -1039,6 +1045,7 @@ window.confirmarAnulacionManual = async function() {
     hideNcLoading();
     haptic("success");
     showToast("✅ Nota de Crédito generada con éxito", "success");
+    histMesCargado = "";
 
     if (j.notaCredito?.pdfUrl) setTimeout(() => window.open(j.notaCredito.pdfUrl, "_blank"), 400);
     if (typeof renderResumen === "function") renderResumen();
@@ -1059,12 +1066,21 @@ window.switchTab = function(tab) {
   const isHistorial = tab === "historial";
   const isEmail     = tab === "email";
 
-  document.getElementById("tabFacturar").style.display     = isFacturar  ? "block" : "none";
-  document.getElementById("tabExtracto").style.display     = isExtracto  ? "flex"  : "none";
-  document.getElementById("tabHistorial").style.display    = isHistorial ? "flex"  : "none";
-  document.getElementById("tabEmail").style.display        = isEmail     ? "flex"  : "none";
-  document.getElementById("bottomBarFacturar").style.display = isFacturar  ? "block" : "none";
-  document.getElementById("bottomBarExtracto").style.display = isExtracto  ? "block" : "none";
+  document.getElementById("tabFacturar").classList.toggle("active",  isFacturar);
+  document.getElementById("tabExtracto").classList.toggle("active",  isExtracto);
+  document.getElementById("tabHistorial").classList.toggle("active", isHistorial);
+  document.getElementById("tabEmail").classList.toggle("active",     isEmail);
+  document.querySelectorAll(".side-link[data-tab]").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+  const TITULOS = {
+    facturar:  ["Facturación", "Sistema de facturación ARCA"],
+    extracto:  ["Extracto bancario", "Subí el extracto y la IA detecta las transferencias"],
+    historial: ["Historial de facturas", "Consultá, descargá y gestioná los comprobantes emitidos"],
+    email:     ["Emails y resumen", "Enviá el resumen mensual de facturación"],
+  };
+  const [tit, sub] = TITULOS[tab] || TITULOS.facturar;
+  document.getElementById("pageTitle").textContent = tit;
+  document.getElementById("pageSub").textContent = sub;
+  window.scrollTo({ top: 0 });
 
   document.getElementById("tabBtnFacturar").classList.toggle("active",  isFacturar);
   document.getElementById("tabBtnExtracto").classList.toggle("active",  isExtracto);
@@ -1087,8 +1103,8 @@ document.getElementById("extFileInput").addEventListener("change", function() {
   if (!f) return;
   haptic();
   const badge = document.getElementById("extFileBadge");
-  badge.style.display = "block";
-  badge.textContent = `📎 ${f.name} (${(f.size / 1024).toFixed(0)} KB)`;
+  badge.style.display = "flex";
+  badge.innerHTML = `${ico("file", "ic-sm")}${escHtml(f.name)} · ${(f.size / 1024).toFixed(0)} KB`;
   document.getElementById("extBtnProcesar").disabled = false;
   document.getElementById("extBtnProcesar").style.opacity = "1";
 });
@@ -1101,17 +1117,17 @@ window.extProcesar = async function() {
   haptic();
   const btn = document.getElementById("extBtnProcesar");
   btn.disabled = true;
-  btn.innerHTML = `<div class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:#fff;width:18px;height:18px;"></div> Subiendo...`;
+  btn.innerHTML = `<span class="spinner spinner-sm"></span>Subiendo...`;
 
   try {
     // Despertar el server antes de subir — evita "Unexpected end of form"
     const despierto = await wakeServer(() => {
-      btn.innerHTML = `<div class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:#fff;width:18px;height:18px;"></div> Despertando servidor...`;
+      btn.innerHTML = `<span class="spinner spinner-sm"></span>Despertando servidor...`;
       showToast("⏳ Despertando el servidor, aguantá unos segundos...", "success");
     });
     if (!despierto) throw new Error("El servidor no responde. Probá de nuevo en un minuto.");
 
-    btn.innerHTML = `<div class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:#fff;width:18px;height:18px;"></div> Subiendo...`;
+    btn.innerHTML = `<span class="spinner spinner-sm"></span>Subiendo...`;
     const formData = new FormData();
     formData.append("extracto", file);
 
@@ -1125,13 +1141,13 @@ window.extProcesar = async function() {
     if (!r.ok || !j.ok) throw new Error(j.message || "Error al subir");
 
     // Mostrar pantalla de análisis con polling
-    btn.innerHTML = `<div class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:#fff;width:18px;height:18px;"></div> Analizando...`;
+    btn.innerHTML = `<span class="spinner spinner-sm"></span>Analizando...`;
     await extEsperarAnalisis(j.jobId, btn);
 
   } catch (e) {
     showToast("❌ " + (e.message || "Error"), "error");
     btn.disabled = false;
-    btn.innerHTML = "🔍 ANALIZAR CON IA";
+    btn.innerHTML = `${ico("sparkles", "ic-sm")}Analizar con IA`;
   }
 };
 
@@ -1166,7 +1182,7 @@ async function extEsperarAnalisis(jobId, btn) {
           if (conCuit.length === 0) {
             showToast(`Se encontraron ${estado.total} movimientos pero ninguno tiene CUIT para facturar`, "error");
             btn.disabled = false;
-            btn.innerHTML = "🔍 ANALIZAR CON IA";
+            btn.innerHTML = `${ico("sparkles", "ic-sm")}Analizar con IA`;
             return;
           }
           showToast(`Sin chinos detectados · ${conCuit.length} transferencia${conCuit.length !== 1 ? "s" : ""} con CUIT disponible${conCuit.length !== 1 ? "s" : ""}`, "success");
@@ -1189,7 +1205,7 @@ async function extEsperarAnalisis(jobId, btn) {
       if (fallos >= 4) {
         showToast("❌ " + (e.message || "Error en análisis"), "error");
         btn.disabled = false;
-        btn.innerHTML = "🔍 ANALIZAR CON IA";
+        btn.innerHTML = `${ico("sparkles", "ic-sm")}Analizar con IA`;
         return;
       }
     }
@@ -1215,7 +1231,6 @@ function extRenderList() {
 
   const extBtn = document.getElementById("extBtnFacturar");
   extBtn.disabled = incluidas.length === 0 || incluidas.some(t => t.incluida && !t.cuitEdit);
-  extBtn.style.opacity = extBtn.disabled ? "0.55" : "1";
 
   const btnTodo = document.getElementById("extBtnFacturarTodo");
   if (btnTodo) {
@@ -1224,13 +1239,12 @@ function extRenderList() {
     );
     btnTodo.style.display = "flex";
     btnTodo.disabled = candidatasTodo.length === 0;
-    btnTodo.style.opacity = btnTodo.disabled ? "0.55" : "1";
     btnTodo.innerHTML = candidatasTodo.length > 0
-      ? `🏦 FACTURAR TODO (${candidatasTodo.length})`
-      : `🏦 FACTURAR TODO CON CUIT`;
+      ? `${ico("bank", "ic-sm")}Facturar todo (${candidatasTodo.length})`
+      : `${ico("bank", "ic-sm")}Facturar todo con CUIT`;
   }
 
-  // Barra de total en el bottom bar (siempre visible antes de facturar)
+  // Total visible en el dock del celular
   const bottomBar = document.getElementById("extBottomTotalBar");
   const bottomCount = document.getElementById("extBottomCount");
   const bottomTotal = document.getElementById("extBottomTotal");
@@ -1239,43 +1253,39 @@ function extRenderList() {
     if (bottomCount) bottomCount.textContent = `${incluidas.length} transferencia${incluidas.length !== 1 ? "s" : ""}`;
     if (bottomTotal) bottomTotal.textContent = `$${formatMoneyAR(total)}`;
   }
+  document.getElementById("tabExtracto").classList.add("ext-dock-on");
 
   extTransferencias.forEach(t => {
     const div = document.createElement("div");
     const sinCuit = !t.cuitEdit;
     const emailGuardado = t.cuitEdit.length === 11 ? getEmailForCuit(t.cuitEdit) : "";
-    div.className = `transfer-card${sinCuit ? " sin-cuit" : ""}${!t.incluida ? " excluida" : ""}`;
+    div.className = `tr-row transfer-card${sinCuit ? " sin-cuit" : ""}${!t.incluida ? " excluida" : ""}`;
 
-    const avatarLetter = (t.nombre || "?").trim().charAt(0).toUpperCase();
+    let estado;
+    if (t.yaFacturado) estado = `<span class="tag tag-green tag-dot">Ya facturada</span>`;
+    else if (sinCuit) estado = `<span class="tag tag-red tag-dot">Falta CUIT</span>`;
+    else if (!t.incluida) estado = `<span class="tag">Excluida</span>`;
+    else estado = `<span class="tag tag-blue tag-dot">Sin facturar</span>`;
+
     div.innerHTML = `
-      <div class="tc-main">
-        <div class="tc-avatar">${avatarLetter}</div>
-        <div class="tc-info">
-          <div class="tc-nombre">${t.nombre}</div>
-          <div class="tc-meta">${t.fecha || "Sin fecha"}${t.descripcion ? " · " + t.descripcion : ""}</div>
-          ${t.yaFacturado ? `<div class="tc-ya-fac">✅ Ya facturada este mes — excluida por defecto</div>` : ""}
-        </div>
-        <div class="tc-monto">$${formatMoneyAR(t.monto)}</div>
+      <div class="tr-check-cell"><button class="tr-check${t.incluida ? " on" : ""}" onclick="extToggleTransfer(${t.id})" aria-label="${t.incluida ? "Excluir" : "Incluir"}">${t.incluida ? ico("check") : ""}</button></div>
+      <div class="tr-fecha">${escHtml(t.fecha || "—")}</div>
+      <div class="tr-main">
+        <div class="tr-nombre">${escHtml(t.nombre)}</div>
+        <div class="tr-meta">${escHtml(t.fecha || "Sin fecha")}${t.descripcion ? " · " + escHtml(t.descripcion) : ""}${t.referencia ? " · Ref. " + escHtml(t.referencia) : ""}</div>
       </div>
-      <div class="tc-bottom">
-        <div class="tc-cuit-row">
-          <input class="transfer-cuit-input" type="tel" inputmode="numeric" maxlength="11"
-            placeholder="CUIT (11 dígitos)" value="${t.cuitEdit}"
-            onchange="extUpdateCuit(${t.id}, this.value)"
-            oninput="extUpdateCuit(${t.id}, this.value)" />
-          <button class="transfer-toggle${t.incluida ? " incluida" : ""}"
-            onclick="extToggleTransfer(${t.id})">
-            ${t.incluida ? "✓ Incluida" : "Excluida"}
-          </button>
-        </div>
-        ${emailGuardado ? `<div class="tc-email">📧 ${emailGuardado}</div>` : ""}
-        ${sinCuit && !t.yaFacturado ? `<div class="tc-alert">⚠️ Ingresá el CUIT para incluir</div>` : ""}
+      <div class="tr-cuit">
+        <input class="transfer-cuit-input" type="tel" inputmode="numeric" maxlength="11" aria-label="CUIT"
+          placeholder="CUIT (11 dígitos)" value="${escHtml(t.cuitEdit)}"
+          onchange="extUpdateCuit(${t.id}, this.value)"
+          oninput="extUpdateCuit(${t.id}, this.value)" />
       </div>
+      <div class="tr-monto">$${formatMoneyAR(t.monto)}</div>
+      <div class="tr-estado">${estado}${emailGuardado ? `<span class="tc-email" title="${escHtml(emailGuardado)}">${ico("mail", "ic-sm")}<span class="tc-email-txt">${escHtml(emailGuardado)}</span></span>` : ""}</div>
     `;
     list.appendChild(div);
   });
 }
-
 window.extUpdateCuit = function(id, val) {
   const t = extTransferencias.find(x => x.id === id);
   if (t) {
@@ -1289,7 +1299,13 @@ window.extUpdateCuit = function(id, val) {
     const cards = document.querySelectorAll(".transfer-card");
     cards.forEach((card, i) => {
       if (extTransferencias[i]?.id === id) {
-        card.classList.toggle("sin-cuit", t.cuitEdit.length !== 11);
+        const falta = t.cuitEdit.length !== 11;
+        card.classList.toggle("sin-cuit", falta);
+        const tag = card.querySelector(".tr-estado .tag");
+        if (tag && !t.yaFacturado) {
+          tag.className = falta ? "tag tag-red tag-dot" : (t.incluida ? "tag tag-blue tag-dot" : "tag");
+          tag.textContent = falta ? "Falta CUIT" : (t.incluida ? "Sin facturar" : "Excluida");
+        }
       }
     });
   }
@@ -1304,6 +1320,7 @@ window.extToggleTransfer = function(id) {
 window.extVolver = function() {
   haptic();
   extTransferencias = [];
+  document.getElementById("tabExtracto").classList.remove("ext-dock-on");
   document.getElementById("extStep2").classList.remove("active");
   document.getElementById("extStep1").classList.add("active");
   document.getElementById("extFileBadge").style.display = "none";
@@ -1312,7 +1329,7 @@ window.extVolver = function() {
   if (bottomBar) bottomBar.style.display = "none";
   const btn = document.getElementById("extBtnProcesar");
   btn.disabled = true;
-  btn.innerHTML = "🔍 ANALIZAR CON IA";
+  btn.innerHTML = `${ico("sparkles", "ic-sm")}Analizar con IA`;
 };
 
 // ── Paso 3: Facturar (fire-and-forget con job polling) ────────
@@ -1323,7 +1340,7 @@ window.extFacturar = async function() {
   haptic();
   const btn = document.getElementById("extBtnFacturar");
   btn.disabled = true;
-  btn.innerHTML = `<div class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:#fff;width:18px;height:18px;"></div> Iniciando...`;
+  btn.innerHTML = `<span class="spinner spinner-sm"></span>Iniciando...`;
 
   try {
     const payload = {
@@ -1345,7 +1362,7 @@ window.extFacturar = async function() {
     };
 
     const despierto = await wakeServer(() => {
-      btn.innerHTML = `<div class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:#fff;width:18px;height:18px;"></div> Despertando servidor...`;
+      btn.innerHTML = `<span class="spinner spinner-sm"></span>Despertando servidor...`;
     });
     if (!despierto) throw new Error("El servidor no responde. Probá de nuevo en un minuto.");
 
@@ -1366,7 +1383,7 @@ window.extFacturar = async function() {
   } catch (e) {
     showToast("❌ " + (e.message || "Error"), "error");
     btn.disabled = false;
-    btn.innerHTML = `⚡ FACTURAR SELECCIONADAS`;
+    btn.innerHTML = `${ico("zap")}Facturar seleccionadas`;
   }
 };
 
@@ -1396,23 +1413,19 @@ function extRenderRevisionTodo() {
   count.textContent = `${extCandidatasTodo.length} transferencia${extCandidatasTodo.length !== 1 ? "s" : ""}`;
   totalEl.textContent = `$${formatMoneyAR(total)}`;
   confirmar.disabled = extCandidatasTodo.length === 0;
-  confirmar.style.opacity = confirmar.disabled ? "0.55" : "1";
 
   lista.innerHTML = (extCandidatasTodo.length ? extCandidatasTodo.map(t => `
-    <div class="rev-card">
-      <div class="rev-avatar">${(t.nombre||"?").trim().charAt(0).toUpperCase()}</div>
-      <div class="rev-info">
-        <div class="rev-nombre">${t.nombre}</div>
-        <div class="rev-sub">${t.fecha || ""} · CUIT ${t.cuit}</div>
+    <div class="res-row">
+      <span class="avatar">${escHtml((t.nombre || "?").trim().charAt(0).toUpperCase())}</span>
+      <div class="grow">
+        <div class="nm">${escHtml(t.nombre)}</div>
+        <div class="sub">${escHtml(t.fecha || "")} · CUIT ${escHtml(t.cuit)}${t.referencia ? " · Ref. " + escHtml(t.referencia) : ""}</div>
       </div>
-      <div class="rev-right">
-        <div class="rev-monto">$${formatMoneyAR(t.monto)}</div>
-        <button class="rev-remove" onclick="extQuitarCandidataTodo(${t._id})">✕</button>
-      </div>
+      <div class="amt">$${formatMoneyAR(t.monto)}</div>
+      <button class="icon-btn" onclick="extQuitarCandidataTodo(${t._id})" aria-label="Quitar">${ico("x", "ic-sm")}</button>
     </div>
-  `).join("") : `<div style="text-align:center;padding:32px;color:var(--text2);font-size:13px;font-weight:600;">Sin candidatas</div>`);
+  `).join("") : `<div class="vacio">${ico("info")}<p>Sin transferencias para facturar</p></div>`);
 }
-
 window.extQuitarCandidataTodo = function(id) {
   haptic();
   extCandidatasTodo = extCandidatasTodo.filter(t => t._id !== id);
@@ -1432,7 +1445,7 @@ window.extConfirmarTodo = async function() {
 
   const btn = document.getElementById("extBtnFacturarTodo");
   btn.disabled = true;
-  btn.innerHTML = `<div class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:#fff;width:18px;height:18px;"></div> Iniciando...`;
+  btn.innerHTML = `<span class="spinner spinner-sm"></span>Iniciando...`;
 
   try {
     const payload = {
@@ -1450,7 +1463,7 @@ window.extConfirmarTodo = async function() {
     };
 
     const despierto = await wakeServer(() => {
-      btn.innerHTML = `<div class="spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:#fff;width:18px;height:18px;"></div> Despertando servidor...`;
+      btn.innerHTML = `<span class="spinner spinner-sm"></span>Despertando servidor...`;
     });
     if (!despierto) throw new Error("El servidor no responde. Probá de nuevo en un minuto.");
 
@@ -1470,7 +1483,7 @@ window.extConfirmarTodo = async function() {
     showToast("❌ " + (e.message || "Error"), "error");
     btn.disabled = false;
     const n = extCandidatasTodo.length;
-    btn.innerHTML = `🏦 FACTURAR TODO (${n})`;
+    btn.innerHTML = `${ico("bank", "ic-sm")}Facturar todo (${n})`;
   }
 };
 
@@ -1478,23 +1491,20 @@ window.extConfirmarTodo = async function() {
 async function extMostrarProgreso(jobId, total) {
   document.getElementById("extStep2").classList.remove("active");
   document.getElementById("extStep3").classList.add("active");
+  document.getElementById("tabExtracto").classList.remove("ext-dock-on");
   document.getElementById("extBtnFacturar").style.display = "none";
   const btnTodoP = document.getElementById("extBtnFacturarTodo");
   if (btnTodoP) btnTodoP.style.display = "none";
 
   const container = document.getElementById("extResultados");
   container.innerHTML = `
-    <div style="text-align:center;padding:32px 16px;">
-      <div class="spinner" style="width:44px;height:44px;border-width:4px;margin:0 auto 20px;border-color:rgba(52,199,89,0.3);border-top-color:#34C759;"></div>
-      <div id="extProgresoTexto" style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px;">Iniciando proceso...</div>
-      <div id="extProgresoCount" style="font-size:13px;color:var(--text2);margin-bottom:16px;">0 / ${total}</div>
-      <div style="background:#e2e8f0;border-radius:8px;height:8px;overflow:hidden;margin-bottom:12px;">
-        <div id="extProgresoBar" style="background:#34C759;height:100%;width:0%;transition:width 0.6s ease;border-radius:8px;"></div>
-      </div>
-      <div id="extProgresoDetalle" style="font-size:12px;color:var(--text2);line-height:1.6;"></div>
-      <div style="margin-top:16px;padding:12px;background:#F0FDF4;border-radius:10px;border:1px solid #BBF7D0;font-size:12px;color:#15803D;font-weight:600;">
-        📱 Podés guardar el celular — el servidor sigue procesando
-      </div>
+    <div class="progreso">
+      <span class="spinner spinner-dark spinner-lg"></span>
+      <div class="progreso-tit" id="extProgresoTexto">Iniciando proceso…</div>
+      <div class="progreso-count" id="extProgresoCount">0 / ${total}</div>
+      <div class="barra"><div id="extProgresoBar"></div></div>
+      <div class="progreso-det" id="extProgresoDetalle"></div>
+      <div class="aviso aviso-ok" style="margin-top:16px;text-align:left;">${ico("phone", "ic-sm")}<span>Podés guardar el celular: el servidor sigue procesando.</span></div>
     </div>
   `;
 
@@ -1513,11 +1523,11 @@ async function extMostrarProgreso(jobId, total) {
       const detEl   = document.getElementById("extProgresoDetalle");
       if (barEl) barEl.style.width = pct + "%";
       if (txtEl) txtEl.textContent =
-        estado.estado === "terminado"   ? "✅ Proceso completado" :
-        estado.estado === "interrumpido" ? "⚠️ Proceso interrumpido" :
-        `Procesando... ${pct}%`;
+        estado.estado === "terminado"   ? "Proceso completado" :
+        estado.estado === "interrumpido" ? "Proceso interrumpido" :
+        `Procesando… ${pct}%`;
       if (cntEl) cntEl.textContent = `${estado.progreso} / ${estado.total}`;
-      if (detEl) detEl.innerHTML =
+      if (detEl) detEl.textContent =
         `${estado.facturasEmitidas || 0} emitidas · ${estado.omitidas || 0} ya facturadas · ${estado.errores || 0} errores`;
 
       fallos = 0;
@@ -1534,7 +1544,7 @@ async function extMostrarProgreso(jobId, total) {
       fallos++;
       if (fallos >= 3) {
         const detEl = document.getElementById("extProgresoDetalle");
-        if (detEl) detEl.innerHTML = `⚠️ Sin conexión — el proceso sigue en el servidor.<br>Cuando vuelvas a abrir la app vas a ver el resultado.`;
+        if (detEl) detEl.textContent = "Sin conexión: el proceso sigue en el servidor. Cuando vuelvas a abrir la app vas a ver el resultado.";
       }
     }
   }
@@ -1543,6 +1553,7 @@ async function extMostrarProgreso(jobId, total) {
 function extRenderResultados(data) {
   document.getElementById("extStep2").classList.remove("active");
   document.getElementById("extStep3").classList.add("active");
+  document.getElementById("tabExtracto").classList.remove("ext-dock-on");
   document.getElementById("extBtnFacturar").style.display = "none";
   const btnTodoR = document.getElementById("extBtnFacturarTodo");
   if (btnTodoR) btnTodoR.style.display = "none";
@@ -1552,60 +1563,66 @@ function extRenderResultados(data) {
   const omitidas = (data.resultados || []).filter(r => r.skipped);
   const errores  = (data.resultados || []).filter(r => !r.ok);
 
+  // Para el centro de pendientes: solo si hubo errores o se cortó
+  try {
+    if (errores.length || data.interrumpido) {
+      localStorage.setItem("ml_ultimo_extracto", JSON.stringify({
+        ts: Date.now(), interrumpido: !!data.interrumpido,
+        errores: errores.map(r => ({ nombre: r.nombre, cuit: r.cuit, monto: r.monto, error: r.error })),
+      }));
+    } else {
+      localStorage.removeItem("ml_ultimo_extracto");
+    }
+  } catch {}
+
   let html = `
-    <div class="ext-summary-bar" style="margin-bottom:16px;">
-      <div><div class="lbl">Facturas emitidas</div><div class="val">${emitidas.length}</div></div>
-      <div style="text-align:right;"><div class="lbl">Total facturado</div><div class="val">$${formatMoneyAR(data.totalFacturado || 0)}</div></div>
+    <div class="res-head">
+      <div class="kpi"><div class="kpi-body"><div class="kpi-num">${emitidas.length}</div><div class="kpi-label">Facturas emitidas</div></div></div>
+      <div class="kpi"><div class="kpi-body"><div class="kpi-num">$${formatMoneyAR(data.totalFacturado || 0)}</div><div class="kpi-label">Total facturado</div></div></div>
     </div>
-    ${data.interrumpido ? `<div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#92400E;font-weight:600;">
-      ⚠️ El proceso se cortó a mitad. Volvé a facturar el extracto: lo ya emitido se omite solo.
-    </div>` : ""}
-    ${data.avisoSecuencia ? `<div style="background:#FEE2E2;border:1px solid #FCA5A5;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#991B1B;font-weight:600;">
-      ⚠️ ${data.avisoSecuencia}
-    </div>` : ""}
-    ${omitidas.length > 0 ? `<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#64748B;font-weight:600;">
-      ✅ ${omitidas.length} ya facturada${omitidas.length !== 1 ? "s" : ""} este mes — omitidas para no duplicar
-    </div>` : ""}
-    <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;">Comprobantes emitidos</div>
+    ${data.simulado ? `<div class="aviso aviso-warn">${ico("info", "ic-sm")}<span>Simulación: no se emitió nada en ARCA.</span></div>` : ""}
+    ${data.interrumpido ? `<div class="aviso aviso-warn">${ico("alert", "ic-sm")}<span>El proceso se cortó a mitad. Volvé a facturar el extracto: lo ya emitido se omite solo.</span></div>` : ""}
+    ${data.avisoSecuencia ? `<div class="aviso aviso-err">${ico("alert", "ic-sm")}<span>${escHtml(data.avisoSecuencia)}</span></div>` : ""}
+    ${omitidas.length > 0 ? `<div class="aviso aviso-info">${ico("check-circle", "ic-sm")}<span>${omitidas.length} ya facturada${omitidas.length !== 1 ? "s" : ""}: se omitieron para no duplicar.</span></div>` : ""}
+    <div class="sec-tit">Comprobantes emitidos</div>
   `;
 
   emitidas.forEach(r => {
-    const ini = (r.nombre||"?").trim().charAt(0).toUpperCase();
+    const ini = escHtml((r.nombre || "?").trim().charAt(0).toUpperCase());
     html += `
-      <div class="ext-result-card" style="display:flex;align-items:center;gap:12px;">
-        <div style="width:42px;height:42px;border-radius:13px;flex-shrink:0;background:linear-gradient(135deg,#065f46,#059669);color:#FFF;font-size:18px;font-weight:800;display:flex;align-items:center;justify-content:center;">${ini}</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-weight:800;font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.nombre}</div>
-          <div style="font-size:11px;color:var(--text2);margin-top:2px;">${r.comprobante} · CAE ${r.cae}</div>
-          <div style="font-size:16px;font-weight:800;color:var(--green);margin-top:5px;">$${formatMoneyAR(r.total)}</div>
+      <div class="res-row">
+        <span class="avatar ok">${ini}</span>
+        <div class="grow">
+          <div class="nm">${escHtml(r.nombre)}</div>
+          <div class="sub">${escHtml(r.comprobante)} · CAE ${escHtml(r.cae)}</div>
         </div>
-        ${r.pdfUrl ? `<button class="fact-mini-btn pdf" onclick="window.open('${r.pdfUrl}','_blank')" style="flex-shrink:0;">📄 PDF</button>` : ""}
+        <div class="amt">$${formatMoneyAR(r.total)}</div>
+        ${r.pdfUrl ? `<a class="mini-btn" href="${escHtml(r.pdfUrl)}" target="_blank" rel="noopener">${ico("download")}PDF</a>` : ""}
       </div>`;
   });
+  if (!emitidas.length) html += `<div class="muted" style="padding:8px 0;">No se emitieron comprobantes nuevos.</div>`;
 
   if (errores.length > 0) {
-    html += `<div style="font-size:12px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:0.6px;margin:16px 0 8px;">Con error (${errores.length})</div>`;
+    html += `<div class="sec-tit" style="color:var(--red)">Con error (${errores.length})</div>`;
     errores.forEach(r => {
-      const ini = (r.nombre||"?").trim().charAt(0).toUpperCase();
+      const ini = escHtml((r.nombre || "?").trim().charAt(0).toUpperCase());
       html += `
-        <div class="ext-result-card error" style="display:flex;align-items:center;gap:12px;">
-          <div style="width:42px;height:42px;border-radius:13px;flex-shrink:0;background:linear-gradient(135deg,#7f1d1d,#dc2626);color:#FFF;font-size:18px;font-weight:800;display:flex;align-items:center;justify-content:center;">${ini}</div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-weight:800;font-size:14px;color:var(--text);">${r.nombre}</div>
-            <div style="font-size:11px;color:var(--text2);margin-top:2px;">CUIT: ${r.cuit}</div>
-            <div style="font-size:12px;color:var(--red);margin-top:5px;font-weight:600;">❌ ${r.error}</div>
+        <div class="res-row">
+          <span class="avatar bad">${ini}</span>
+          <div class="grow">
+            <div class="nm">${escHtml(r.nombre)}</div>
+            <div class="sub">CUIT ${escHtml(r.cuit)}</div>
+            <div class="err">${escHtml(r.error)}</div>
           </div>
         </div>`;
     });
   }
 
-  html += `<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:12px;padding:12px 16px;margin-top:16px;font-size:13px;color:#15803D;font-weight:600;">
-    📧 Se envió el reporte consolidado por email.
-  </div>`;
+  if (!data.simulado) html += `<div class="aviso aviso-ok" style="margin-top:14px;">${ico("mail", "ic-sm")}<span>Se envió el reporte de conciliación por email.</span></div>`;
 
   container.innerHTML = html;
+  window.UI?.actualizarPendientes?.();
 }
-
 window.extReset = function() {
   haptic();
   extTransferencias = [];
@@ -1620,15 +1637,15 @@ window.extReset = function() {
   const btn = document.getElementById("extBtnFacturar");
   btn.disabled = true;
   btn.style.display = "flex";
-  btn.innerHTML = "⚡ FACTURAR SELECCIONADAS";
+  btn.innerHTML = `${ico("zap")}Facturar seleccionadas`;
   const btnTodoReset = document.getElementById("extBtnFacturarTodo");
-  if (btnTodoReset) { btnTodoReset.disabled = true; btnTodoReset.style.display = "none"; btnTodoReset.innerHTML = "🏦 FACTURAR TODO CON CUIT"; }
+  if (btnTodoReset) { btnTodoReset.disabled = true; btnTodoReset.style.display = "none"; btnTodoReset.innerHTML = `${ico("bank", "ic-sm")}Facturar todo con CUIT`; }
   extCandidatasTodo = [];
   document.getElementById("revisionTodoBackdrop")?.classList.remove("active");
   document.getElementById("revisionTodoSheet")?.classList.remove("active");
   const procBtn = document.getElementById("extBtnProcesar");
   procBtn.disabled = true;
-  procBtn.innerHTML = "🔍 ANALIZAR CON IA";
+  procBtn.innerHTML = `${ico("sparkles", "ic-sm")}Analizar con IA`;
 };
 
 // ============================================
@@ -1699,82 +1716,143 @@ window.histClearSearch = function() {
   histCargar();
 };
 
-// ── Cargar resultados desde el backend ───────────────────────
+// ── Cargar el mes completo desde el backend ───────────────────
+// La búsqueda y los filtros se aplican en el dispositivo sobre los datos reales del mes
+let histDatosMes = [];
+let histMesCargado = "";
+
 async function histCargar() {
   const list = document.getElementById("histList");
-  // Mostrar skeleton
-  list.innerHTML = [1,2,3,4].map(() => `<div class="hist-skel"></div>`).join("");
+  const clave = `${histAnio}-${histMes}`;
+  if (histMesCargado === clave) { histAplicarFiltros(); return; }
+
+  list.innerHTML = [1,2,3,4,5].map(() => `<div class="hist-skel"></div>`).join("");
   document.getElementById("histStatBar").style.display = "none";
 
   try {
-    const params = new URLSearchParams({ mes: histMes, anio: histAnio });
-    if (histQ) params.set("q", histQ);
-    const r = await fetch(`${BASE}/historial?${params}`, { signal: AbortSignal.timeout(15000) });
+    const params = new URLSearchParams({ mes: histMes, anio: histAnio, limit: 500 });
+    const r = await fetch(`${BASE}/historial?${params}`, { signal: AbortSignal.timeout(20000) });
     const j = await r.json();
+    // Si mientras cargaba se eligió otro mes, esta respuesta ya no corresponde
+    if (clave !== `${histAnio}-${histMes}`) return;
     if (!r.ok || !j.ok) throw new Error(j.message || "Error");
-    histRenderList(j.facturas || [], j.total || 0);
+    histDatosMes = (j.facturas || []).slice().sort((a, b) =>
+      String(b.fecha).localeCompare(String(a.fecha)) || (b.nroFactura - a.nroFactura));
+    histMesCargado = clave;
+    histAplicarFiltros();
   } catch (e) {
-    list.innerHTML = `<div class="hist-empty">
-      <div class="icon">⚠️</div>
+    if (clave !== `${histAnio}-${histMes}`) return;
+    list.innerHTML = `<div class="hist-empty">${ico("wifi-off")}
       <p>No se pudo cargar el historial</p>
-      <small>${e.message}</small>
+      <small>${escHtml(e.message)}</small>
     </div>`;
   }
 }
 
-// ── Renderizar lista ──────────────────────────────────────────
+const sinAcentos = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+function histCoincide(f, q) {
+  if (!q) return true;
+  const qn = sinAcentos(q).trim();
+  if (sinAcentos(f.nombre).includes(qn)) return true;
+  if (sinAcentos(f.comprobante).includes(qn)) return true;
+  const dig = q.replace(/\D/g, "");
+  if (dig && String(f.cuit || "").includes(dig)) return true;
+  if (dig && /^\d{1,8}$/.test(q.trim()) && Number(dig) === Number(f.nroFactura)) return true;
+  // Monto: 263434 · 263.434 · 263.434,50
+  if (/^[\d.,$\s]+$/.test(q)) {
+    const m = Number(q.replace(/[$\s]/g, "").replace(/\./g, "").replace(",", "."));
+    if (m > 0 && Math.abs(Math.abs(Number(f.total)) - m) < 1) return true;
+  }
+  // Fecha: 17/10 · 17/10/2026 · 2026-10-17
+  const fe = String(f.fecha || "");
+  const feAR = fe.split("-").reverse().join("/");
+  if (qn.includes("/") && feAR.includes(qn)) return true;
+  if (/^\d{4}-\d{2}/.test(qn) && fe.includes(qn)) return true;
+  return false;
+}
+
+function histAplicarFiltros() {
+  const tipo   = document.getElementById("histFiltroTipo")?.value || "";
+  const origen = document.getElementById("histFiltroOrigen")?.value || "";
+  const estado = document.getElementById("histFiltroEstado")?.value || "";
+  const filtradas = histDatosMes.filter(f => {
+    const letra = f.tipoCbte === "NC" ? "NC" : letraDeComprobante(f.comprobante);
+    if (tipo && letra !== tipo) return false;
+    const esExtracto = /EXTRACTO/i.test(f.condicionVenta || "");
+    if (origen === "extracto" && !esExtracto) return false;
+    if (origen === "directa" && esExtracto) return false;
+    if (estado === "anulada" && !f.anulado) return false;
+    if (estado === "emitida" && f.anulado) return false;
+    return histCoincide(f, histQ);
+  });
+  histRenderList(filtradas, filtradas.length);
+}
+
+["histFiltroTipo", "histFiltroOrigen", "histFiltroEstado"].forEach(id =>
+  document.getElementById(id)?.addEventListener("change", histAplicarFiltros));
+
+// ── Renderizar lista / tabla ──────────────────────────────────
 function histRenderList(facturas, totalCount) {
   const list = document.getElementById("histList");
   histActualizarLabel();
 
-  // Stats
   const factSolo  = facturas.filter(f => f.tipoCbte === "FA" && !f.anulado);
   const ncSolo    = facturas.filter(f => f.tipoCbte === "NC");
   const totalPesos = factSolo.reduce((s, f) => s + f.total, 0);
   const statBar = document.getElementById("histStatBar");
-  statBar.style.display = "flex";
+  statBar.style.display = "";
   document.getElementById("histStatCount").textContent = factSolo.length;
   document.getElementById("histStatTotal").textContent = `$${formatMoneyAR(totalPesos)}`;
   document.getElementById("histStatNCs").textContent   = ncSolo.length;
+  const cli = document.getElementById("histStatClientes");
+  if (cli) cli.textContent = new Set(factSolo.map(f => f.cuit)).size;
 
   if (facturas.length === 0) {
-    list.innerHTML = `<div class="hist-empty">
-      <div class="icon">${histQ ? "🔍" : "📭"}</div>
-      <p>${histQ ? `Sin resultados para "${histQ}"` : "Sin comprobantes este mes"}</p>
-      <small>${histQ ? "Probá buscar por CUIT completo o parte del nombre" : "Navegá a otro mes con las flechas"}</small>
+    const filtrando = histQ || document.getElementById("histFiltroTipo")?.value || document.getElementById("histFiltroOrigen")?.value || document.getElementById("histFiltroEstado")?.value;
+    list.innerHTML = `<div class="hist-empty">${ico(filtrando ? "search" : "file")}
+      <p>${filtrando ? "Sin resultados" : "Sin comprobantes este mes"}</p>
+      <small>${filtrando ? "Probá con otro dato: nombre, CUIT, número, monto (263434) o fecha (17/10)" : "Navegá a otro mes con las flechas"}</small>
     </div>`;
+    window._histFacturasActuales = [];
     return;
   }
 
-  list.innerHTML = facturas.map(f => {
+  list.innerHTML = facturas.map((f, i) => {
     const esNC     = f.tipoCbte === "NC";
     const esAnul   = f.anulado;
-    const esExtrac = (f.condicionVenta || "").includes("EXTRACTO");
+    const esExtrac = /EXTRACTO/i.test(f.condicionVenta || "");
+    const letra    = esNC ? "NC" : letraDeComprobante(f.comprobante);
     const totalFmt = `$${formatMoneyAR(Math.abs(f.total))}`;
-    const badgesHtml = [
-      `<span class="hist-badge comp">${f.comprobante}</span>`,
-      esNC     ? `<span class="hist-badge nc">Nota de Crédito</span>` : "",
-      esAnul   ? `<span class="hist-badge anu">Anulada</span>` : "",
-      esExtrac ? `<span class="hist-badge ext">Extracto</span>` : "",
-      f.pdfUrl ? `<span class="hist-badge pdf">PDF ✓</span>` : "",
-    ].filter(Boolean).join("");
+    const fechaAR  = String(f.fecha || "").split("-").reverse().join("/");
+    const datos    = attrJson({ comprobante: f.comprobante, nombre: f.nombre, total: f.total, cuit: f.cuit, emailTo: f.emailTo, nro: f.nroFactura, nroFactura: f.nroFactura, puntoVenta: f.puntoVenta });
+    const estado   = esAnul ? `<span class="tag tag-red tag-dot">Anulada</span>` : `<span class="tag tag-green tag-dot">Emitida</span>`;
+    const origenTxt = esExtrac ? "Extracto" : "Directa";
 
-    const avatarInit = (f.nombre || f.cuit || "?").trim().charAt(0).toUpperCase();
-    return `<div class="hist-card ${esNC ? "nc" : ""} ${esAnul ? "anulada" : ""}"
-                 onclick="histAbrirDetalle(${facturas.indexOf(f)})">
-      <div class="hc-avatar">${avatarInit}</div>
-      <div class="hc-body">
-        <div class="hc-top">
-          <div class="hc-nombre">${f.nombre || f.cuit || "Sin nombre"}</div>
-          <div class="hc-total ${esNC ? "nc" : ""}">${esNC ? "−" : ""}${totalFmt}</div>
-        </div>
-        <div class="hc-meta">CUIT ${f.cuit} · ${f.fecha}</div>
-        <div class="hc-badges">${badgesHtml}</div>
+    return `<div class="hrow ${esAnul ? "anulada" : ""}" role="button" tabindex="0" onclick="histAbrirDetalle(${i})" onkeydown="if(event.key==='Enter')histAbrirDetalle(${i})">
+      <span class="avatar">${escHtml((f.nombre || f.cuit || "?").trim().charAt(0).toUpperCase())}</span>
+      <div class="h-fecha">${escHtml(fechaAR)}</div>
+      <div class="h-main"><div class="h-nombre">${escHtml(f.nombre || f.cuit || "Sin nombre")}</div><div class="h-sub">CUIT ${escHtml(f.cuit)} · ${escHtml(fechaAR)}</div></div>
+      <div class="h-cuit">${escHtml(f.cuit)}</div>
+      <div class="h-comp">${escHtml(f.comprobante)}</div>
+      <div class="h-monto ${esNC ? "nc" : ""}">${esNC ? "−" : ""}${totalFmt}</div>
+      <div class="h-tipo"><span class="letra-badge letra-${letra || "M"}">${letra || "—"}</span></div>
+      <div class="h-origen">${origenTxt}</div>
+      <div class="h-estado">${estado}</div>
+      <div class="h-acc" onclick="event.stopPropagation()">
+        ${f.pdfUrl ? `<a class="icon-btn" href="${escHtml(f.pdfUrl)}" target="_blank" rel="noopener" title="Ver PDF" aria-label="Ver PDF">${ico("download")}</a>` : ""}
+        ${!esAnul ? `<button class="icon-btn" title="Reenviar email" aria-label="Reenviar email" onclick='abrirModalReenviarEmail(${datos})'>${ico("mail")}</button>` : ""}
+        <button class="icon-btn" title="Más" aria-label="Más opciones" onclick="histAbrirDetalle(${i})">${ico("more")}</button>
+      </div>
+      <div class="h-badges">
+        <span class="letra-badge letra-${letra || "M"}">${letra || "—"}</span>
+        <span class="tag">${escHtml(f.comprobante)}</span>
+        ${esExtrac ? `<span class="tag tag-violet">Extracto</span>` : ""}
+        ${esAnul ? `<span class="tag tag-red">Anulada</span>` : ""}
       </div>
     </div>`;
   }).join("");
 
-  // Guardar facturas en variable global para acceder desde los callbacks
   window._histFacturasActuales = facturas;
 }
 
@@ -1793,12 +1871,13 @@ window.histAbrirDetalle = function(idx) {
   document.getElementById("histDetNombre").textContent = f.nombre || "Sin nombre";
   document.getElementById("histDetSub").textContent   = `CUIT ${f.cuit}`;
   document.getElementById("histDetTotal").textContent  = `${esNC ? "−" : ""}$${formatMoneyAR(Math.abs(f.total))}`;
-  document.getElementById("histDetFecha").textContent  = f.fecha;
+  document.getElementById("histDetFecha").textContent  = String(f.fecha || "").split("-").reverse().join("/");
   document.getElementById("histDetComp").textContent   = f.comprobante;
   document.getElementById("histDetCuit").textContent   = f.cuit;
   document.getElementById("histDetCae").textContent    = f.cae || "—";
   document.getElementById("histDetCond2").textContent  = f.condicionVenta || "—";
   document.getElementById("histDetEmail").textContent  = f.emailTo || "—";
+  document.getElementById("histDetCond").textContent   = esAnul ? "Anulada" : (esNC ? "Nota de crédito" : "Emitida");
 
   // Botones según estado
   const btnPdf   = document.getElementById("histBtnPdf");
@@ -1824,19 +1903,21 @@ window.histAbrirPdf = function() {
 };
 
 window.histReenviarEmail = function() {
-  if (!histFacturaActual) return;
+  const f = histFacturaActual; // histCerrarDetalle() lo pone en null
+  if (!f) return;
   histCerrarDetalle();
-  abrirModalReenviarEmail(histFacturaActual);
+  abrirModalReenviarEmail(f);
 };
 
 window.histAnular = function() {
-  if (!histFacturaActual) return;
+  const f = histFacturaActual; // histCerrarDetalle() lo pone en null
+  if (!f) return;
   histCerrarDetalle();
   // Reutilizamos el modal existente de anulación
-  facturaAAnular = histFacturaActual;
+  facturaAAnular = f;
   document.getElementById("anularTextoInfo").innerHTML =
-    `Se va a anular <strong>${histFacturaActual.comprobante}</strong> · ${histFacturaActual.nombre || histFacturaActual.cuit}<br>` +
-    `<span style="color:var(--text2);font-size:12px;">Total: $${formatMoneyAR(histFacturaActual.total)}</span>`;
+    `Se va a anular <strong>${escHtml(f.comprobante)}</strong> · ${escHtml(f.nombre || f.cuit)}<br>` +
+    `Total: <strong>$${formatMoneyAR(Math.abs(f.total))}</strong>`;
   document.getElementById("anularMotivo").value = "Factura emitida por error";
   document.getElementById("anularModal").classList.add("active");
 };
@@ -1899,6 +1980,7 @@ window.emailNavMes = function(dir) {
   if (emailMes > 12) { emailMes = 1;  emailAnio++; }
   emailActualizarLabel();
   emailCargarStats();
+  emailContarEnvios();
   emailOcultarResultado();
 };
 
@@ -1921,19 +2003,32 @@ async function emailCargarStats() {
     const clientes = new Set(facturas.map(f => f.cuit || f.cuit_cliente || "").filter(Boolean)).size;
     const stats    = { count: facturas.length, total, clientes };
     emailStatsCache[key] = stats;
+    if (key !== `${emailAnio}-${String(emailMes).padStart(2,"0")}`) return;
     emailRenderStats(stats);
   } catch { /* stats quedan en — */ }
 }
 
 function emailRenderStats(stats) {
   const fmtK = n => {
-    if (Math.abs(n) >= 1000000) return `$${(n/1000000).toFixed(1)}M`;
-    if (Math.abs(n) >= 1000)    return `$${(n/1000).toFixed(0)}K`;
+    if (Math.abs(n) >= 1000000) return `$${(n/1000000).toLocaleString("es-AR", { maximumFractionDigits: 1 })}M`;
+    if (Math.abs(n) >= 1000)    return `$${Math.round(n/1000).toLocaleString("es-AR")}K`;
     return `$${formatMoneyAR(n)}`;
   };
   document.getElementById("emailStatCount").textContent    = stats.count;
   document.getElementById("emailStatTotal").textContent    = fmtK(stats.total);
   document.getElementById("emailStatClientes").textContent = stats.clientes;
+  const sub = document.getElementById("emailPreviewSub");
+  if (sub) sub.textContent = `${stats.count} comprobante${stats.count !== 1 ? "s" : ""} · $${formatMoneyAR(stats.total)}`;
+  emailActualizarSendBtn();
+}
+
+function emailContarEnvios() {
+  const el = document.getElementById("emailStatEnvios");
+  if (!el) return;
+  try {
+    const hist = JSON.parse(localStorage.getItem(EMAIL_HIST_STORAGE_KEY) || "[]");
+    el.textContent = hist.filter(h => Number(h.mes) === emailMes && Number(h.anio) === emailAnio).length;
+  } catch { el.textContent = "0"; }
 }
 
 function emailRenderChips() {
@@ -1945,12 +2040,13 @@ function emailRenderChips() {
     div.className = `email-chip${c.activo ? " active" : ""}`;
     div.onclick = () => emailToggleContacto(i);
     div.innerHTML = `
-      <div class="email-chip-check">${c.activo ? "✓" : ""}</div>
+      <div class="email-chip-check">${c.activo ? ico("check") : ""}</div>
       <div class="email-chip-info">
-        <div class="email-chip-name">${c.nombre}</div>
-        <div class="email-chip-addr">${c.email}</div>
+        <div class="email-chip-name">${escHtml(c.nombre)}</div>
+        <div class="email-chip-addr">${escHtml(c.email)}</div>
       </div>
-      ${c.removible ? `<button class="email-chip-remove" onclick="emailEliminarContacto(event,${i})">×</button>` : ""}
+      ${c.id === "pablo" ? `<span class="tag">Principal</span>` : ""}
+      ${c.removible ? `<button class="email-chip-remove" onclick="emailEliminarContacto(event,${i})" aria-label="Quitar">${ico("trash", "ic-sm")}</button>` : ""}
     `;
     container.appendChild(div);
   });
@@ -2000,12 +2096,12 @@ function emailActualizarSendBtn() {
   if (!btn) return;
   btn.disabled    = activos.length === 0;
   if (activos.length === 0) {
-    btn.innerHTML = "📧 Seleccioná al menos un destinatario";
+    btn.innerHTML = `${ico("mail")}Elegí al menos un destinatario`;
   } else {
     const mesNom = MESES[emailMes];
     const cantStr = activos.length === 1 ? activos[0].nombre.split(" ")[0] : `${activos.length} destinatarios`;
     const factStr = stats ? ` · ${stats.count} comp.` : "";
-    btn.innerHTML = `📧 Enviar Resumen ${mesNom}${factStr} → ${cantStr}`;
+    btn.innerHTML = `${ico("send")}Enviar resumen de ${mesNom}${factStr} a ${escHtml(cantStr)}`;
   }
 }
 
@@ -2022,7 +2118,7 @@ window.emailEnviar = async function() {
   const btn = document.getElementById("emailSendBtn");
   const oldHtml = btn.innerHTML;
   btn.disabled  = true;
-  btn.innerHTML = `<div class="spinner" style="width:18px;height:18px;border-color:rgba(255,255,255,0.3);border-top-color:#fff;"></div> Enviando...`;
+  btn.innerHTML = `<span class="spinner spinner-sm"></span>Enviando...`;
   emailOcultarResultado();
 
   try {
@@ -2048,12 +2144,12 @@ window.emailEnviar = async function() {
 
     let resHtml = "";
     if (exitosos.length > 0) {
-      resHtml += `<div style="margin-bottom:6px;">✅ Enviado correctamente a:</div>`;
-      resHtml += exitosos.map(r => `<div style="font-size:12px;opacity:0.85;margin-left:14px;">• ${r.email}</div>`).join("");
+      resHtml += `<div><strong>${j.simulado ? "Simulación: no se envió nada." : "Enviado correctamente a:"}</strong></div>`;
+      resHtml += exitosos.map(r => `<div>• ${escHtml(r.email)}</div>`).join("");
     }
     if (fallidos.length > 0) {
-      resHtml += `<div style="margin-top:${exitosos.length?8:0}px;margin-bottom:4px;">⚠️ No se pudo enviar a:</div>`;
-      resHtml += fallidos.map(r => `<div style="font-size:12px;opacity:0.85;margin-left:14px;">• ${r.email}<br><span style="font-size:11px;opacity:0.7;">${r.error || "Restricción del proveedor de email"}</span></div>`).join("");
+      resHtml += `<div style="margin-top:${exitosos.length ? 8 : 0}px;"><strong>No se pudo enviar a:</strong></div>`;
+      resHtml += fallidos.map(r => `<div>• ${escHtml(r.email)} <span class="muted">(${escHtml(r.error || "restricción del proveedor de email")})</span></div>`).join("");
     }
 
     const resEl = document.getElementById("emailSendResult");
@@ -2063,6 +2159,7 @@ window.emailEnviar = async function() {
     }
 
     emailRenderHistorial();
+    emailContarEnvios();
 
   } catch (e) {
     haptic("error");
@@ -2097,7 +2194,7 @@ function emailRenderHistorial() {
       const fechaStr = fecha.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "2-digit" });
       const horaStr  = fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
       const chips    = (h.resultados || []).map(r =>
-        `<span class="email-hist-chip ${r.ok ? "ok" : "err"}">${r.ok ? "✓" : "✗"} ${r.email.split("@")[0]}</span>`
+        `<span class="tag ${r.ok ? "tag-green" : "tag-red"} tag-dot" title="${escHtml(r.error || "")}">${escHtml(r.email)} · ${r.ok ? "enviado" : "falló"}</span>`
       ).join("");
       return `
         <div class="email-hist-item">
@@ -2105,7 +2202,7 @@ function emailRenderHistorial() {
             <div class="email-hist-mes">${MESES[h.mes] || "?"} ${h.anio}</div>
             <div class="email-hist-time">${fechaStr} ${horaStr}</div>
           </div>
-          <div class="email-hist-chips">${chips || "<span style='font-size:11px;color:var(--text2)'>Sin destinatarios</span>"}</div>
+          <div class="email-hist-chips">${chips || `<span class="muted">Sin destinatarios</span>`}</div>
         </div>`;
     }).join("");
   } catch { list.innerHTML = ""; }
@@ -2120,6 +2217,7 @@ function emailInicializar() {
   emailRenderChips();
   emailCargarStats();
   emailRenderHistorial();
+  emailContarEnvios();
 }
 
 window.confirmarReenvioEmail = async function() {

@@ -2,1571 +2,545 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#EEF2F7">
-  <title>Mercado Limpio</title>
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Facturación ML">
+  <meta name="theme-color" content="#F2F5F9">
+  <title>Facturación ML · Mercado Limpio</title>
   <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons-mercado-limpio/ml-icon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons-mercado-limpio/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg:          #EEF2F7;
-      --surface:     rgba(255,255,255,0.76);
-      --surface2:    rgba(241,245,249,0.82);
-      --surface3:    rgba(226,232,240,0.75);
-      --glass-border: rgba(255,255,255,0.62);
-      --glass-hi:    inset 0 1px 0 rgba(255,255,255,0.82);
-      --glass-shadow: 0 4px 28px rgba(15,23,42,0.08);
-      --accent:      #C97A3A;
-      --accent2:     #E08C45;
-      --accent-dim:  rgba(201,122,58,0.10);
-      --accent-glow: rgba(201,122,58,0.25);
-      --green:       #16A34A;
-      --green-dim:   rgba(22,163,74,0.09);
-      --red:         #DC2626;
-      --red-dim:     rgba(220,38,38,0.09);
-      --warn:        #D97706;
-      --text:        #0F172A;
-      --text2:       #64748B;
-      --text3:       #94A3B8;
-      --border:      rgba(15,23,42,0.07);
-      --border2:     rgba(15,23,42,0.12);
-      --safe-b:      env(safe-area-inset-bottom, 20px);
-      --safe-t:      env(safe-area-inset-top, 44px);
-    }
-
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
-
-    body {
-      font-family: 'Sora', -apple-system, sans-serif;
-      background:
-        radial-gradient(ellipse 90% 45% at 10% -5%, rgba(99,102,241,0.09) 0%, transparent 65%),
-        radial-gradient(ellipse 70% 55% at 90% 105%, rgba(201,122,58,0.09) 0%, transparent 65%),
-        radial-gradient(ellipse 50% 40% at 55% 50%, rgba(20,184,166,0.04) 0%, transparent 70%),
-        #EEF2F7;
-      color: var(--text);
-      padding-bottom: calc(136px + var(--safe-b));
-      overscroll-behavior-y: none;
-      -webkit-font-smoothing: antialiased;
-      min-height: 100dvh;
-    }
-
-    /* ── Header ─────────────────────────────────────── */
-    header {
-      position: sticky; top: 0; z-index: 50;
-      background: rgba(238,242,247,0.78);
-      backdrop-filter: blur(32px) saturate(200%) brightness(103%);
-      -webkit-backdrop-filter: blur(32px) saturate(200%) brightness(103%);
-      padding: calc(var(--safe-t) + 6px) 18px 12px;
-      border-bottom: 1px solid rgba(255,255,255,0.55);
-      box-shadow: 0 1px 0 rgba(15,23,42,0.05), var(--glass-hi);
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .header-left { display: flex; align-items: center; gap: 12px; }
-    .header-logo {
-      width: 32px; height: 32px; border-radius: 9px;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      display: flex; align-items: center; justify-content: center;
-      font-size: 16px; flex-shrink: 0;
-      box-shadow: 0 2px 10px var(--accent-glow);
-    }
-    header h1 {
-      font-size: 17px; font-weight: 700; letter-spacing: -0.3px;
-      color: var(--text);
-    }
-
-    .btn-resumen-header {
-      background: var(--surface2);
-      color: var(--text);
-      border: 1px solid var(--border2);
-      border-radius: 20px;
-      padding: 7px 14px; font-size: 12px; font-weight: 600;
-      cursor: pointer; display: flex; align-items: center; gap: 5px;
-      font-family: 'Sora', sans-serif;
-      transition: transform 0.12s, background 0.15s;
-      -webkit-user-select: none;
-    }
-    .btn-resumen-header:active { transform: scale(0.91); background: var(--surface3); }
-
-    .server-status { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: var(--text2); }
-    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); transition: background 0.4s; flex-shrink: 0; }
-    .status-dot.online  { background: var(--green); box-shadow: 0 0 6px rgba(52,211,153,0.7); }
-    .status-dot.offline { background: var(--red); }
-    .status-dot.waking  { background: var(--warn); animation: blink 1.1s infinite; }
-
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
-
-    /* ── Shimmer skeleton ────────────────────────────── */
-    @keyframes shimmer {
-      0%   { background-position: -400px 0; }
-      100% { background-position:  400px 0; }
-    }
-    .skeleton {
-      border-radius: 10px; height: 18px;
-      background: linear-gradient(90deg, rgba(203,213,225,0.55) 25%, rgba(255,255,255,0.85) 50%, rgba(203,213,225,0.55) 75%);
-      background-size: 800px 100%;
-      animation: shimmer 1.4s infinite;
-    }
-
-    /* ── Layout ─────────────────────────────────────── */
-    .container { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
-    .card {
-      background: var(--surface);
-      backdrop-filter: blur(24px) saturate(180%) brightness(102%);
-      -webkit-backdrop-filter: blur(24px) saturate(180%) brightness(102%);
-      border-radius: 22px;
-      padding: 18px;
-      border: 1px solid var(--glass-border);
-      box-shadow: var(--glass-shadow), var(--glass-hi);
-    }
-    .card-label {
-      font-size: 10px; font-weight: 700; color: var(--text2);
-      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px;
-    }
-
-    /* ── Upload ─────────────────────────────────────── */
-    .upload-zone {
-      background: var(--surface2);
-      border: 1.5px dashed var(--border2);
-      border-radius: 14px;
-      padding: 24px 20px; text-align: center; position: relative; transition: all 0.18s;
-    }
-    .upload-zone:active { transform: scale(0.97); border-color: var(--accent); }
-    .upload-zone h3 { color: var(--accent); font-size: 15px; margin-bottom: 4px; font-weight: 700; }
-    .upload-zone p  { font-size: 12px; color: var(--text2); }
-    .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; z-index: 10; cursor: pointer; }
-    #file-badge {
-      display: none; margin-top: 10px; padding: 8px 14px;
-      background: var(--green-dim); color: var(--green);
-      border-radius: 10px; font-size: 12px; font-weight: 700;
-      border: 1px solid rgba(52,211,153,0.2);
-    }
-    .summary-box {
-      display: none; margin-top: 14px; padding: 14px;
-      background: var(--accent-dim); border: 1px solid rgba(201,122,58,0.2);
-      border-radius: 12px; font-size: 13px; color: var(--text); line-height: 1.7;
-    }
-    .summary-total { margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(201,122,58,0.3); font-weight: 800; font-size: 14px; color: var(--accent2); }
-    .domicilio-pdf { margin-top: 5px; font-style: italic; color: var(--text2); font-size: 12px; }
-
-    /* ── Forms ──────────────────────────────────────── */
-    .form-group { margin-bottom: 12px; }
-    .form-group:last-child { margin-bottom: 0; }
-    label {
-      display: block; font-size: 10px; font-weight: 700; color: var(--text2);
-      margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.8px;
-    }
-    input, select, textarea {
-      width: 100%; padding: 13px 14px;
-      border: 1px solid rgba(15,23,42,0.12);
-      border-radius: 14px;
-      font-size: 15px; background: rgba(255,255,255,0.82); color: var(--text); font-weight: 500;
-      appearance: none; -webkit-appearance: none;
-      transition: border 0.18s, box-shadow 0.18s;
-      font-family: 'Sora', sans-serif;
-      box-shadow: inset 0 1px 3px rgba(15,23,42,0.06);
-    }
-    input::placeholder, textarea::placeholder { color: var(--text3); }
-    input:focus, select:focus, textarea:focus {
-      outline: none; border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-dim);
-    }
-    textarea { height: 72px; resize: none; font-size: 14px; line-height: 1.5; }
-    select {
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='%238A7E74' d='M0 0l6 8 6-8z'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
-    }
-    select option { background: #1e293b; }
-
-    .tags-scroll { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 3px; scrollbar-width: none; }
-    .tags-scroll::-webkit-scrollbar { display: none; }
-    .tag-btn {
-      white-space: nowrap; padding: 8px 14px;
-      background: var(--surface2);
-      border: 1px solid var(--border2); border-radius: 20px;
-      font-size: 12px; font-weight: 600;
-      color: var(--text2); cursor: pointer;
-      font-family: 'Sora', sans-serif;
-      transition: all 0.1s; flex-shrink: 0;
-    }
-    .tag-btn:active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); transform: scale(0.92); }
-
-    /* ── Botón preview ──────────────────────────────── */
-    .btn-preview-card {
-      width: 100%; padding: 13px; background: var(--accent-dim); color: var(--accent);
-      border: 1px solid rgba(201,122,58,0.25); border-radius: 12px; font-size: 14px; font-weight: 700;
-      display: flex; align-items: center; justify-content: center; gap: 6px;
-      cursor: pointer; font-family: 'Sora', sans-serif;
-      transition: opacity 0.15s, transform 0.12s;
-    }
-    .btn-preview-card:active:not(:disabled) { transform: scale(0.97); }
-    .btn-preview-card:disabled { opacity: .35; }
-
-    .ghost-btn {
-      background: transparent; color: var(--text2);
-      border: 1px solid var(--border2); border-radius: 12px;
-      padding: 11px 14px; font-size: 13px; font-weight: 600;
-      cursor: pointer; width: 100%; text-align: center;
-      font-family: 'Sora', sans-serif;
-      transition: opacity 0.12s, transform 0.1s;
-    }
-    .ghost-btn:active { transform: scale(0.97); opacity: 0.7; }
-
-    .danger-btn {
-      background: var(--red-dim); color: var(--red);
-      border: 1px solid rgba(248,113,113,0.25);
-      border-radius: 12px;
-      padding: 11px 14px; font-size: 13px; font-weight: 700;
-      cursor: pointer; font-family: 'Sora', sans-serif;
-      transition: opacity 0.12s, transform 0.1s;
-    }
-    .danger-btn:active { transform: scale(0.96); opacity: 0.82; }
-    .danger-btn:disabled { opacity: 0.45; }
-
-    /* ── Tab bar — iOS 26 Floating Pill ─────────────── */
-    .tab-bar {
-      position: fixed; bottom: 0; left: 0; width: 100%;
-      background: transparent;
-      z-index: 100;
-      display: flex; flex-direction: column;
-      padding-bottom: var(--safe-b);
-      pointer-events: none;
-    }
-    .tab-buttons {
-      display: flex;
-      background: rgba(10,15,28,0.88);
-      backdrop-filter: blur(36px) saturate(200%);
-      -webkit-backdrop-filter: blur(36px) saturate(200%);
-      border-radius: 30px;
-      border: 1px solid rgba(255,255,255,0.13);
-      box-shadow: 0 10px 44px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.2);
-      margin: 0 18px;
-      padding: 5px;
-      pointer-events: auto;
-    }
-    .tab-btn {
-      flex: 1; padding: 9px 6px 8px; border: none; background: none;
-      font-size: 8.5px; font-weight: 700; color: rgba(255,255,255,0.38);
-      display: flex; flex-direction: column; align-items: center; gap: 3px;
-      cursor: pointer; transition: color 0.18s, background 0.18s;
-      text-transform: uppercase; letter-spacing: 0.7px;
-      font-family: 'Sora', sans-serif;
-      border-radius: 24px;
-    }
-    .tab-btn .tab-icon { font-size: 19px; line-height: 1; }
-    .tab-btn.active { color: #FFFFFF; background: rgba(255,255,255,0.16); }
-
-    /* ── Bottom bar ─────────────────────────────── */
-    .bottom-bar { padding: 8px 14px 8px; pointer-events: auto; }
-    .main-btn {
-      width: 100%; padding: 16px;
-      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
-      color: #FFF;
-      border: none; border-radius: 18px; font-size: 15px; font-weight: 700;
-      display: flex; align-items: center; justify-content: center; gap: 9px;
-      box-shadow: 0 6px 24px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.22);
-      cursor: pointer; font-family: 'Sora', sans-serif;
-      transition: transform 0.12s, opacity 0.12s; min-height: 54px;
-      letter-spacing: -0.2px;
-    }
-    .main-btn:active:not(:disabled) { transform: scale(0.97); }
-    .main-btn:disabled { opacity: .5; pointer-events: none; }
-    .main-btn.btn-success {
-      background: linear-gradient(135deg, #34D399 0%, #059669 100%);
-      box-shadow: 0 6px 20px rgba(52,211,153,0.3), inset 0 1px 0 rgba(255,255,255,0.22);
-    }
-    .main-btn.btn-loading {
-      background: var(--surface3); box-shadow: none; color: var(--text2);
-    }
-
-    /* ── Spinner ─────────────────────────────────────── */
-    .spinner {
-      border: 2.5px solid rgba(255,255,255,0.2); border-top: 2.5px solid #FFF;
-      border-radius: 50%; width: 18px; height: 18px; flex-shrink: 0;
-      animation: spin 0.7s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ── NC Loading — flotante no bloqueante ─────────── */
-    #ncLoadingOverlay {
-      position: fixed;
-      bottom: calc(94px + var(--safe-b));
-      left: 14px; right: 14px;
-      z-index: 9000;
-      background: rgba(10,15,28,0.92);
-      backdrop-filter: blur(32px) saturate(200%);
-      -webkit-backdrop-filter: blur(32px) saturate(200%);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 20px;
-      padding: 16px 20px;
-      display: none;
-      align-items: center; gap: 16px;
-      box-shadow: 0 12px 48px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.14);
-    }
-    #ncLoadingOverlay.active { display: flex; }
-    .nc-spinner-ring {
-      width: 36px; height: 36px; flex-shrink: 0;
-      border: 3px solid var(--border2);
-      border-top: 3px solid var(--accent);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    .nc-text-wrap { flex: 1; }
-    #ncLoadingText {
-      color: var(--text); font-size: 14px; font-weight: 700; line-height: 1.3;
-    }
-    #ncLoadingSubtext {
-      color: var(--text2); font-size: 11px; margin-top: 3px; font-weight: 500;
-    }
-
-    /* ── Toast ──────────────────────────────────────── */
-    #toast-container {
-      position: fixed; top: calc(var(--safe-t) + 60px);
-      left: 14px; right: 14px; z-index: 8000; pointer-events: none;
-      display: flex; flex-direction: column; gap: 8px;
-    }
-    .toast {
-      background: rgba(26,21,18,0.94);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: #FFF; padding: 13px 18px; border-radius: 14px;
-      font-size: 13px; font-weight: 600;
-      transform: translateY(-14px) scale(0.97); opacity: 0;
-      transition: all 0.22s cubic-bezier(0.32,0.72,0,1); text-align: center;
-      backdrop-filter: blur(12px);
-    }
-    .toast.show { transform: translateY(0) scale(1); opacity: 1; }
-    .toast.success { border-color: rgba(52,211,153,0.4); }
-    .toast.error   { border-color: rgba(248,113,113,0.4); }
-
-    /* ── Modal preview ──────────────────────────────── */
-    .modal-backdrop {
-      position: fixed; inset: 0; background: rgba(10,15,28,0.6);
-      backdrop-filter: blur(14px) saturate(160%); -webkit-backdrop-filter: blur(14px) saturate(160%);
-      z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.22s;
-    }
-    .modal-backdrop.active { opacity: 1; pointer-events: auto; }
-    .bottom-sheet {
-      position: fixed; bottom: 0; left: 0; width: 100%; height: 91vh;
-      background: rgba(238,242,247,0.92);
-      backdrop-filter: blur(40px) saturate(180%);
-      -webkit-backdrop-filter: blur(40px) saturate(180%);
-      border-radius: 26px 26px 0 0;
-      z-index: 1001; transform: translateY(100%);
-      transition: transform 0.38s cubic-bezier(0.32,0.72,0,1);
-      display: flex; flex-direction: column; overflow: hidden;
-      border-top: 1px solid rgba(255,255,255,0.7);
-      box-shadow: 0 -8px 48px rgba(15,23,42,0.14);
-    }
-    .bottom-sheet.active { transform: translateY(0); }
-    .sheet-header {
-      padding: 14px 18px; background: rgba(255,255,255,0.5);
-      display: flex; justify-content: space-between; align-items: center;
-      border-bottom: 1px solid rgba(255,255,255,0.5);
-    }
-    .sheet-header h2 { font-size: 16px; font-weight: 700; color: var(--text); }
-    .close-btn {
-      background: var(--surface3); border: none; width: 30px; height: 30px;
-      border-radius: 50%; font-size: 13px; font-weight: bold;
-      color: var(--text2); cursor: pointer; display: flex; align-items: center; justify-content: center;
-    }
-    .pill-parte {
-      background: var(--accent); color: white; padding: 3px 9px;
-      border-radius: 11px; font-size: 11px; font-weight: 700; margin-left: 8px;
-    }
-    .nav-parts { display: flex; gap: 8px; }
-    .nav-parts button {
-      padding: 7px 12px; border: 1px solid var(--border2); background: var(--surface3);
-      border-radius: 10px; font-weight: bold; font-size: 15px; cursor: pointer; color: var(--text);
-      font-family: 'Sora', sans-serif;
-    }
-    .iframe-wrapper { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; }
-    .iframe-wrapper iframe { width: 1px; min-width: 100%; height: 100%; border: none; }
-
-    /* ── Modal Resumen Mensual ───────────────────────── */
-    .resumen-modal {
-      position: fixed; inset: 0;
-      background: rgba(238,242,247,0.92);
-      backdrop-filter: blur(40px) saturate(180%);
-      -webkit-backdrop-filter: blur(40px) saturate(180%);
-      z-index: 2000;
-      transform: translateY(100%);
-      transition: transform 0.38s cubic-bezier(0.32,0.72,0,1);
-      display: flex; flex-direction: column; overflow: hidden;
-    }
-    .resumen-modal.active { transform: translateY(0); }
-
-    .resumen-header {
-      background: rgba(255,255,255,0.55);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      padding: calc(var(--safe-t) + 12px) 20px 16px;
-      flex-shrink: 0;
-      border-bottom: 1px solid rgba(255,255,255,0.55);
-    }
-    .resumen-header-top {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 14px;
-    }
-    .resumen-header h2 { font-size: 20px; font-weight: 800; letter-spacing: -0.4px; color: var(--text); }
-    .resumen-close {
-      background: var(--surface2); border: 1px solid var(--border2); width: 34px; height: 34px;
-      border-radius: 50%; font-size: 16px; color: var(--text2); font-weight: bold;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-    }
-    .resumen-close:active { background: var(--surface3); }
-
-    .mes-nav {
-      display: flex; align-items: center; justify-content: space-between;
-      background: var(--surface2); border-radius: 12px;
-      padding: 4px; border: 1px solid var(--border);
-    }
-    .mes-nav-btn {
-      background: none; border: none; color: var(--text2); padding: 8px 14px;
-      font-size: 18px; cursor: pointer; border-radius: 9px;
-      transition: background 0.15s; line-height: 1; font-family: 'Sora', sans-serif;
-    }
-    .mes-nav-btn:active { background: var(--surface3); }
-    .mes-nav-btn:disabled { opacity: 0.2; pointer-events: none; }
-    #mesNavLabel {
-      font-size: 14px; font-weight: 700; color: var(--text);
-      text-align: center; flex: 1; letter-spacing: -0.2px;
-    }
-
-    .resumen-body {
-      flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
-      padding: 16px; padding-bottom: calc(30px + var(--safe-b));
-    }
-
-    .kpi-grid { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 10px; margin-bottom: 18px; }
-    .kpi-card {
-      background: var(--surface); border-radius: 14px; padding: 14px 10px;
-      text-align: center; border: 1px solid var(--border);
-    }
-    .kpi-card.kpi-green {
-      background: linear-gradient(135deg, rgba(52,211,153,0.15), rgba(5,150,105,0.1));
-      border-color: rgba(52,211,153,0.2);
-    }
-    .kpi-num { font-size: 24px; font-weight: 800; color: var(--text); line-height: 1; letter-spacing: -1px; }
-    .kpi-num-sm { font-size: 13px; font-weight: 800; color: var(--green); line-height: 1.3; }
-    .kpi-label { font-size: 9px; color: var(--text2); font-weight: 700; margin-top: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
-
-    .section-label {
-      font-size: 10px; font-weight: 700; color: var(--text2);
-      text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px;
-    }
-
-    .fact-row {
-      display: flex; align-items: flex-start; padding: 14px;
-      background: var(--surface); border-radius: 14px; margin-bottom: 8px;
-      border: 1px solid var(--border);
-    }
-    .fact-row.anulada {
-      opacity: 0.55; border-color: rgba(248,113,113,0.15);
-    }
-
-    .fact-actions { display: flex; gap: 7px; margin-top: 9px; flex-wrap: wrap; }
-    .fact-mini-btn {
-      border: none; border-radius: 9px;
-      padding: 7px 11px; font-size: 11px; font-weight: 700;
-      cursor: pointer; font-family: 'Sora', sans-serif;
-      transition: transform 0.1s, opacity 0.1s;
-    }
-    .fact-mini-btn:active { transform: scale(0.93); opacity: 0.75; }
-    .fact-mini-btn.pdf    { background: var(--accent-dim); color: var(--accent); }
-    .fact-mini-btn.anular { background: var(--red-dim); color: var(--red); }
-
-    /* ── Modal éxito ────────────────────────────────── */
-    .success-modal {
-      position: fixed; inset: 0;
-      background: rgba(238,242,247,0.94);
-      backdrop-filter: blur(40px) saturate(180%);
-      -webkit-backdrop-filter: blur(40px) saturate(180%);
-      z-index: 2001;
-      transform: translateY(100%);
-      transition: transform 0.38s cubic-bezier(0.32,0.72,0,1);
-      display: flex; flex-direction: column; overflow-y: auto;
-    }
-    .success-modal.active { transform: translateY(0); }
-    .success-header {
-      background: linear-gradient(160deg, #065F46, #034732);
-      color: white; padding: calc(var(--safe-t) + 26px) 20px 30px; text-align: center;
-      position: relative;
-    }
-    .success-header .icon { font-size: 52px; display: block; margin-bottom: 10px; }
-    .success-header h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.4px; }
-    .success-header p  { opacity: .8; margin-top: 5px; font-size: 13px; }
-    .success-body { padding: 20px 16px; flex: 1; background: var(--bg); padding-bottom: calc(24px + var(--safe-b)); }
-
-    .action-btn {
-      display: flex; align-items: center; justify-content: center; gap: 9px;
-      width: 100%; padding: 15px; border-radius: 14px;
-      font-size: 14px; font-weight: 700; text-decoration: none;
-      margin-bottom: 10px; border: none; cursor: pointer;
-      font-family: 'Sora', sans-serif;
-      transition: transform 0.1s, opacity 0.12s;
-    }
-    .action-btn:active { transform: scale(0.97); opacity: 0.82; }
-    .btn-wa           { background: #25D366; color: white; }
-    .btn-download     { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(201,122,58,0.25); }
-    .btn-close-success{ background: var(--surface2); color: var(--text2); border: 1px solid var(--border2); }
-
-    /* ── Modal centrado ─────────────────────────────── */
-    .modal-center-backdrop {
-      position: fixed; inset: 0;
-      background: rgba(10,15,28,0.62);
-      backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%);
-      z-index: 3000; display: none;
-      align-items: flex-end; justify-content: center;
-      padding: 0;
-    }
-    .modal-center-backdrop.active { display: flex; }
-
-    .modal-center-card {
-      width: 100%; max-width: 600px;
-      background: rgba(238,242,247,0.94);
-      backdrop-filter: blur(40px) saturate(180%);
-      -webkit-backdrop-filter: blur(40px) saturate(180%);
-      border-radius: 26px 26px 0 0;
-      padding: 20px 18px calc(20px + var(--safe-b));
-      border-top: 1px solid rgba(255,255,255,0.7);
-      box-shadow: 0 -8px 48px rgba(15,23,42,0.14);
-      animation: sheetUp 0.30s cubic-bezier(0.32,0.72,0,1);
-      max-height: 90vh; overflow-y: auto;
-    }
-
-    @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-    .modal-sheet-handle {
-      width: 36px; height: 4px; background: var(--surface3); border-radius: 2px;
-      margin: 0 auto 18px;
-    }
-
-    .modal-center-card h3 { font-size: 18px; font-weight: 800; margin-bottom: 6px; color: var(--text); }
-    .modal-center-card > p {
-      font-size: 12px; color: var(--text2); line-height: 1.55; margin-bottom: 14px;
-    }
-    .modal-center-actions { display: flex; gap: 10px; margin-top: 16px; }
-    .modal-center-actions button { flex: 1; }
-
-    #anularMotivo { min-height: 88px; }
-
-    /* ── Tab Extracto ─────────────────────────────── */
-    #tabExtracto { display: none; }
-    #tabFacturar { display: block; }
-
-    .ext-upload-zone {
-      background: rgba(255,255,255,0.55);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1.5px dashed rgba(15,23,42,0.18); border-radius: 18px;
-      padding: 30px 20px; text-align: center; position: relative; transition: all 0.18s;
-      cursor: pointer;
-    }
-    .ext-upload-zone:active { transform: scale(0.97); border-color: var(--accent); }
-    .ext-upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; z-index: 10; cursor: pointer; }
-    .ext-upload-icon { font-size: 42px; margin-bottom: 10px; }
-    .ext-upload-zone h3 { color: var(--text); font-size: 16px; font-weight: 700; margin-bottom: 4px; }
-    .ext-upload-zone p  { font-size: 12px; color: var(--text2); }
-
-    /* ── Transfer Card ───────────────────────────────────────── */
-    .transfer-card {
-      background: var(--surface);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      border-radius: 20px;
-      padding: 16px; margin-bottom: 10px;
-      border: 1px solid var(--glass-border);
-      box-shadow: var(--glass-shadow), var(--glass-hi);
-    }
-    .transfer-card.sin-cuit { border-top: 2.5px solid var(--warn); }
-    .transfer-card.excluida { opacity: 0.42; }
-
-    .tc-main { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-    .tc-avatar {
-      width: 42px; height: 42px; border-radius: 13px; flex-shrink: 0;
-      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-      color: #FFF; font-size: 18px; font-weight: 800;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .transfer-card.sin-cuit  .tc-avatar { background: linear-gradient(135deg, #92400e, #d97706); }
-    .transfer-card.excluida  .tc-avatar { background: linear-gradient(135deg, #4b5563, #6b7280); }
-
-    .tc-info { flex: 1; min-width: 0; }
-    .tc-nombre { font-weight: 700; font-size: 14px; color: var(--text); line-height: 1.3;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .tc-meta { font-size: 11px; color: var(--text2); margin-top: 2px; }
-    .tc-ya-fac { font-size: 11px; color: #64748b; font-weight: 700; margin-top: 4px; }
-    .tc-monto { font-size: 17px; font-weight: 800; color: var(--green); white-space: nowrap; letter-spacing: -0.5px; }
-    .transfer-card.excluida .tc-monto { color: var(--text3); text-decoration: line-through; }
-
-    .tc-bottom { display: flex; flex-direction: column; gap: 7px; }
-    .tc-cuit-row { display: flex; gap: 8px; align-items: center; }
-    .tc-email { font-size: 11px; color: var(--green); font-weight: 600; margin-top: 1px; }
-    .tc-alert { font-size: 11px; color: var(--warn); font-weight: 700; margin-top: 1px; }
-
-    .transfer-cuit-input {
-      flex: 1; padding: 10px 12px; border: 1px solid var(--border2); border-radius: 10px;
-      font-size: 14px; font-weight: 600; background: var(--surface2); font-family: monospace;
-      color: var(--text);
-    }
-    .transfer-cuit-input:focus { outline: none; border-color: var(--accent); }
-    .transfer-toggle {
-      padding: 9px 12px; border: 1px solid var(--border2); border-radius: 10px;
-      background: var(--surface2); font-size: 12px; font-weight: 700; cursor: pointer; color: var(--text2);
-      font-family: 'Sora', sans-serif;
-      transition: all 0.12s; white-space: nowrap;
-    }
-    .transfer-toggle.incluida { background: var(--green-dim); border-color: rgba(52,211,153,0.3); color: var(--green); }
-
-    /* ── Revision Todo cards ─────────────────────────────────── */
-    .rev-card {
-      display: flex; align-items: center; gap: 11px; padding: 12px 14px;
-      background: var(--surface2); border-radius: 14px; margin-bottom: 8px;
-      border: 1px solid var(--border);
-    }
-    .rev-avatar {
-      width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0;
-      background: linear-gradient(135deg, #1e293b, #334155);
-      color: #FFF; font-size: 16px; font-weight: 800;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .rev-info { flex: 1; min-width: 0; }
-    .rev-nombre { font-weight: 700; font-size: 13px; color: var(--text);
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .rev-sub { font-size: 10px; color: var(--text2); margin-top: 2px; font-weight: 500; }
-    .rev-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
-    .rev-monto { font-weight: 800; font-size: 14px; color: var(--green); white-space: nowrap; }
-    .rev-remove {
-      background: var(--red-dim); border: none; border-radius: 8px;
-      width: 26px; height: 26px; font-size: 11px; cursor: pointer; color: var(--red);
-      display: flex; align-items: center; justify-content: center;
-      font-family: 'Sora', sans-serif; font-weight: 700;
-    }
-
-    .ext-summary-bar {
-      background: var(--surface);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      border-radius: 18px; padding: 16px 18px;
-      margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;
-      border: 1px solid var(--glass-border);
-      box-shadow: var(--glass-shadow), var(--glass-hi);
-    }
-    .ext-summary-bar .lbl { font-size: 10px; color: var(--text2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-    .ext-summary-bar .val { font-size: 20px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
-
-    #extBtnFacturar {
-      width: 100%; padding: 16px;
-      background: linear-gradient(135deg, var(--green) 0%, #059669 100%);
-      color: #FFF;
-      border: none; border-radius: 14px; font-size: 15px; font-weight: 700;
-      display: flex; align-items: center; justify-content: center; gap: 9px;
-      box-shadow: 0 6px 20px rgba(52,211,153,0.25);
-      cursor: pointer; font-family: 'Sora', sans-serif;
-      transition: transform 0.12s, opacity 0.12s; min-height: 54px;
-    }
-    #extBtnFacturarTodo {
-      width: 100%; padding: 14px;
-      background: linear-gradient(135deg, #C97A3A 0%, #a85f28 100%);
-      color: #FFF;
-      border: none; border-radius: 14px; font-size: 14px; font-weight: 700;
-      display: flex; align-items: center; justify-content: center; gap: 9px;
-      box-shadow: 0 4px 16px rgba(201,122,58,0.28);
-      cursor: pointer; font-family: 'Sora', sans-serif;
-      transition: transform 0.12s, opacity 0.12s; min-height: 50px;
-      margin-top: 8px;
-    }
-    .ext-step { display: none; flex-direction: column; gap: 12px; }
-    .ext-step.active { display: flex; }
-
-    /* Info card extracto */
-    .info-card {
-      background: var(--accent-dim);
-      border: 1px solid rgba(201,122,58,0.18);
-      border-radius: 14px; padding: 14px 16px;
-    }
-    .info-card-title { font-size: 12px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
-    .info-card-body { font-size: 12px; color: var(--text2); line-height: 1.7; }
-
-    /* ── Historial ───────────────────────────────────── */
-    #tabHistorial { display: none; flex-direction: column; gap: 0; padding-bottom: calc(88px + var(--safe-b)); }
-
-    .hist-header {
-      position: sticky; top: calc(var(--safe-t) + 54px); z-index: 40;
-      background: rgba(238,242,247,0.82);
-      backdrop-filter: blur(28px) saturate(180%); -webkit-backdrop-filter: blur(28px) saturate(180%);
-      padding: 12px 14px 10px;
-      border-bottom: 1px solid rgba(255,255,255,0.55);
-    }
-
-    .hist-mes-nav {
-      display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
-    }
-    .hist-mes-btn {
-      width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border2);
-      background: var(--surface2); font-size: 16px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      color: var(--text2);
-      transition: transform 0.1s, opacity 0.1s;
-    }
-    .hist-mes-btn:active { transform: scale(0.88); opacity: 0.7; }
-    .hist-mes-btn:disabled { opacity: 0.2; pointer-events: none; }
-    #histMesLabel { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
-
-    .hist-search-wrap { position: relative; }
-    .hist-search-wrap input {
-      padding: 11px 14px 11px 38px;
-      border-radius: 11px; border: 1px solid var(--border2);
-      background: var(--surface2); font-size: 14px;
-    }
-    .hist-search-icon {
-      position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
-      font-size: 14px; pointer-events: none; color: var(--text2);
-    }
-    .hist-search-clear {
-      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-      background: var(--surface3); border: none; border-radius: 50%;
-      width: 20px; height: 20px; font-size: 10px; font-weight: 900;
-      color: var(--text2); cursor: pointer; display: none;
-      align-items: center; justify-content: center;
-    }
-    .hist-search-clear.show { display: flex; }
-
-    .hist-list { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
-
-    /* ── Historial Card ─────────────────────────────────────── */
-    .hist-card {
-      background: var(--surface);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      border-radius: 20px; padding: 14px 16px;
-      border: 1px solid var(--glass-border);
-      box-shadow: var(--glass-shadow), var(--glass-hi);
-      cursor: pointer; transition: transform 0.12s, box-shadow 0.12s;
-      display: flex; align-items: center; gap: 13px;
-    }
-    .hist-card:active { transform: scale(0.985); box-shadow: 0 1px 8px rgba(15,23,42,0.06); }
-    .hist-card.anulada { opacity: 0.5; }
-
-    .hc-avatar {
-      width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0;
-      background: linear-gradient(135deg, var(--accent) 0%, #7A3010 100%);
-      color: #FFF; font-size: 19px; font-weight: 800;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .hist-card.nc      .hc-avatar { background: linear-gradient(135deg, #D97706, #92400E); }
-    .hist-card.anulada .hc-avatar { background: linear-gradient(135deg, #6B7280, #374151); }
-
-    .hc-body { flex: 1; min-width: 0; }
-    .hc-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3px; }
-    .hc-nombre { font-size: 14px; font-weight: 700; color: var(--text); flex: 1; margin-right: 10px; line-height: 1.3; }
-    .hc-total { font-size: 16px; font-weight: 800; color: var(--text); white-space: nowrap; }
-    .hc-total.nc { color: var(--warn); }
-    .hc-meta { font-size: 11px; color: var(--text2); font-weight: 500; margin-bottom: 8px; }
-    .hc-badges { display: flex; gap: 5px; flex-wrap: wrap; }
-    .hist-badge { padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 700; }
-    .hist-badge.comp { background: var(--accent-dim); color: var(--accent); }
-    .hist-badge.nc   { background: rgba(251,191,36,0.12); color: var(--warn); }
-    .hist-badge.anu  { background: var(--red-dim); color: var(--red); }
-    .hist-badge.ext  { background: var(--green-dim); color: var(--green); }
-    .hist-badge.pdf  { background: rgba(139,92,246,0.12); color: #A78BFA; }
-
-    .hist-empty { text-align: center; padding: 60px 30px; color: var(--text2); }
-    .hist-empty .icon { font-size: 48px; margin-bottom: 14px; }
-    .hist-empty p { font-size: 14px; font-weight: 600; }
-    .hist-empty small { font-size: 12px; color: var(--text3); }
-
-    .hist-stat-bar { display: flex; gap: 10px; padding: 0 14px 12px; }
-    .hist-stat {
-      flex: 1;
-      background: var(--surface);
-      backdrop-filter: blur(16px) saturate(160%);
-      -webkit-backdrop-filter: blur(16px) saturate(160%);
-      border-radius: 14px; padding: 12px;
-      text-align: center; border: 1px solid var(--glass-border);
-      box-shadow: var(--glass-shadow), var(--glass-hi);
-    }
-    .hist-stat .num { font-size: 18px; font-weight: 800; color: var(--text); }
-    .hist-stat .lbl { font-size: 9px; color: var(--text2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
-
-    /* Sheet detalle historial */
-    #histDetailSheet {
-      position: fixed; bottom: 0; left: 0; width: 100%;
-      background: rgba(238,242,247,0.94);
-      backdrop-filter: blur(40px) saturate(180%);
-      -webkit-backdrop-filter: blur(40px) saturate(180%);
-      border-radius: 26px 26px 0 0;
-      z-index: 2000; transform: translateY(100%);
-      transition: transform 0.35s cubic-bezier(0.32,0.72,0,1);
-      max-height: 88vh; overflow-y: auto;
-      padding-bottom: calc(24px + var(--safe-b));
-      border-top: 1px solid rgba(255,255,255,0.7);
-      box-shadow: 0 -8px 48px rgba(15,23,42,0.14);
-    }
-    #histDetailSheet.active { transform: translateY(0); }
-    #histDetailBackdrop {
-      position: fixed; inset: 0; background: rgba(10,15,28,0.6);
-      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-      z-index: 1999; opacity: 0; pointer-events: none; transition: opacity 0.25s;
-    }
-    #histDetailBackdrop.active { opacity: 1; pointer-events: auto; }
-
-    .hist-detail-handle { width: 36px; height: 4px; background: var(--surface3); border-radius: 2px; margin: 12px auto 0; }
-    .hist-detail-header { padding: 14px 20px 0; }
-    .hist-detail-tipo { font-size: 10px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
-    .hist-detail-nombre { font-size: 20px; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 2px; color: var(--text); }
-    .hist-detail-sub { font-size: 12px; color: var(--text2); font-weight: 500; }
-
-    .hist-detail-total-box {
-      margin: 14px 20px;
-      background: linear-gradient(135deg, var(--accent) 0%, #8B3A0F 100%);
-      border-radius: 16px; padding: 18px 20px;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .hist-detail-total-box .lbl { font-size: 11px; color: rgba(255,255,255,0.6); font-weight: 600; }
-    .hist-detail-total-box .amount { font-size: 28px; font-weight: 800; color: #FFF; letter-spacing: -0.8px; }
-    .hist-detail-total-box .fecha  { font-size: 12px; color: rgba(255,255,255,0.7); font-weight: 500; margin-top: 4px; }
-    .hist-detail-info { padding: 0 20px; }
-    .hist-info-row {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 11px 0; border-bottom: 1px solid var(--border);
-    }
-    .hist-info-row:last-child { border-bottom: none; }
-    .hist-info-row .key { font-size: 11px; color: var(--text2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
-    .hist-info-row .val { font-size: 13px; font-weight: 600; color: var(--text); text-align: right; max-width: 65%; overflow-wrap: break-word; word-break: normal; }
-    .hist-detail-actions { padding: 16px 20px 0; display: flex; flex-direction: column; gap: 10px; }
-    .hist-action-btn {
-      width: 100%; padding: 14px; border-radius: 13px; border: none;
-      font-size: 14px; font-weight: 700; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      font-family: 'Sora', sans-serif;
-      transition: transform 0.1s, opacity 0.12s;
-    }
-    .hist-action-btn:active { transform: scale(0.97); opacity: 0.82; }
-    .hist-action-btn.pdf  { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(201,122,58,0.2); }
-    .hist-action-btn.email{ background: var(--green-dim); color: var(--green); border: 1px solid rgba(52,211,153,0.2); }
-    .hist-action-btn.anular { background: var(--red-dim); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
-
-    .hist-skel { border-radius: 20px; height: 88px;
-      background: linear-gradient(90deg, rgba(203,213,225,0.5) 25%, rgba(255,255,255,0.82) 50%, rgba(203,213,225,0.5) 75%);
-      background-size: 800px 100%; animation: shimmer 1.4s infinite;
-    }
-
-    /* ── Tab Email ───────────────────────────────────── */
-    #tabEmail { display: none; flex-direction: column; padding-bottom: calc(88px + var(--safe-b)); }
-
-    .email-sticky-header {
-      position: sticky; top: calc(var(--safe-t) + 54px); z-index: 40;
-      background: rgba(238,242,247,0.82);
-      backdrop-filter: blur(28px) saturate(180%); -webkit-backdrop-filter: blur(28px) saturate(180%);
-      padding: 12px 14px 10px;
-      border-bottom: 1px solid rgba(255,255,255,0.55);
-    }
-    .email-mes-nav { display: flex; align-items: center; justify-content: space-between; }
-    #emailMesLabel { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
-    .email-mes-btn {
-      width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border2);
-      background: var(--surface2); font-size: 16px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; color: var(--text2);
-      transition: transform 0.1s, opacity 0.1s;
-    }
-    .email-mes-btn:active { transform: scale(0.88); opacity: 0.7; }
-    .email-mes-btn:disabled { opacity: 0.2; pointer-events: none; }
-
-    .email-body { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
-
-    .email-preview-card {
-      background: linear-gradient(135deg, var(--accent) 0%, #7A3010 100%);
-      border-radius: 18px; padding: 20px;
-    }
-    .email-preview-card .pv-label {
-      font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.55);
-      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;
-    }
-    .email-preview-card .pv-mes {
-      font-size: 22px; font-weight: 800; color: #FFF; letter-spacing: -0.5px; margin-bottom: 16px;
-    }
-    .email-preview-stats { display: flex; gap: 8px; }
-    .email-preview-stat {
-      flex: 1; background: rgba(0,0,0,0.2); border-radius: 11px; padding: 12px;
-      text-align: center; border: 1px solid rgba(255,255,255,0.1);
-    }
-    .email-preview-stat .n { font-size: 18px; font-weight: 800; color: #FFF; line-height: 1; }
-    .email-preview-stat .l { font-size: 9px; color: rgba(255,255,255,0.55); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
-
-    .email-compose-card {
-      background: var(--surface);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      border-radius: 22px; padding: 18px;
-      border: 1px solid var(--glass-border);
-      box-shadow: var(--glass-shadow), var(--glass-hi);
-    }
-    .email-section-label {
-      font-size: 10px; font-weight: 700; color: var(--text2);
-      text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px;
-    }
-
-    .email-chips { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
-    .email-chip {
-      display: flex; align-items: center; gap: 10px;
-      padding: 12px 14px; border-radius: 13px;
-      background: var(--surface2); border: 1px solid var(--border2);
-      cursor: pointer; transition: all 0.15s; -webkit-user-select: none;
-    }
-    .email-chip.active { background: var(--accent-dim); border-color: rgba(201,122,58,0.3); }
-    .email-chip:active { transform: scale(0.97); }
-    .email-chip-check {
-      width: 22px; height: 22px; border-radius: 50%;
-      background: var(--surface3); display: flex; align-items: center; justify-content: center;
-      font-size: 11px; flex-shrink: 0; transition: all 0.15s;
-    }
-    .email-chip.active .email-chip-check { background: var(--accent); color: #FFF; }
-    .email-chip-info { flex: 1; min-width: 0; }
-    .email-chip-name { font-size: 13px; font-weight: 700; color: var(--text); }
-    .email-chip-addr { font-size: 11px; color: var(--text2); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .email-chip-remove { background: none; border: none; font-size: 16px; color: var(--text3); cursor: pointer; padding: 4px; line-height: 1; flex-shrink: 0; }
-
-    .email-add-row { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; }
-    .email-add-row input { flex: 1; padding: 12px 14px; border-radius: 11px; font-size: 13px; }
-    .email-add-btn {
-      width: 44px; height: 44px; border-radius: 11px;
-      background: var(--accent); color: #FFF; border: none;
-      font-size: 22px; cursor: pointer; font-family: 'Sora', sans-serif;
-      display: flex; align-items: center; justify-content: center;
-      transition: transform 0.1s; flex-shrink: 0;
-    }
-    .email-add-btn:active { transform: scale(0.90); }
-
-    .email-send-btn {
-      width: 100%; padding: 16px; border-radius: 14px;
-      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
-      color: #FFF; border: none; font-size: 14px; font-weight: 700;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      box-shadow: 0 6px 20px var(--accent-glow); cursor: pointer;
-      font-family: 'Sora', sans-serif;
-      transition: transform 0.12s, opacity 0.12s; min-height: 52px;
-    }
-    .email-send-btn:active:not(:disabled) { transform: scale(0.97); }
-    .email-send-btn:disabled { opacity: 0.45; pointer-events: none; background: var(--surface3); box-shadow: none; }
-
-    .email-send-result {
-      border-radius: 12px; padding: 12px 14px; margin-top: 10px;
-      font-size: 12px; font-weight: 700; display: none;
-    }
-    .email-send-result.show { display: block; }
-    .email-send-result.ok  { background: var(--green-dim); color: var(--green); border: 1px solid rgba(52,211,153,0.2); }
-    .email-send-result.err { background: var(--red-dim); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
-
-    .email-hist-section { padding: 4px 14px 0; }
-    .email-hist-item {
-      background: var(--surface); border-radius: 14px; padding: 14px 16px;
-      margin-bottom: 8px; border: 1px solid var(--border);
-    }
-    .email-hist-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-    .email-hist-mes { font-size: 13px; font-weight: 700; color: var(--text); }
-    .email-hist-time { font-size: 10px; color: var(--text2); font-weight: 500; }
-    .email-hist-chips { display: flex; flex-wrap: wrap; gap: 5px; }
-    .email-hist-chip { padding: 3px 9px; border-radius: 7px; font-size: 10px; font-weight: 700; }
-    .email-hist-chip.ok  { background: var(--green-dim); color: var(--green); }
-    .email-hist-chip.err { background: var(--red-dim); color: var(--red); }
-    .email-hist-empty { text-align: center; padding: 30px; color: var(--text2); font-size: 12px; font-weight: 600; }
-
-    /* ── Cold Start Banner ───────────────────────────────────── */
-    #coldStartBanner {
-      position: fixed;
-      top: calc(var(--safe-t) + 62px);
-      left: 14px; right: 14px;
-      z-index: 600;
-      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-      border: 1px solid rgba(201,122,58,0.35);
-      border-radius: 16px; padding: 13px 16px;
-      display: none; align-items: center; gap: 13px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.28);
-      animation: slideDown 0.3s cubic-bezier(0.32,0.72,0,1);
-    }
-    #coldStartBanner.visible { display: flex; }
-    @keyframes slideDown { from { transform: translateY(-16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .cold-ring {
-      width: 22px; height: 22px; flex-shrink: 0;
-      border: 2.5px solid rgba(201,122,58,0.3); border-top-color: var(--accent);
-      border-radius: 50%; animation: spin 0.8s linear infinite;
-    }
-    .cold-txt { flex: 1; }
-    .cold-title { font-size: 13px; font-weight: 700; color: #FFF; }
-    .cold-sub   { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 2px; }
-
-    /* ── Result card in extStep3 ─────────────────────────────── */
-    .ext-result-card {
-      background: var(--surface); border-radius: 16px; padding: 14px 16px;
-      margin-bottom: 8px; border: 1px solid rgba(52,211,153,0.2);
-      border-left: 3px solid var(--green);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    }
-    .ext-result-card.error { border-color: rgba(220,38,38,0.15); border-left-color: var(--red); }
-
-  </style>
+  <link rel="preconnect" href="https://api-mercadolimpio.onrender.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/app.css">
+  <script src="js/config.js"></script>
 </head>
 <body>
 
-<header>
-  <div class="header-left">
-    <div class="header-logo">🍋</div>
-    <h1>Mercado Limpio</h1>
+<!-- ══ ÍCONOS ══ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></symbol>
+    <symbol id="i-bank" viewBox="0 0 24 24"><path d="M3 22h18"/><path d="M6 18v-7"/><path d="M10 18v-7"/><path d="M14 18v-7"/><path d="M18 18v-7"/><path d="M12 2 20 7H4z"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8 12 3 7 8"/><path d="M12 3v12"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/></symbol>
+    <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M5 3v4"/><path d="M3 5h4"/><path d="M19 17v4"/><path d="M17 19h4"/></symbol>
+    <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></symbol>
+    <symbol id="i-dollar" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M16 6 12 2 8 6"/><path d="M12 2v13"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></symbol>
+    <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/></symbol>
+    <symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></symbol>
+    <symbol id="i-file-minus" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M9 15h6"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2"/><path d="M12 18h.01"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+    <symbol id="i-building" viewBox="0 0 24 24"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></symbol>
+    <symbol id="i-wifi-off" viewBox="0 0 24 24"><path d="M12 20h.01"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/><path d="M2 8.82a15 15 0 0 1 4.17-2.65"/><path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/><path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/><path d="M5 13a10 10 0 0 1 5.24-2.76"/><path d="m2 2 20 20"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></symbol>
+  </defs>
+</svg>
+
+<!-- ══ BARRA LATERAL (PC) ══ -->
+<aside class="sidebar" aria-label="Navegación">
+  <div class="brand">
+    <img src="icons-mercado-limpio/ml-icon-96.png" alt="" width="40" height="40">
+    <div><div class="brand-name">Mercado Limpio</div><div class="brand-sub">Facturación ML</div></div>
   </div>
-  <button class="btn-resumen-header" onclick="abrirResumen()">📊 Resumen</button>
-</header>
-
-<div id="toast-container"></div>
-
-<!-- Cold Start Banner -->
-<div id="coldStartBanner">
-  <div class="cold-ring"></div>
-  <div class="cold-txt">
-    <div class="cold-title">Servidor iniciando…</div>
-    <div class="cold-sub">Primera conexión del día — listo en ~30 seg</div>
+  <nav class="side-nav">
+    <button class="side-link active" data-tab="facturar"><svg class="ic"><use href="#i-file"/></svg>Facturar</button>
+    <button class="side-link" data-tab="extracto"><svg class="ic"><use href="#i-bank"/></svg>Extracto bancario</button>
+    <button class="side-link" data-tab="historial"><svg class="ic"><use href="#i-history"/></svg>Historial</button>
+    <button class="side-link" data-tab="email"><svg class="ic"><use href="#i-mail"/></svg>Emails y resumen</button>
+    <button class="side-link" onclick="abrirResumen()"><svg class="ic"><use href="#i-chart"/></svg>Resumen mensual</button>
+  </nav>
+  <div class="side-foot">
+    <div class="server-pill"><span class="status-dot waking" data-status-dot></span><span data-status-label>Conectando…</span></div>
+    <div class="side-user"><span class="avatar">PS</span><div><div class="side-user-name">Pablo Santamaría</div><div class="side-user-sub">Mercado Limpio Distribuidora</div></div></div>
   </div>
-</div>
+</aside>
 
-<!-- NC Loading — flotante, no bloquea la app -->
-<div id="ncLoadingOverlay">
-  <div class="nc-spinner-ring"></div>
-  <div class="nc-text-wrap">
-    <div id="ncLoadingText">Emitiendo Nota de Crédito…</div>
-    <div id="ncLoadingSubtext">Podés navegar — te avisamos al terminar</div>
+<div class="app">
+  <!-- Encabezado -->
+  <header class="topbar">
+    <div class="topbar-brand">
+      <img src="icons-mercado-limpio/ml-icon-96.png" alt="" width="36" height="36">
+      <div><div class="brand-name">Mercado Limpio</div><div class="brand-sub">Facturación ML</div></div>
+    </div>
+    <div class="topbar-title">
+      <h1 id="pageTitle">Facturación</h1>
+      <p id="pageSub">Sistema de facturación ARCA</p>
+    </div>
+    <div class="topbar-actions">
+      <label class="mes-select"><svg class="ic"><use href="#i-calendar"/></svg><select data-mes-global aria-label="Mes"></select><svg class="ic ic-sm"><use href="#i-down"/></svg></label>
+      <button class="icon-btn" id="btnPendientes" aria-label="Pendientes" onclick="UI.abrirPendientes()"><svg class="ic"><use href="#i-bell"/></svg><span class="badge-dot" id="pendBadge" hidden></span></button>
+      <button class="icon-btn only-mobile" aria-label="Menú" onclick="UI.abrirMenu()"><svg class="ic"><use href="#i-menu"/></svg></button>
+    </div>
+  </header>
+
+  <div class="env-banner" id="envBanner" hidden>
+    <svg class="ic ic-sm"><use href="#i-info"/></svg>
+    <span><strong>Versión de prueba.</strong> Emitir, anular y enviar emails se <strong>simulan</strong>: no llegan a ARCA ni a clientes.</span>
   </div>
-</div>
 
-<!-- ══ TAB FACTURAR ══════════════════════════════════════════ -->
-<main class="container" id="tabFacturar">
+  <div id="toast-container" aria-live="polite"></div>
 
-  <!-- Dashboard Header -->
-  <div style="background:linear-gradient(145deg,#060d1f 0%,#0f172a 45%,#1a1030 100%);border-radius:26px;padding:22px;position:relative;overflow:hidden;box-shadow:0 12px 48px rgba(10,15,40,0.28),inset 0 1px 0 rgba(255,255,255,0.08);">
-    <!-- Liquid Glass orbs -->
-    <div style="position:absolute;top:-50px;right:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(201,122,58,0.18) 0%,transparent 70%);pointer-events:none;filter:blur(2px);"></div>
-    <div style="position:absolute;bottom:-60px;left:-30px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,0.12) 0%,transparent 70%);pointer-events:none;filter:blur(4px);"></div>
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;">
-      <div>
-        <div style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:5px;" id="heroFecha">—</div>
-        <div style="font-size:20px;font-weight:800;color:#FFF;letter-spacing:-0.5px;line-height:1.1;">Mercado Limpio</div>
-        <div style="font-size:11.5px;color:rgba(255,255,255,0.4);margin-top:3px;font-weight:500;letter-spacing:0.1px;">Sistema de Facturación ARCA</div>
+  <div id="coldStartBanner" role="status">
+    <span class="spinner spinner-sm"></span>
+    <div><div class="cold-title">Servidor iniciando…</div><div class="cold-sub">Primera conexión del día — listo en ~30 seg</div></div>
+  </div>
+
+  <div id="ncLoadingOverlay" role="status">
+    <span class="spinner spinner-sm"></span>
+    <div><div id="ncLoadingText">Emitiendo Nota de Crédito…</div><div id="ncLoadingSubtext">Podés navegar — te avisamos al terminar</div></div>
+  </div>
+
+  <!-- ══════════ FACTURAR ══════════ -->
+  <main class="view active" id="tabFacturar">
+    <section class="status-card only-mobile">
+      <div class="status-left">
+        <span class="status-dot waking" data-status-dot></span>
+        <div><div class="status-title" data-status-label>Conectando…</div><div class="status-sub" data-status-sub>Verificando servidor</div></div>
       </div>
-      <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.07);backdrop-filter:blur(16px);border-radius:20px;padding:7px 11px;border:1px solid rgba(255,255,255,0.1);box-shadow:inset 0 1px 0 rgba(255,255,255,0.12);">
-        <div class="status-dot waking" id="statusDot" style="width:7px;height:7px;"></div>
-        <span id="statusLabel" style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.65);">…</span>
-      </div>
-    </div>
-    <!-- KPI row — glass cards -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;">
-      <div style="background:rgba(255,255,255,0.07);backdrop-filter:blur(16px);border-radius:16px;padding:13px 10px;border:1px solid rgba(255,255,255,0.1);text-align:center;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12);">
-        <div style="font-size:8.5px;font-weight:700;color:rgba(255,255,255,0.38);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:7px;">Facturas</div>
-        <div style="font-size:26px;font-weight:800;color:#FFF;letter-spacing:-1.2px;line-height:1;" id="kpiFacturas">—</div>
-        <div style="font-size:9px;color:rgba(255,255,255,0.28);margin-top:5px;font-weight:500;" id="kpiMesLabel">este mes</div>
-      </div>
-      <div style="background:rgba(201,122,58,0.16);backdrop-filter:blur(16px);border-radius:16px;padding:13px 10px;border:1px solid rgba(201,122,58,0.28);text-align:center;box-shadow:inset 0 1px 0 rgba(255,201,100,0.15);">
-        <div style="font-size:8.5px;font-weight:700;color:rgba(255,255,255,0.38);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:7px;">Total</div>
-        <div style="font-size:14px;font-weight:800;color:#E08C45;letter-spacing:-0.5px;line-height:1.2;" id="kpiTotal">—</div>
-        <div style="font-size:9px;color:rgba(255,255,255,0.28);margin-top:5px;font-weight:500;">facturado</div>
-      </div>
-      <div style="background:rgba(255,255,255,0.07);backdrop-filter:blur(16px);border-radius:16px;padding:13px 10px;border:1px solid rgba(255,255,255,0.1);text-align:center;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12);">
-        <div style="font-size:8.5px;font-weight:700;color:rgba(255,255,255,0.38);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:7px;">Clientes</div>
-        <div style="font-size:26px;font-weight:800;color:#FFF;letter-spacing:-1.2px;line-height:1;" id="kpiClientes">—</div>
-        <div style="font-size:9px;color:rgba(255,255,255,0.28);margin-top:5px;font-weight:500;">únicos</div>
-      </div>
-    </div>
-  </div>
+      <button class="btn btn-glass btn-sm" onclick="abrirResumen()"><svg class="ic ic-sm"><use href="#i-chart"/></svg>Resumen</button>
+    </section>
 
-  <div class="card">
-    <div class="card-label">Remito PDF</div>
-    <div class="upload-zone">
-      <h3>📄 Subir Remito</h3>
-      <p>Tocá para seleccionar uno o varios archivos PDF</p>
-      <input type="file" id="fileRemito" accept="application/pdf" multiple />
+    <label class="mes-select mes-select-block only-mobile"><svg class="ic"><use href="#i-calendar"/></svg><select data-mes-global aria-label="Mes"></select><svg class="ic ic-sm"><use href="#i-down"/></svg></label>
+
+    <section class="kpi-grid">
+      <div class="kpi"><span class="kpi-icon tone-orange"><svg class="ic"><use href="#i-file"/></svg></span><div class="kpi-body"><div class="kpi-num" id="kpiFacturas">—</div><div class="kpi-label">Facturas emitidas</div><div class="kpi-delta" id="kpiFacturasDelta"></div></div></div>
+      <div class="kpi"><span class="kpi-icon tone-green"><svg class="ic"><use href="#i-dollar"/></svg></span><div class="kpi-body"><div class="kpi-num" id="kpiTotal">—</div><div class="kpi-label">Total facturado</div><div class="kpi-delta" id="kpiTotalDelta"></div></div></div>
+      <div class="kpi"><span class="kpi-icon tone-blue"><svg class="ic"><use href="#i-users"/></svg></span><div class="kpi-body"><div class="kpi-num" id="kpiClientes">—</div><div class="kpi-label">Clientes únicos</div><div class="kpi-delta" id="kpiClientesDelta"></div></div></div>
+    </section>
+    <span id="kpiMesLabel" hidden></span>
+
+    <div class="facturar-grid">
+      <section class="card nueva-factura">
+        <div class="card-head"><h2>Nueva factura</h2></div>
+        <div class="origen-tabs" role="tablist">
+          <button class="origen-btn active" data-origen="manual" onclick="UI.origen('manual')"><span class="origen-ic tone-orange"><svg class="ic"><use href="#i-file"/></svg></span><span>Factura manual</span></button>
+          <button class="origen-btn" data-origen="pdf" onclick="UI.origen('pdf')"><span class="origen-ic tone-blue"><svg class="ic"><use href="#i-upload"/></svg></span><span>Remito PDF</span></button>
+          <button class="origen-btn" data-origen="foto" onclick="UI.origen('foto')"><span class="origen-ic tone-violet"><svg class="ic"><use href="#i-camera"/></svg></span><span>Foto de remito</span></button>
+          <button class="origen-btn" data-origen="extracto" onclick="UI.origen('extracto')"><span class="origen-ic tone-green"><svg class="ic"><use href="#i-bank"/></svg></span><span>Desde extracto</span></button>
+        </div>
+
+        <div class="remito-zone" id="remitoZone" hidden>
+          <label class="upload-zone">
+            <svg class="ic ic-lg"><use href="#i-upload"/></svg>
+            <strong>Subir remito PDF</strong>
+            <span>Tocá para elegir uno o varios archivos PDF del mismo cliente</span>
+            <input type="file" id="fileRemito" accept="application/pdf" multiple>
+          </label>
+          <div id="file-badge" class="file-badge"></div>
+          <div id="resumenExtraccion" class="summary-box"></div>
+        </div>
+
+        <div class="form-grid">
+          <div class="field field-cuit">
+            <label for="cuit">CUIT del cliente</label>
+            <div class="input-ic"><input type="tel" id="cuit" placeholder="30112233445" inputmode="numeric" maxlength="11" autocomplete="off"><button type="button" class="input-ic-btn" aria-label="Clientes recientes" onclick="UI.toggleRecientes()"><svg class="ic ic-sm"><use href="#i-search"/></svg></button></div>
+            <div class="cliente-info" id="clienteInfo" hidden></div>
+            <div class="recientes" id="recientes" hidden></div>
+          </div>
+          <div class="field">
+            <label for="monto">Monto total</label>
+            <div class="input-prefix"><span>$</span><input type="text" id="monto" placeholder="150000,00" inputmode="decimal" autocomplete="off"></div>
+          </div>
+          <div class="field">
+            <label for="condicionVenta">Condición de venta</label>
+            <select id="condicionVenta">
+              <option value="Transferencia Bancaria">Transferencia Bancaria</option>
+              <option value="Efectivo">Efectivo</option>
+              <option value="Cheque">Cheque</option>
+              <option value="Cuenta Corriente">Cuenta Corriente</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="email">Email destinatario <span class="opt">(opcional)</span></label>
+            <input type="email" id="email" placeholder="Se recuerda por CUIT" autocomplete="email" inputmode="email">
+          </div>
+          <div class="field field-full">
+            <label>Descripción <span class="opt">(opcional)</span></label>
+            <div class="chips">
+              <button type="button" class="chip" onclick="presetDetalle('Artículos varios marca Make')">Make</button>
+              <button type="button" class="chip" onclick="presetDetalle('Artículos Romil')">Romil</button>
+              <button type="button" class="chip" onclick="presetDetalle('Artículos de limpieza varios')">Varios</button>
+            </div>
+            <textarea id="detalle" rows="2" placeholder="Opcional si subís un remito"></textarea>
+          </div>
+        </div>
+        <button class="link-btn link-danger" onclick="abrirAnulacionManual()"><svg class="ic ic-sm"><use href="#i-ban"/></svg>Anular factura de otro mes</button>
+      </section>
+
+      <section class="card preview-card">
+        <div class="card-head"><h2>Vista previa</h2><span class="tag" id="prevEstado">Completá CUIT y monto</span></div>
+        <dl class="prev-rows">
+          <div><dt>Comprobante</dt><dd><span class="letra-badge" id="prevTipo">—</span></dd></div>
+          <div><dt>Cliente</dt><dd id="prevCliente">—</dd></div>
+          <div><dt>Condición IVA</dt><dd id="prevCond">—</dd></div>
+          <div><dt>CUIT</dt><dd id="prevCuit">—</dd></div>
+          <div><dt>Condición de venta</dt><dd id="prevVenta">—</dd></div>
+          <div><dt>Ítems</dt><dd id="prevItems">—</dd></div>
+          <div class="prev-total"><dt>Monto total</dt><dd id="prevTotal">—</dd></div>
+        </dl>
+        <button class="btn btn-secondary btn-block" id="btnOpenPreview" disabled><svg class="ic ic-sm"><use href="#i-eye"/></svg>Ver PDF de vista previa</button>
+        <div class="dock" id="bottomBarFacturar">
+          <button id="btnEmitir" class="main-btn" onclick="emitir()"><svg class="ic"><use href="#i-zap"/></svg>Emitir factura</button>
+        </div>
+      </section>
     </div>
-    <div id="file-badge"></div>
-    <div id="resumenExtraccion" class="summary-box"></div>
-  </div>
 
-  <div class="card">
-    <div class="card-label">Datos de facturación</div>
-    <div class="form-group">
-      <label>CUIT Cliente</label>
-      <input type="tel" id="cuit" placeholder="30112233445" inputmode="numeric" maxlength="11" />
-    </div>
-    <div class="form-group">
-      <label>Monto Total</label>
-      <input type="tel" id="monto" placeholder="150000,00" inputmode="decimal" />
-    </div>
-    <div class="form-group">
-      <label>Condición de Venta</label>
-      <select id="condicionVenta">
-        <option value="Transferencia Bancaria">Transferencia Bancaria</option>
-        <option value="Efectivo">Efectivo</option>
-        <option value="Cheque">Cheque</option>
-        <option value="Cuenta Corriente">Cuenta Corriente</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Email destinatario</label>
-      <input type="email" id="email" placeholder="Opcional — se recuerda por CUIT" autocomplete="email" />
-    </div>
-    <div class="form-group">
-      <label>Atajos</label>
-      <div class="tags-scroll">
-        <button class="tag-btn" onclick="presetDetalle('Artículos varios marca Make')">Make</button>
-        <button class="tag-btn" onclick="presetDetalle('Artículos Romil')">Romil</button>
-        <button class="tag-btn" onclick="presetDetalle('Artículos de limpieza varios')">Varios</button>
-      </div>
-    </div>
-    <div class="form-group">
-      <label>Descripción</label>
-      <textarea id="detalle" placeholder="Opcional si subís PDF..."></textarea>
-    </div>
-  </div>
+    <section class="card ultimas only-desktop">
+      <div class="card-head"><h2>Últimas facturas emitidas</h2><button class="link-btn" onclick="switchTab('historial')">Ver todas<svg class="ic ic-sm"><use href="#i-right"/></svg></button></div>
+      <div class="table-wrap"><table class="tbl" id="ultimasTabla"><thead><tr><th>Fecha</th><th>Cliente</th><th>CUIT</th><th>Comprobante</th><th class="r">Importe</th><th>Tipo</th><th>Origen</th><th>Estado</th><th class="r">Acciones</th></tr></thead><tbody></tbody></table></div>
+    </section>
+  </main>
 
-  <div class="card" style="padding:10px;display:flex;flex-direction:column;gap:8px;">
-    <button class="btn-preview-card" id="btnOpenPreview" disabled>
-      👁 Vista previa del PDF
-    </button>
-    <button class="ghost-btn" onclick="abrirAnulacionManual()" style="border-color:rgba(248,113,113,0.3);color:var(--red);">
-      ⛔ Anular factura de otro mes
-    </button>
-  </div>
-
-</main>
-
-<!-- ══ TAB EXTRACTO BANCARIO ═══════════════════════════════ -->
-<div id="tabExtracto" style="display:none; padding:14px; padding-bottom:calc(130px + var(--safe-b)); flex-direction:column; gap:12px;">
-
-  <div class="ext-step active" id="extStep1">
-    <div class="card">
-      <div class="card-label">Extracto Bancario</div>
-      <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px;">
-        Subí el extracto o captura del banco. Gemini detecta automáticamente las transferencias.
-      </p>
-      <div class="ext-upload-zone" id="extUploadZone">
-        <div class="ext-upload-icon">🏦</div>
-        <h3>Subir extracto</h3>
-        <p>Excel .xlsx, PDF o imagen JPG/PNG</p>
-        <input type="file" id="extFileInput" accept=".xlsx,.xls,application/pdf,image/jpeg,image/png,image/webp" />
-      </div>
-      <div id="extFileBadge" style="display:none;margin-top:10px;padding:8px 14px;background:var(--green-dim);color:var(--green);border-radius:10px;font-size:12px;font-weight:700;border:1px solid rgba(52,211,153,0.2);"></div>
-      <button class="main-btn" id="extBtnProcesar" disabled style="margin-top:14px;background:linear-gradient(135deg,#7C3AED,#5B21B6);box-shadow:0 6px 18px rgba(124,58,237,0.28);" onclick="extProcesar()">
-        🔍 ANALIZAR CON IA
-      </button>
-    </div>
-    <div class="info-card">
-      <div class="info-card-title">⚡ Cómo funciona</div>
-      <div class="info-card-body">
-        1. Subís el extracto bancario<br>
-        2. Gemini detecta transferencias de clientes<br>
-        3. Revisás y confirmás los CUITs<br>
-        4. Se emiten todas las facturas<br>
-        5. Recibís reporte por email
-      </div>
-    </div>
-  </div>
-
-  <div class="ext-step" id="extStep2">
-    <div class="ext-summary-bar" id="extSummaryBar">
-      <div><div class="lbl">Transferencias</div><div class="val" id="extCountLabel">0</div></div>
-      <div style="text-align:right;"><div class="lbl">Total a facturar</div><div class="val" id="extTotalLabel">$0</div></div>
-    </div>
-    <div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:6px;">
-      Confirmá o editá cada CUIT
-    </div>
-    <div id="extTransferList"></div>
-    <button class="ghost-btn" onclick="extVolver()">← Subir otro extracto</button>
-  </div>
-
-  <div class="ext-step" id="extStep3">
-    <div id="extResultados"></div>
-    <button class="ghost-btn" style="margin-top:4px;" onclick="extReset()">🔄 Procesar otro extracto</button>
-  </div>
-
-</div>
-
-<!-- ══ TAB HISTORIAL ══════════════════════════════════════ -->
-<div id="tabHistorial" style="display:none;flex-direction:column;">
-
-  <div class="hist-header">
-    <div class="hist-mes-nav">
-      <button class="hist-mes-btn" id="histBtnPrev" onclick="histNavMes(-1)">‹</button>
-      <span id="histMesLabel">Cargando…</span>
-      <button class="hist-mes-btn" id="histBtnNext" onclick="histNavMes(1)" disabled>›</button>
-    </div>
-    <div class="hist-search-wrap">
-      <span class="hist-search-icon">🔍</span>
-      <input type="search" id="histSearchInput" placeholder="Buscar por nombre o CUIT…" inputmode="search" autocomplete="off" />
-      <button class="hist-search-clear" id="histSearchClear" onclick="histClearSearch()">✕</button>
-    </div>
-  </div>
-
-  <div class="hist-stat-bar" id="histStatBar" style="margin-top:12px;display:none;">
-    <div class="hist-stat"><div class="num" id="histStatCount">—</div><div class="lbl">Facturas</div></div>
-    <div class="hist-stat"><div class="num" id="histStatTotal">—</div><div class="lbl">Total</div></div>
-    <div class="hist-stat"><div class="num" id="histStatNCs">—</div><div class="lbl">NCs</div></div>
-  </div>
-
-  <div class="hist-list" id="histList"></div>
-</div>
-
-<!-- ══ TAB EMAIL ══════════════════════════════════════════ -->
-<div id="tabEmail" style="display:none;flex-direction:column;">
-
-  <div class="email-sticky-header">
-    <div class="email-mes-nav">
-      <button class="email-mes-btn" id="emailBtnPrev" onclick="emailNavMes(-1)">‹</button>
-      <span id="emailMesLabel">Cargando…</span>
-      <button class="email-mes-btn" id="emailBtnNext" onclick="emailNavMes(1)" disabled>›</button>
-    </div>
-  </div>
-
-  <div class="email-body">
-    <div class="email-preview-card" id="emailPreviewCard">
-      <div class="pv-label">Resumen a enviar</div>
-      <div class="pv-mes" id="emailPreviewMes">…</div>
-      <div class="email-preview-stats">
-        <div class="email-preview-stat"><div class="n" id="emailStatCount">—</div><div class="l">Comprobantes</div></div>
-        <div class="email-preview-stat"><div class="n" id="emailStatTotal">—</div><div class="l">Total</div></div>
-        <div class="email-preview-stat"><div class="n" id="emailStatClientes">—</div><div class="l">Clientes</div></div>
+  <!-- ══════════ EXTRACTO ══════════ -->
+  <main class="view" id="tabExtracto">
+    <div class="ext-step active" id="extStep1">
+      <div class="ext-intro">
+        <section class="card">
+          <label class="upload-zone upload-zone-lg" id="extUploadZone">
+            <svg class="ic ic-lg"><use href="#i-upload"/></svg>
+            <strong>Subir extracto bancario</strong>
+            <span>Excel (.xlsx), PDF o imagen (JPG / PNG)</span>
+            <span class="btn btn-secondary btn-sm">Seleccionar archivo</span>
+            <input type="file" id="extFileInput" accept=".xlsx,.xls,application/pdf,image/jpeg,image/png,image/webp">
+          </label>
+          <div id="extFileBadge" class="file-badge" style="display:none"></div>
+        </section>
+        <section class="card card-ai">
+          <span class="ai-ic"><svg class="ic"><use href="#i-sparkles"/></svg></span>
+          <h2>Análisis con IA</h2>
+          <p>Gemini detecta las transferencias de clientes, propone CUIT y montos y marca las que ya están facturadas.</p>
+          <ol class="steps"><li>Subís el extracto</li><li>Revisás y confirmás los CUIT</li><li>Se emiten las facturas</li><li>Recibís el reporte por email</li></ol>
+          <button class="btn btn-ai btn-block" id="extBtnProcesar" disabled onclick="extProcesar()"><svg class="ic ic-sm"><use href="#i-sparkles"/></svg>Analizar con IA</button>
+        </section>
       </div>
     </div>
 
-    <div class="email-compose-card">
-      <div class="email-section-label">Destinatarios</div>
-      <div class="email-chips" id="emailChips"></div>
-      <div class="email-add-row">
-        <input type="email" id="emailNuevoInput" placeholder="Agregar email…" inputmode="email" autocomplete="email"
-               onkeydown="if(event.key==='Enter'){emailAgregarDestinatario();event.preventDefault()}" />
-        <button class="email-add-btn" onclick="emailAgregarDestinatario()">+</button>
-      </div>
-      <button class="email-send-btn" id="emailSendBtn" onclick="emailEnviar()">
-        📧 Enviar Resumen
-      </button>
-      <div class="email-send-result" id="emailSendResult"></div>
+    <div class="ext-step" id="extStep2">
+      <section class="card">
+        <div class="ext-head">
+          <div>
+            <h2>Transferencias detectadas</h2>
+            <span class="tag tag-blue"><span id="extCountLabel">0</span> seleccionadas</span>
+          </div>
+          <div class="ext-total"><span class="lbl">Total seleccionado</span><span class="val" id="extTotalLabel">$0</span></div>
+          <div class="dock dock-ext" id="bottomBarExtracto">
+            <div id="extBottomTotalBar" class="dock-total" style="display:none"><span id="extBottomCount">0 transferencias</span><strong id="extBottomTotal">$0</strong></div>
+            <button id="extBtnFacturar" class="main-btn" onclick="extFacturar()" disabled><svg class="ic"><use href="#i-zap"/></svg>Facturar seleccionadas</button>
+            <button id="extBtnFacturarTodo" class="btn btn-secondary" onclick="extFacturarTodo()" disabled style="display:none">Facturar todo con CUIT</button>
+          </div>
+        </div>
+        <div class="ext-cols only-desktop"><span>Incluir</span><span>Fecha</span><span>Cliente / descripción</span><span>CUIT</span><span class="r">Importe</span><span>Estado</span></div>
+        <div id="extTransferList"></div>
+        <button class="link-btn" onclick="extVolver()"><svg class="ic ic-sm"><use href="#i-left"/></svg>Subir otro extracto</button>
+      </section>
     </div>
 
-    <div class="email-hist-section" id="emailHistSection">
-      <div class="email-section-label" style="margin-bottom:10px;">Historial de envíos</div>
+    <div class="ext-step" id="extStep3">
+      <section class="card">
+        <div id="extResultados"></div>
+        <button class="btn btn-secondary" onclick="extReset()"><svg class="ic ic-sm"><use href="#i-refresh"/></svg>Procesar otro extracto</button>
+      </section>
+    </div>
+  </main>
+
+  <!-- ══════════ HISTORIAL ══════════ -->
+  <main class="view" id="tabHistorial">
+    <section class="card hist-tools">
+      <div class="mes-nav">
+        <button class="icon-btn" id="histBtnPrev" onclick="histNavMes(-1)" aria-label="Mes anterior"><svg class="ic"><use href="#i-left"/></svg></button>
+        <span id="histMesLabel">Cargando…</span>
+        <button class="icon-btn" id="histBtnNext" onclick="histNavMes(1)" disabled aria-label="Mes siguiente"><svg class="ic"><use href="#i-right"/></svg></button>
+      </div>
+      <div class="search">
+        <svg class="ic ic-sm"><use href="#i-search"/></svg>
+        <input type="search" id="histSearchInput" placeholder="Cliente, CUIT, nº de comprobante, monto o fecha…" autocomplete="off" enterkeyhint="search">
+        <button class="search-clear" id="histSearchClear" onclick="histClearSearch()" aria-label="Limpiar"><svg class="ic ic-sm"><use href="#i-x"/></svg></button>
+      </div>
+      <div class="filters">
+        <select id="histFiltroTipo" aria-label="Tipo"><option value="">Tipo</option><option value="A">Factura A</option><option value="B">Factura B</option><option value="M">Factura M</option><option value="NC">Notas de crédito</option></select>
+        <select id="histFiltroOrigen" aria-label="Origen"><option value="">Origen</option><option value="extracto">Extracto</option><option value="directa">Directa (manual / remito)</option></select>
+        <select id="histFiltroEstado" aria-label="Estado"><option value="">Estado</option><option value="emitida">Emitida</option><option value="anulada">Anulada</option></select>
+      </div>
+    </section>
+
+    <section class="kpi-grid kpi-grid-4" id="histStatBar" style="display:none">
+      <div class="kpi"><span class="kpi-icon tone-orange"><svg class="ic"><use href="#i-file"/></svg></span><div class="kpi-body"><div class="kpi-num" id="histStatCount">—</div><div class="kpi-label">Facturas</div></div></div>
+      <div class="kpi"><span class="kpi-icon tone-green"><svg class="ic"><use href="#i-dollar"/></svg></span><div class="kpi-body"><div class="kpi-num" id="histStatTotal">—</div><div class="kpi-label">Total facturado</div></div></div>
+      <div class="kpi"><span class="kpi-icon tone-blue"><svg class="ic"><use href="#i-users"/></svg></span><div class="kpi-body"><div class="kpi-num" id="histStatClientes">—</div><div class="kpi-label">Clientes</div></div></div>
+      <div class="kpi"><span class="kpi-icon tone-red"><svg class="ic"><use href="#i-file-minus"/></svg></span><div class="kpi-body"><div class="kpi-num" id="histStatNCs">—</div><div class="kpi-label">Notas de crédito</div></div></div>
+    </section>
+
+    <section class="card card-flush">
+      <div class="hist-cols only-desktop"><span>Fecha</span><span>Cliente</span><span>CUIT</span><span>Comprobante</span><span class="r">Importe</span><span>Tipo</span><span>Origen</span><span>Estado</span><span class="r">Acciones</span></div>
+      <div class="hist-list" id="histList"></div>
+    </section>
+  </main>
+
+  <!-- ══════════ EMAIL ══════════ -->
+  <main class="view" id="tabEmail">
+    <section class="card hist-tools">
+      <div class="mes-nav">
+        <button class="icon-btn" id="emailBtnPrev" onclick="emailNavMes(-1)" aria-label="Mes anterior"><svg class="ic"><use href="#i-left"/></svg></button>
+        <span id="emailMesLabel">Cargando…</span>
+        <button class="icon-btn" id="emailBtnNext" onclick="emailNavMes(1)" disabled aria-label="Mes siguiente"><svg class="ic"><use href="#i-right"/></svg></button>
+      </div>
+    </section>
+
+    <section class="kpi-grid kpi-grid-4" id="emailPreviewCard">
+      <div class="kpi"><span class="kpi-icon tone-orange"><svg class="ic"><use href="#i-file"/></svg></span><div class="kpi-body"><div class="kpi-num" id="emailStatCount">—</div><div class="kpi-label">Comprobantes</div></div></div>
+      <div class="kpi"><span class="kpi-icon tone-green"><svg class="ic"><use href="#i-dollar"/></svg></span><div class="kpi-body"><div class="kpi-num" id="emailStatTotal">—</div><div class="kpi-label">Total</div></div></div>
+      <div class="kpi"><span class="kpi-icon tone-blue"><svg class="ic"><use href="#i-users"/></svg></span><div class="kpi-body"><div class="kpi-num" id="emailStatClientes">—</div><div class="kpi-label">Clientes</div></div></div>
+      <div class="kpi"><span class="kpi-icon tone-violet"><svg class="ic"><use href="#i-send"/></svg></span><div class="kpi-body"><div class="kpi-num" id="emailStatEnvios">—</div><div class="kpi-label">Envíos del mes</div></div></div>
+    </section>
+
+    <div class="email-grid">
+      <section class="card">
+        <div class="card-head"><div><h2>Destinatarios</h2><p class="muted">Elegí a quién enviar el resumen del mes.</p></div></div>
+        <div class="email-chips" id="emailChips"></div>
+        <div class="add-row">
+          <input type="email" id="emailNuevoInput" placeholder="Agregar email…" inputmode="email" autocomplete="email" onkeydown="if(event.key==='Enter'){emailAgregarDestinatario();event.preventDefault()}">
+          <button class="icon-btn icon-btn-solid" onclick="emailAgregarDestinatario()" aria-label="Agregar"><svg class="ic"><use href="#i-plus"/></svg></button>
+        </div>
+      </section>
+      <section class="card">
+        <div class="card-head"><div><h2>Resumen mensual</h2><p class="muted">Detalle de todos los comprobantes del mes, por email.</p></div></div>
+        <div class="resumen-mini"><svg class="ic ic-lg"><use href="#i-file"/></svg><div><strong id="emailPreviewMes">…</strong><span id="emailPreviewSub"></span></div></div>
+        <button class="main-btn" id="emailSendBtn" onclick="emailEnviar()"><svg class="ic"><use href="#i-mail"/></svg>Enviar resumen</button>
+        <div class="email-send-result" id="emailSendResult"></div>
+      </section>
+    </div>
+
+    <section class="card" id="emailHistSection">
+      <div class="card-head"><h2>Historial de envíos</h2><span class="muted">en este dispositivo</span></div>
       <div id="emailHistList"></div>
+    </section>
+  </main>
+
+  <!-- ══ NAVEGACIÓN INFERIOR (CELULAR) ══ -->
+  <nav class="tabbar" aria-label="Secciones">
+    <button class="tab-btn active" id="tabBtnFacturar" onclick="switchTab('facturar')"><svg class="ic"><use href="#i-file"/></svg><span>Facturar</span></button>
+    <button class="tab-btn" id="tabBtnExtracto" onclick="switchTab('extracto')"><svg class="ic"><use href="#i-bank"/></svg><span>Extracto</span></button>
+    <button class="tab-btn" id="tabBtnHistorial" onclick="switchTab('historial')"><svg class="ic"><use href="#i-history"/></svg><span>Historial</span></button>
+    <button class="tab-btn" id="tabBtnEmail" onclick="switchTab('email')"><svg class="ic"><use href="#i-mail"/></svg><span>Email</span></button>
+  </nav>
+</div>
+
+<!-- ══ VISTA PREVIA PDF ══ -->
+<div class="backdrop" id="previewBackdrop" onclick="closePreview()"></div>
+<div class="sheet sheet-tall sheet-wide" id="previewSheet" role="dialog" aria-label="Vista previa">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div class="sheet-title"><h2>Vista previa</h2><span class="tag" id="pillParte">1/1</span></div>
+    <div class="sheet-tools">
+      <button class="icon-btn" id="btnPrev" onclick="cambiarParte(-1)" aria-label="Parte anterior"><svg class="ic"><use href="#i-left"/></svg></button>
+      <button class="icon-btn" id="btnNext" onclick="cambiarParte(1)" aria-label="Parte siguiente"><svg class="ic"><use href="#i-right"/></svg></button>
+      <button class="icon-btn" onclick="closePreview()" aria-label="Cerrar"><svg class="ic"><use href="#i-x"/></svg></button>
     </div>
+  </div>
+  <div class="iframe-wrap"><iframe id="previewFrame" title="Vista previa de la factura"></iframe></div>
+</div>
+
+<!-- ══ REVISIÓN "FACTURAR TODO" ══ -->
+<div class="backdrop" id="revisionTodoBackdrop" onclick="cerrarRevisionTodo()"></div>
+<div class="sheet sheet-tall" id="revisionTodoSheet" role="dialog" aria-label="Revisión">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div class="sheet-title"><h2>Revisá antes de facturar</h2><span class="muted" id="revisionTodoCount"></span></div>
+    <button class="icon-btn" onclick="cerrarRevisionTodo()" aria-label="Cerrar"><svg class="ic"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="sheet-body" id="revisionTodoLista"></div>
+  <div class="sheet-foot">
+    <div class="foot-total"><span>Total a facturar</span><strong id="revisionTodoTotal"></strong></div>
+    <button id="revisionTodoConfirmar" class="main-btn" onclick="extConfirmarTodo()"><svg class="ic"><use href="#i-zap"/></svg>Confirmar y facturar</button>
   </div>
 </div>
 
-<!-- ══ SHEET DETALLE HISTORIAL ══════════════════════════ -->
-<div id="histDetailBackdrop" onclick="histCerrarDetalle()"></div>
-<div id="histDetailSheet">
-  <div class="hist-detail-handle"></div>
-  <div class="hist-detail-header">
-    <div class="hist-detail-tipo" id="histDetTipo">FACTURA</div>
-    <div class="hist-detail-nombre" id="histDetNombre">—</div>
-    <div class="hist-detail-sub" id="histDetSub">—</div>
+<!-- ══ RESUMEN MENSUAL ══ -->
+<div class="backdrop" id="resumenBackdrop" onclick="cerrarResumen()"></div>
+<div class="sheet sheet-tall sheet-wide" id="resumenModal" role="dialog" aria-label="Resumen mensual">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div class="sheet-title"><h2>Resumen mensual</h2></div>
+    <button class="icon-btn" onclick="cerrarResumen()" aria-label="Cerrar"><svg class="ic"><use href="#i-x"/></svg></button>
   </div>
-  <div class="hist-detail-total-box">
-    <div>
-      <div class="lbl">Total</div>
-      <div class="amount" id="histDetTotal">$0</div>
-      <div class="fecha" id="histDetFecha">—</div>
-    </div>
-    <div style="text-align:right;">
-      <div class="lbl">Comprobante</div>
-      <div style="font-size:13px;font-weight:800;color:#FFF;margin-top:4px;" id="histDetComp">—</div>
-      <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:2px;" id="histDetCond">—</div>
-    </div>
-  </div>
-  <div class="hist-detail-info">
-    <div class="hist-info-row"><span class="key">CUIT</span><span class="val" id="histDetCuit">—</span></div>
-    <div class="hist-info-row"><span class="key">CAE</span><span class="val" id="histDetCae">—</span></div>
-    <div class="hist-info-row"><span class="key">Condición</span><span class="val" id="histDetCond2">—</span></div>
-    <div class="hist-info-row" id="histDetEmailRow"><span class="key">Email</span><span class="val" id="histDetEmail">—</span></div>
-  </div>
-  <div class="hist-detail-actions">
-    <button class="hist-action-btn pdf" id="histBtnPdf" onclick="histAbrirPdf()">📄 Ver / Descargar PDF</button>
-    <button class="hist-action-btn email" id="histBtnEmail" onclick="histReenviarEmail()">📧 Reenviar por Email</button>
-    <button class="hist-action-btn anular" id="histBtnAnular" onclick="histAnular()">⛔ Emitir Nota de Crédito</button>
-  </div>
-</div>
-
-<!-- ══ TAB BAR ══════════════════════════════════════════ -->
-<div class="tab-bar">
-  <div class="tab-buttons">
-    <button class="tab-btn active" id="tabBtnFacturar" onclick="switchTab('facturar')">
-      <span class="tab-icon">🧾</span>Facturar
-    </button>
-    <button class="tab-btn" id="tabBtnExtracto" onclick="switchTab('extracto')">
-      <span class="tab-icon">🏦</span>Extracto
-    </button>
-    <button class="tab-btn" id="tabBtnHistorial" onclick="switchTab('historial')">
-      <span class="tab-icon">🔍</span>Historial
-    </button>
-    <button class="tab-btn" id="tabBtnEmail" onclick="switchTab('email')">
-      <span class="tab-icon">📧</span>Email
-    </button>
-  </div>
-  <div class="bottom-bar" id="bottomBarFacturar">
-    <button id="btnEmitir" class="main-btn" onclick="emitir()">
-      ⚡ EMITIR FACTURA
-    </button>
-  </div>
-  <div class="bottom-bar" id="bottomBarExtracto" style="display:none;">
-    <div id="extBottomTotalBar" style="display:none;padding:0 2px 10px;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--border);margin-bottom:8px;">
-      <span style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;" id="extBottomCount">0 transferencias</span>
-      <span style="font-size:20px;font-weight:800;color:var(--green);letter-spacing:-0.5px;" id="extBottomTotal">$0</span>
-    </div>
-    <button id="extBtnFacturar" onclick="extFacturar()" disabled>
-      ⚡ FACTURAR SELECCIONADAS
-    </button>
-    <button id="extBtnFacturarTodo" onclick="extFacturarTodo()" disabled style="display:none;">
-      🏦 FACTURAR TODO CON CUIT
-    </button>
-  </div>
-</div>
-
-<!-- Modal Preview -->
-<div class="modal-backdrop" id="previewBackdrop" onclick="closePreview()"></div>
-<div class="bottom-sheet" id="previewSheet">
-  <div class="sheet-header">
-    <div style="display:flex;align-items:center;">
-      <h2>Vista Previa</h2>
-      <span class="pill-parte" id="pillParte">1/1</span>
-    </div>
-    <div class="nav-parts">
-      <button id="btnPrev" onclick="cambiarParte(-1)">⬅️</button>
-      <button id="btnNext" onclick="cambiarParte(1)">➡️</button>
-    </div>
-    <button class="close-btn" onclick="closePreview()">✕</button>
-  </div>
-  <div class="iframe-wrapper">
-    <iframe id="previewFrame"></iframe>
-  </div>
-</div>
-
-<!-- Sheet revisión "Facturar Todo" -->
-<div class="modal-backdrop" id="revisionTodoBackdrop" onclick="cerrarRevisionTodo()"></div>
-<div class="bottom-sheet" id="revisionTodoSheet">
-  <div class="sheet-header">
-    <div>
-      <h2>Revisá antes de facturar</h2>
-      <span id="revisionTodoCount" style="font-size:12px;color:var(--text2);font-weight:600;"></span>
-    </div>
-    <button class="close-btn" onclick="cerrarRevisionTodo()">✕</button>
-  </div>
-  <div id="revisionTodoLista" style="flex:1;overflow-y:auto;padding:12px 14px;"></div>
-  <div style="padding:16px;border-top:1px solid var(--border);background:var(--surface);">
-    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
-      <span style="font-size:13px;color:var(--text2);font-weight:700;">TOTAL A FACTURAR</span>
-      <span id="revisionTodoTotal" style="font-size:20px;font-weight:900;color:var(--green);"></span>
-    </div>
-    <button id="revisionTodoConfirmar" onclick="extConfirmarTodo()"
-      style="width:100%;padding:16px;background:linear-gradient(135deg,#C97A3A 0%,#a85f28 100%);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;font-family:'Sora',sans-serif;cursor:pointer;min-height:54px;">
-      ⚡ CONFIRMAR Y FACTURAR
-    </button>
-  </div>
-</div>
-
-<!-- Modal Resumen Mensual -->
-<div class="resumen-modal" id="resumenModal">
-  <div class="resumen-header">
-    <div class="resumen-header-top">
-      <h2>Resumen</h2>
-      <button class="resumen-close" onclick="cerrarResumen()">✕</button>
-    </div>
+  <div class="sheet-sub">
     <div class="mes-nav">
-      <button class="mes-nav-btn" id="btnMesPrev" onclick="navegarMes(-1)">‹</button>
+      <button class="icon-btn" id="btnMesPrev" onclick="navegarMes(-1)" aria-label="Mes anterior"><svg class="ic"><use href="#i-left"/></svg></button>
       <span id="mesNavLabel">Cargando…</span>
-      <button class="mes-nav-btn" id="btnMesNext" onclick="navegarMes(1)">›</button>
+      <button class="icon-btn" id="btnMesNext" onclick="navegarMes(1)" aria-label="Mes siguiente"><svg class="ic"><use href="#i-right"/></svg></button>
     </div>
   </div>
-  <div class="resumen-body" id="resumenContenido"></div>
+  <div class="sheet-body" id="resumenContenido"></div>
 </div>
 
-<!-- Modal Éxito -->
-<div class="success-modal" id="successModal">
-  <div class="success-header">
-    <button type="button" onclick="document.getElementById('successModal').classList.remove('active')"
-      style="position:absolute;top:calc(var(--safe-t)+10px);right:16px;width:34px;height:34px;border:none;border-radius:50%;background:rgba(255,255,255,0.15);color:#fff;font-size:18px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;">
-      ✕
-    </button>
-    <span class="icon">✅</span>
-    <h2>¡Factura Autorizada!</h2>
+<!-- ══ CONFIRMACIÓN DE EMISIÓN ══ -->
+<div class="backdrop" id="successBackdrop"></div>
+<div class="sheet sheet-tall success-sheet" id="successModal" role="dialog" aria-label="Factura autorizada">
+  <div class="success-head">
+    <button class="icon-btn icon-btn-light" onclick="UI.cerrarExito()" aria-label="Cerrar"><svg class="ic"><use href="#i-x"/></svg></button>
+    <span class="success-ic"><svg class="ic"><use href="#i-check"/></svg></span>
+    <h2 id="successTitulo">Factura autorizada por ARCA</h2>
     <p id="successMsgText">Procesada con éxito.</p>
   </div>
-  <div class="success-body" id="successActions"></div>
+  <div class="sheet-body" id="successActions"></div>
 </div>
 
-<!-- Modal Anular -->
-<div class="modal-center-backdrop" id="anularModal" onclick="if(event.target===this)cerrarModalAnular()">
-  <div class="modal-center-card">
-    <div class="modal-sheet-handle"></div>
-    <h3>🧾 Anular comprobante</h3>
+<!-- ══ DETALLE DE COMPROBANTE ══ -->
+<div class="backdrop" id="histDetailBackdrop" onclick="histCerrarDetalle()"></div>
+<div class="sheet" id="histDetailSheet" role="dialog" aria-label="Detalle del comprobante">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div class="sheet-title"><span class="det-tipo" id="histDetTipo">FACTURA</span><h2 id="histDetNombre">—</h2><span class="muted" id="histDetSub">—</span></div>
+    <button class="icon-btn" onclick="histCerrarDetalle()" aria-label="Cerrar"><svg class="ic"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="sheet-body">
+    <div class="det-total">
+      <div><span class="lbl">Total</span><strong id="histDetTotal">$0</strong><span id="histDetFecha">—</span></div>
+      <div class="r"><span class="lbl">Comprobante</span><strong id="histDetComp">—</strong><span id="histDetCond">—</span></div>
+    </div>
+    <dl class="det-rows">
+      <div><dt>CUIT</dt><dd id="histDetCuit">—</dd></div>
+      <div><dt>CAE</dt><dd id="histDetCae">—</dd></div>
+      <div><dt>Condición</dt><dd id="histDetCond2">—</dd></div>
+      <div id="histDetEmailRow"><dt>Email</dt><dd id="histDetEmail">—</dd></div>
+    </dl>
+    <div class="det-actions">
+      <button class="btn btn-secondary" id="histBtnPdf" onclick="histAbrirPdf()"><svg class="ic ic-sm"><use href="#i-download"/></svg>Ver / descargar PDF</button>
+      <button class="btn btn-secondary" id="histBtnEmail" onclick="histReenviarEmail()"><svg class="ic ic-sm"><use href="#i-mail"/></svg>Reenviar por email</button>
+      <button class="btn btn-danger-soft" id="histBtnAnular" onclick="histAnular()"><svg class="ic ic-sm"><use href="#i-file-minus"/></svg>Emitir nota de crédito</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CENTRO DE PENDIENTES ══ -->
+<div class="backdrop" id="pendBackdrop" onclick="UI.cerrarPendientes()"></div>
+<div class="sheet" id="pendSheet" role="dialog" aria-label="Pendientes">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div class="sheet-title"><h2>Pendientes</h2><span class="muted">Solo situaciones reales que requieren atención</span></div>
+    <button class="icon-btn" onclick="UI.cerrarPendientes()" aria-label="Cerrar"><svg class="ic"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="sheet-body" id="pendLista"></div>
+</div>
+
+<!-- ══ MENÚ (CELULAR) ══ -->
+<div class="backdrop" id="menuBackdrop" onclick="UI.cerrarMenu()"></div>
+<div class="sheet" id="menuSheet" role="dialog" aria-label="Menú">
+  <div class="sheet-handle"></div>
+  <div class="sheet-body menu-list">
+    <button onclick="UI.cerrarMenu();abrirResumen()"><svg class="ic"><use href="#i-chart"/></svg>Resumen mensual</button>
+    <button onclick="UI.cerrarMenu();UI.abrirPendientes()"><svg class="ic"><use href="#i-bell"/></svg>Pendientes</button>
+    <button onclick="UI.cerrarMenu();abrirAnulacionManual()"><svg class="ic"><use href="#i-ban"/></svg>Anular factura de otro mes</button>
+    <button onclick="UI.cerrarMenu();UI.instalar()"><svg class="ic"><use href="#i-phone"/></svg>Instalar en la pantalla de inicio</button>
+    <div class="menu-meta" id="menuMeta"></div>
+  </div>
+</div>
+
+<!-- ══ FOTO DE REMITO ══ -->
+<div class="backdrop" id="camBackdrop" onclick="Camara.cerrar()"></div>
+<div class="sheet sheet-tall sheet-wide" id="camSheet" role="dialog" aria-label="Foto de remito">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div class="sheet-title"><h2>Foto de remito</h2><span class="muted" id="camPaso">Sacá una foto nítida del remito completo</span></div>
+    <button class="icon-btn" onclick="Camara.cerrar()" aria-label="Cerrar"><svg class="ic"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="sheet-body" id="camBody"></div>
+  <div class="sheet-foot" id="camFoot"></div>
+  <input type="file" id="camInputCamara" accept="image/*" capture="environment" hidden>
+  <input type="file" id="camInputGaleria" accept="image/*,.heic,.heif" multiple hidden>
+</div>
+
+<!-- ══ ANULAR ══ -->
+<div class="modal" id="anularModal" onclick="if(event.target===this)cerrarModalAnular()">
+  <div class="modal-card">
+    <h3><svg class="ic"><use href="#i-file-minus"/></svg>Anular comprobante</h3>
     <p id="anularTextoInfo">Se emitirá una Nota de Crédito para neutralizar la factura.</p>
-    <div class="form-group" style="margin-bottom:0;">
-      <label>Motivo</label>
-      <textarea id="anularMotivo" placeholder="Ej: Factura duplicada / emitida por error"></textarea>
-    </div>
-    <div class="modal-center-actions">
-      <button class="ghost-btn" onclick="cerrarModalAnular()">Cancelar</button>
-      <button class="danger-btn" id="btnConfirmarAnular" onclick="confirmarAnulacion()">Anular</button>
+    <div class="field"><label for="anularMotivo">Motivo</label><textarea id="anularMotivo" rows="2" placeholder="Ej: factura duplicada / emitida por error"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="cerrarModalAnular()">Cancelar</button>
+      <button class="btn btn-danger" id="btnConfirmarAnular" onclick="confirmarAnulacion()">Emitir nota de crédito</button>
     </div>
   </div>
 </div>
 
-<!-- Modal Reenviar Email -->
-<div class="modal-center-backdrop" id="reenviarEmailModal" onclick="if(event.target===this)cerrarModalReenviarEmail()">
-  <div class="modal-center-card">
-    <div class="modal-sheet-handle"></div>
-    <h3>📧 Reenviar por email</h3>
-    <p id="reenviarEmailInfo" style="font-size:12px;color:var(--text2);margin-bottom:14px;"></p>
-    <div class="form-group" style="margin-bottom:0;">
-      <label>Email del cliente</label>
-      <input type="email" id="reenviarEmailInput" placeholder="cliente@ejemplo.com" autocomplete="email" />
-    </div>
-    <div class="modal-center-actions">
-      <button class="ghost-btn" onclick="cerrarModalReenviarEmail()">Cancelar</button>
-      <button class="action-btn" id="btnConfirmarReenvio" onclick="confirmarReenvioEmail()" style="background:var(--green-dim);color:var(--green);border:1px solid rgba(52,211,153,0.2);">Enviar</button>
+<!-- ══ REENVIAR EMAIL ══ -->
+<div class="modal" id="reenviarEmailModal" onclick="if(event.target===this)cerrarModalReenviarEmail()">
+  <div class="modal-card">
+    <h3><svg class="ic"><use href="#i-mail"/></svg>Reenviar por email</h3>
+    <p id="reenviarEmailInfo"></p>
+    <div class="field"><label for="reenviarEmailInput">Email del cliente</label><input type="email" id="reenviarEmailInput" placeholder="cliente@ejemplo.com" autocomplete="email" inputmode="email"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="cerrarModalReenviarEmail()">Cancelar</button>
+      <button class="btn btn-primary" id="btnConfirmarReenvio" onclick="confirmarReenvioEmail()">Enviar</button>
     </div>
   </div>
 </div>
 
-<!-- Modal Anulación Manual -->
-<div class="modal-center-backdrop" id="anularManualModal" onclick="if(event.target===this)cerrarAnulacionManual()">
-  <div class="modal-center-card">
-    <div class="modal-sheet-handle"></div>
-    <h3>⛔ Anular Factura Antigua</h3>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:14px;">Para facturas de otro mes, ingresá CUIT y Monto manualmente.</p>
-    <div style="display:flex;gap:10px;margin-bottom:12px;">
-      <div class="form-group" style="flex:1;margin-bottom:0;">
-        <label>Letra</label>
-        <select id="manualTipo">
-          <option value="1">A</option>
-          <option value="6">B</option>
-          <option value="51">M (hasta oct-2026)</option>
-        </select>
-      </div>
-      <div class="form-group" style="flex:1;margin-bottom:0;">
-        <label>Punto Venta</label>
-        <input type="number" id="manualPV" placeholder="5" value="5" />
-      </div>
-      <div class="form-group" style="flex:2;margin-bottom:0;">
-        <label>Nro Factura</label>
-        <input type="number" id="manualNro" placeholder="1234" />
-      </div>
+<!-- ══ ANULACIÓN MANUAL ══ -->
+<div class="modal" id="anularManualModal" onclick="if(event.target===this)cerrarAnulacionManual()">
+  <div class="modal-card">
+    <h3><svg class="ic"><use href="#i-ban"/></svg>Anular factura de otro mes</h3>
+    <p>Para comprobantes que no están en el historial del mes, ingresá los datos a mano.</p>
+    <div class="form-row">
+      <div class="field"><label for="manualTipo">Letra</label><select id="manualTipo"><option value="1">A</option><option value="6">B</option><option value="51">M (hasta oct-2026)</option></select></div>
+      <div class="field"><label for="manualPV">Punto de venta</label><input type="number" id="manualPV" placeholder="5" value="5" inputmode="numeric"></div>
+      <div class="field"><label for="manualNro">Nº de factura</label><input type="number" id="manualNro" placeholder="1234" inputmode="numeric"></div>
     </div>
-    <div style="display:flex;gap:10px;margin-bottom:12px;">
-      <div class="form-group" style="flex:1;margin-bottom:0;">
-        <label>CUIT Cliente</label>
-        <input type="tel" id="manualCUIT" placeholder="30112233445" maxlength="11" />
-      </div>
-      <div class="form-group" style="flex:1;margin-bottom:0;">
-        <label>Monto Total</label>
-        <input type="tel" id="manualMonto" placeholder="1524.50" />
-      </div>
+    <div class="form-row">
+      <div class="field"><label for="manualCUIT">CUIT del cliente</label><input type="tel" id="manualCUIT" placeholder="30112233445" maxlength="11" inputmode="numeric"></div>
+      <div class="field"><label for="manualMonto">Monto total</label><input type="text" id="manualMonto" placeholder="1524.50" inputmode="decimal"></div>
     </div>
-    <div class="form-group" style="margin-bottom:12px;">
-      <label>Fecha NC (Máx 5 días atrás)</label>
-      <input type="date" id="fechaNC" style="border-color:rgba(251,191,36,0.3);" />
-    </div>
-    <div class="form-group" style="margin-bottom:0;">
-      <label>Motivo</label>
-      <textarea id="manualMotivo" placeholder="Ej: Error de facturación">Factura emitida por error</textarea>
-    </div>
-    <div class="modal-center-actions">
-      <button class="ghost-btn" onclick="cerrarAnulacionManual()">Cancelar</button>
-      <button class="danger-btn" id="btnConfirmarManual" onclick="confirmarAnulacionManual()">Buscar y Anular</button>
+    <div class="field"><label for="fechaNC">Fecha de la NC <span class="opt">(máx. 5 días atrás)</span></label><input type="date" id="fechaNC"></div>
+    <div class="field"><label for="manualMotivo">Motivo</label><textarea id="manualMotivo" rows="2" placeholder="Ej: error de facturación">Factura emitida por error</textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="cerrarAnulacionManual()">Cancelar</button>
+      <button class="btn btn-danger" id="btnConfirmarManual" onclick="confirmarAnulacionManual()">Buscar y anular</button>
     </div>
   </div>
 </div>
-
-<script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" })
-      .then(reg => reg.update())
-      .catch(() => {});
-  }
-  // Fecha en hero card
-  (function() {
-    const DIAS  = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
-    const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-    const d = new Date();
-    const el = document.getElementById("heroFecha");
-    if (el) el.textContent = `${DIAS[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}`;
-  })();
-
-  const MESES_NOM = ["","Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-  const fmtM = n => {
-    if (n >= 1000000) return "$" + (n/1000000).toFixed(1) + "M";
-    if (n >= 1000) return "$" + Math.round(n/1000) + "K";
-    return "$" + Math.round(n);
-  };
-
-  async function loadHeroKPIs() {
-    const now = new Date();
-    const mes = now.getMonth() + 1;
-    const anio = now.getFullYear();
-
-    // Show cached data immediately if fresh (< 10 min, same month)
-    try {
-      const c = JSON.parse(localStorage.getItem("ml_kpis_cache") || "null");
-      if (c && c.mes === mes && c.anio === anio && (Date.now() - c.ts) < 600000) {
-        document.getElementById("kpiFacturas").textContent = c.facturas;
-        document.getElementById("kpiTotal").textContent    = c.total;
-        document.getElementById("kpiClientes").textContent = c.clientes;
-        document.getElementById("kpiMesLabel").textContent = c.mesLabel;
-      }
-    } catch {}
-
-    try {
-      const r = await fetch(
-        `https://api-mercadolimpio.onrender.com/admin/facturas-mes?mes=${mes}&anio=${anio}`,
-        { signal: AbortSignal.timeout(15000) }
-      );
-      if (!r.ok) return;
-      const j = await r.json();
-      const facturas = (j.facturas || []).filter(f => f.tipoCbte === "FA" && !f.anulado);
-      const total    = facturas.reduce((s, f) => s + (Number(f.total) || 0), 0);
-      const clientes = new Set(facturas.map(f => f.cuit)).size;
-      const mesLabel = MESES_NOM[mes] + " " + anio;
-      document.getElementById("kpiFacturas").textContent  = facturas.length || "0";
-      document.getElementById("kpiTotal").textContent     = fmtM(total);
-      document.getElementById("kpiClientes").textContent  = clientes || "0";
-      document.getElementById("kpiMesLabel").textContent  = mesLabel;
-      // Save to cache
-      try { localStorage.setItem("ml_kpis_cache", JSON.stringify({ ts: Date.now(), mes, anio, facturas: facturas.length || "0", total: fmtM(total), clientes: clientes || "0", mesLabel })); } catch {}
-    } catch(_) {}
-  }
-
-  let _coldTimer = null;
-  async function checkServer() {
-    const dot    = document.getElementById("statusDot");
-    const label  = document.getElementById("statusLabel");
-    const banner = document.getElementById("coldStartBanner");
-    try {
-      dot.className = "status-dot waking"; label.textContent = "…";
-      // Show cold-start banner after 4 seconds if still waking
-      clearTimeout(_coldTimer);
-      _coldTimer = setTimeout(() => { if (banner) banner.classList.add("visible"); }, 4000);
-      const r = await fetch("https://api-mercadolimpio.onrender.com/health", { signal: AbortSignal.timeout(12000) });
-      clearTimeout(_coldTimer);
-      if (r.ok) {
-        dot.className = "status-dot online"; label.textContent = "Online";
-        if (banner) banner.classList.remove("visible");
-      } else throw new Error();
-    } catch {
-      clearTimeout(_coldTimer);
-      dot.className = "status-dot offline"; label.textContent = "Sin señal";
-      if (banner) banner.classList.remove("visible");
-    }
-  }
-
-  checkServer();
-  loadHeroKPIs();
-  setInterval(checkServer, 9 * 60 * 1000);
-</script>
 
 <script src="app.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/camara.js"></script>
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).then(r => r.update()).catch(() => {});
+  }
+</script>
 </body>
 </html>
