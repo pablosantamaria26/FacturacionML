@@ -2,7 +2,7 @@
 // caché y solo borra las suyas.
 const ES_PROD = self.location.pathname.startsWith("/FacturacionML/");
 const PREFIX = ES_PROD ? "mercadolimpio-" : "ml-prueba-";
-const CACHE_NAME = PREFIX + "v48";
+const CACHE_NAME = PREFIX + "v49";
 const BASE = "https://api-mercadolimpio.onrender.com";
 const STATIC = [
   "./", "./index.html", "./app.js", "./manifest.json",
@@ -12,7 +12,11 @@ const STATIC = [
 ];
 
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(STATIC)).then(() => self.skipWaiting()));
+  // cache:"reload" saltea la caché HTTP (GitHub Pages da max-age=600): así nunca se
+  // mezcla un index.html nuevo con un app.js viejo al actualizar
+  e.waitUntil(caches.open(CACHE_NAME)
+    .then(c => c.addAll(STATIC.map(u => new Request(u, { cache: "reload" }))))
+    .then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", e => {
@@ -33,7 +37,7 @@ self.addEventListener("fetch", e => {
 
   // Red primero para el HTML (toma la versión nueva apenas se publica); caché para el resto
   if (e.request.mode === "navigate") {
-    e.respondWith(fetch(e.request).catch(() => caches.match("./index.html")));
+    e.respondWith(fetch(e.request.url, { cache: "no-cache" }).catch(() => caches.match("./index.html")));
     return;
   }
   e.respondWith(caches.match(e.request).then(c => c || fetch(e.request)));
