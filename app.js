@@ -1006,6 +1006,7 @@ window.cerrarAnulacionManual = function() {
 };
 
 window.confirmarAnulacionManual = async function() {
+  const tipo  = Number(document.getElementById("manualTipo").value || 1);
   const pv    = document.getElementById("manualPV").value;
   const nro   = document.getElementById("manualNro").value;
   const cuit  = document.getElementById("manualCUIT").value.trim();
@@ -1025,7 +1026,7 @@ window.confirmarAnulacionManual = async function() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          puntoVenta: Number(pv), nroFactura: Number(nro),
+          cbteTipo: tipo, puntoVenta: Number(pv), nroFactura: Number(nro),
           cuitCliente: cuit, montoTotal: Number(monto),
           fechaNC: fechaElegida, motivo
         })
@@ -1787,7 +1788,8 @@ window.histAbrirDetalle = function(idx) {
   const esNC   = f.tipoCbte === "NC";
   const esAnul = f.anulado;
 
-  document.getElementById("histDetTipo").textContent  = esNC ? "NOTA DE CRÉDITO" : "FACTURA M";
+  const letra = (String(f.comprobante || "").toUpperCase().match(/^(?:FA-|NC-)?([ABM])-/) || [])[1] || "";
+  document.getElementById("histDetTipo").textContent  = `${esNC ? "NOTA DE CRÉDITO" : "FACTURA"} ${letra}`.trim();
   document.getElementById("histDetNombre").textContent = f.nombre || "Sin nombre";
   document.getElementById("histDetSub").textContent   = `CUIT ${f.cuit}`;
   document.getElementById("histDetTotal").textContent  = `${esNC ? "−" : ""}$${formatMoneyAR(Math.abs(f.total))}`;
