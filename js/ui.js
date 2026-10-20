@@ -131,7 +131,7 @@
         <td>${/EXTRACTO/i.test(f.condicionVenta || "") ? "Extracto" : "Directa"}</td>
         <td>${f.anulado ? `<span class="tag tag-red tag-dot">Anulada</span>` : `<span class="tag tag-green tag-dot">Emitida</span>`}</td>
         <td><div class="acc">
-          ${f.pdfUrl ? `<a class="icon-btn" href="${escHtml(f.pdfUrl)}" target="_blank" rel="noopener" title="Ver PDF" aria-label="Ver PDF">${ico("download")}</a>` : ""}
+          ${f.pdfUrl ? `<a class="icon-btn" href="${escHtml(urlDescargaPdf(f.pdfUrl, f.comprobante, f.nombre))}" download="${escHtml(nombrePdfComprobante(f.comprobante, f.nombre))}" target="_blank" rel="noopener" title="Descargar PDF" aria-label="Descargar PDF">${ico("download")}</a>` : ""}
           ${!f.anulado ? `<button class="icon-btn" title="Reenviar email" aria-label="Reenviar email" onclick='abrirModalReenviarEmail(${datos})'>${ico("mail")}</button>` : ""}
         </div></td>
       </tr>`;

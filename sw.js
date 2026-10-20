@@ -2,7 +2,7 @@
 // caché y solo borra las suyas.
 const ES_PROD = self.location.pathname.startsWith("/FacturacionML/");
 const PREFIX = ES_PROD ? "mercadolimpio-" : "ml-prueba-";
-const CACHE_NAME = PREFIX + "v47";
+const CACHE_NAME = PREFIX + "v48";
 const BASE = "https://api-mercadolimpio.onrender.com";
 const STATIC = [
   "./", "./index.html", "./app.js", "./manifest.json",

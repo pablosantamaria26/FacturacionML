@@ -15,6 +15,23 @@ const letraDeComprobante = (comp) => {
   if (s.startsWith("NC-")) return "NC";
   return (s.match(/^(?:FA-)?([ABM])-/) || [])[1] || "";
 };
+// Nombre amigable del PDF (igual que nombreArchivoComprobante del backend): FA-00005-00000001_YAN-XIUYU.pdf
+const nombrePdfComprobante = (comprobante, cliente) => {
+  const s = String(comprobante || "").toUpperCase();
+  const m = s.match(/^(?:(FA|NC)-)?([ABCM])-(\d{5})-(\d{8})$/) || s.match(/^(NC)-?([ABCM])?-?(\d{5})-(\d{8})$/);
+  const base = !m ? (s.replace(/[^A-Z0-9-]/g, "") || "COMPROBANTE")
+    : m[1] === "NC" ? `NC-${m[2] ? m[2] + "-" : ""}${m[3]}-${m[4]}` : `F${m[2]}-${m[3]}-${m[4]}`;
+  const cli = String(cliente || "").normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .toUpperCase().replace(/[^A-Z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40).replace(/-+$/, "");
+  return `${base}${cli ? "_" + cli : ""}.pdf`;
+};
+// URL de descarga con ese nombre: Supabase Storage lo respeta con ?download=<nombre>.
+// Solo cambia cómo se presenta; la ruta guardada del PDF no se toca.
+const urlDescargaPdf = (pdfUrl, comprobante, cliente) => {
+  if (!pdfUrl || !/\/storage\/v1\/object\/public\//.test(pdfUrl)) return pdfUrl || "";
+  const sep = pdfUrl.includes("?") ? "&" : "?";
+  return `${pdfUrl}${sep}download=${encodeURIComponent(nombrePdfComprobante(comprobante, cliente))}`;
+};
 
 let itemsGlobal = [];
 let domicilioRemitoGlobal = "";
@@ -781,7 +798,7 @@ async function renderResumen() {
           <div class="fr-sub">${escHtml(String(f.fecha || "").split("-").reverse().join("/"))} · ${escHtml(comprobante)}</div>
           <div class="fr-cae">CAE ${escHtml(f.cae || "—")}</div>
           <div class="fact-actions">
-            ${pdfUrl ? `<a class="mini-btn" href="${escHtml(pdfUrl)}" target="_blank" rel="noopener">${ico("download")}PDF</a>` : ""}
+            ${pdfUrl ? `<a class="mini-btn" href="${escHtml(urlDescargaPdf(pdfUrl, comprobante, nombre))}" download="${escHtml(nombrePdfComprobante(comprobante, nombre))}" target="_blank" rel="noopener" title="Descargar PDF" aria-label="Descargar PDF">${ico("download")}PDF</a>` : ""}
             ${!estaAnulado ? `<button class="mini-btn" onclick='abrirModalReenviarEmail(${factData})'>${ico("mail")}Email</button>` : ""}
             ${!esNC && !estaAnulado && totalNum > 0 ? `<button class="mini-btn danger" onclick='abrirModalAnular(${factData})'>${ico("file-minus")}Nota de crédito</button>` : ""}
           </div>
@@ -862,14 +879,17 @@ function showSuccessModal(data) {
   facturas.forEach((f, idx) => {
     if (!f.pdfUrl) return;
     const sufijo = facturas.length > 1 ? ` (parte ${idx + 1})` : "";
-    mk("a", "btn btn-secondary", "download", `Abrir PDF${sufijo}`, { href: f.pdfUrl, target: "_blank", download: `Factura_${f.nroFactura || idx + 1}.pdf` });
-    if (navigator.share) {
+    const nombrePdf = nombrePdfComprobante(f.comprobante, data.receptor?.nombre || "");
+    mk("a", "btn btn-secondary", "eye", `Ver PDF${sufijo}`, { href: f.pdfUrl, target: "_blank", rel: "noopener" });
+    if (!navigator.share) {
+      mk("a", "btn btn-secondary", "download", `Descargar PDF${sufijo}`, { href: urlDescargaPdf(f.pdfUrl, f.comprobante, data.receptor?.nombre || ""), download: nombrePdf, title: nombrePdf, target: "_blank", rel: "noopener" });
+    } else {
       mk("button", "btn btn-secondary", "share", `Compartir${sufijo}`).onclick = async () => {
         haptic();
         try {
           const resp = await fetch(f.pdfUrl);
           const blob = await resp.blob();
-          const file = new File([blob], `Factura_${f.nroFactura||idx+1}.pdf`, { type: "application/pdf" });
+          const file = new File([blob], nombrePdf, { type: "application/pdf" });
           if (navigator.canShare && navigator.canShare({ files: [file] })) {
             await navigator.share({ files: [file], title: "Factura Mercado Limpio", text: `$${formatMoneyAR(f.total)} · CAE: ${f.cae}` });
           } else {
@@ -1597,7 +1617,7 @@ function extRenderResultados(data) {
           <div class="sub">${escHtml(r.comprobante)} · CAE ${escHtml(r.cae)}</div>
         </div>
         <div class="amt">$${formatMoneyAR(r.total)}</div>
-        ${r.pdfUrl ? `<a class="mini-btn" href="${escHtml(r.pdfUrl)}" target="_blank" rel="noopener">${ico("download")}PDF</a>` : ""}
+        ${r.pdfUrl ? `<a class="mini-btn" href="${escHtml(urlDescargaPdf(r.pdfUrl, r.comprobante, r.nombre))}" download="${escHtml(nombrePdfComprobante(r.comprobante, r.nombre))}" target="_blank" rel="noopener" title="Descargar PDF" aria-label="Descargar PDF">${ico("download")}PDF</a>` : ""}
       </div>`;
   });
   if (!emitidas.length) html += `<div class="muted" style="padding:8px 0;">No se emitieron comprobantes nuevos.</div>`;
@@ -1840,7 +1860,7 @@ function histRenderList(facturas, totalCount) {
       <div class="h-origen">${origenTxt}</div>
       <div class="h-estado">${estado}</div>
       <div class="h-acc" onclick="event.stopPropagation()">
-        ${f.pdfUrl ? `<a class="icon-btn" href="${escHtml(f.pdfUrl)}" target="_blank" rel="noopener" title="Ver PDF" aria-label="Ver PDF">${ico("download")}</a>` : ""}
+        ${f.pdfUrl ? `<a class="icon-btn" href="${escHtml(urlDescargaPdf(f.pdfUrl, f.comprobante, f.nombre))}" download="${escHtml(nombrePdfComprobante(f.comprobante, f.nombre))}" target="_blank" rel="noopener" title="Descargar PDF" aria-label="Descargar PDF">${ico("download")}</a>` : ""}
         ${!esAnul ? `<button class="icon-btn" title="Reenviar email" aria-label="Reenviar email" onclick='abrirModalReenviarEmail(${datos})'>${ico("mail")}</button>` : ""}
         <button class="icon-btn" title="Más" aria-label="Más opciones" onclick="histAbrirDetalle(${i})">${ico("more")}</button>
       </div>
@@ -1883,6 +1903,12 @@ window.histAbrirDetalle = function(idx) {
   const btnPdf   = document.getElementById("histBtnPdf");
   const btnAnul  = document.getElementById("histBtnAnular");
   btnPdf.style.display   = f.pdfUrl ? "flex" : "none";
+  const btnDesc = document.getElementById("histBtnDescargar");
+  btnDesc.style.display  = f.pdfUrl ? "flex" : "none";
+  if (f.pdfUrl) {
+    btnDesc.href = urlDescargaPdf(f.pdfUrl, f.comprobante, f.nombre);
+    btnDesc.download = nombrePdfComprobante(f.comprobante, f.nombre);
+  }
   btnAnul.style.display  = (!esNC && !esAnul) ? "flex" : "none";
 
   document.getElementById("histDetailBackdrop").classList.add("active");
