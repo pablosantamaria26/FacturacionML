@@ -1847,7 +1847,7 @@ function histRenderList(facturas, totalCount) {
     const fechaAR  = String(f.fecha || "").split("-").reverse().join("/");
     const datos    = attrJson({ comprobante: f.comprobante, nombre: f.nombre, total: f.total, cuit: f.cuit, emailTo: f.emailTo, nro: f.nroFactura, nroFactura: f.nroFactura, puntoVenta: f.puntoVenta });
     const estado   = esAnul ? `<span class="tag tag-red tag-dot">Anulada</span>` : `<span class="tag tag-green tag-dot">Emitida</span>`;
-    const origenTxt = esExtrac ? "Extracto" : "Directa";
+    const origenTxt = f.origen === "caja" ? "Caja" + (f.remito ? " · " + f.remito : "") : esExtrac ? "Extracto" : "Directa";   // 19/11/2026: facturas de remitos emitidas desde la Caja
 
     return `<div class="hrow ${esAnul ? "anulada" : ""}" role="button" tabindex="0" onclick="histAbrirDetalle(${i})" onkeydown="if(event.key==='Enter')histAbrirDetalle(${i})">
       <span class="avatar">${escHtml((f.nombre || f.cuit || "?").trim().charAt(0).toUpperCase())}</span>
