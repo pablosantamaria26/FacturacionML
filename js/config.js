@@ -88,6 +88,16 @@
       await espera(800);
       return jsonResp({ ok: true, simulado: true });
     }
+    /* 24/11/2026: lista de «nunca facturar» simulada en este equipo (en prueba no se toca la lista real). */
+    if (path === "/nunca-facturar" || path === "/nunca-facturar/quitar") {
+      const MOT = { empleado: "Empleado", familia: "Familia o amigos", personal: "Personal (no es venta)", otro: "Otro" };
+      let l = {}; try { l = JSON.parse(localStorage.getItem("ml_nunca_sim") || "{}"); } catch (e) {}
+      const c = String(body.cuit || "").replace(/\D/g, "");
+      if (method === "POST" && path === "/nunca-facturar") { if (c.length !== 11) return jsonResp({ ok: false, message: "El CUIT tiene que tener 11 dígitos." }, 400); l[c] = { nombre: body.nombre || "", motivo: MOT[body.motivo] ? body.motivo : "otro", fecha: new Date().toISOString() }; }
+      if (method === "POST" && path === "/nunca-facturar/quitar") delete l[c];
+      localStorage.setItem("ml_nunca_sim", JSON.stringify(l));
+      return jsonResp({ ok: true, simulado: true, motivos: MOT, lista: Object.entries(l).map(([cuit, e]) => ({ cuit, nombre: e.nombre, motivo: e.motivo, texto: MOT[e.motivo], fecha: e.fecha })) });
+    }
     if (method === "POST" && path === "/enviar-resumen") {
       await espera(1200);
       return jsonResp({ ok: true, simulado: true, resultados: (body.destinatarios || []).map((email) => ({ email, ok: true })) });

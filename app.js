@@ -1121,6 +1121,8 @@ let extOrnella = null;            // resultado del cruce con la facturación de 
 const deOrnella = t => !!(t && t.ornella && t.ornella.tipo === "ornella");
 let extOtroCanal = null;          // facturas ya emitidas desde la Caja / a mano que estas transferencias pagan (24/11/2026)
 const deCaja = t => !!(t && t.otroCanal && t.otroCanal.tipo !== "posible");
+let extNunca = null;              // lista de «nunca facturar» (empleados, familia, personal) — 24/11/2026
+const deNunca = t => !!(t && t.excluido);
 
 // ── Archivo seleccionado ──────────────────────────────────────
 document.getElementById("extFileInput").addEventListener("change", function() {
@@ -1196,10 +1198,11 @@ async function extEsperarAnalisis(jobId, btn) {
         extImpuestos = estado.impuestos || null;
         extOrnella = estado.ornella || null;
         extOtroCanal = estado.otroCanal || null;
+        extNunca = estado.nuncaFacturar || null;
         extTransferencias = (estado.transferencias || []).map((t, i) => ({
           ...t,
           id: i,
-          incluida: !t.yaFacturado && !t.ornella && !t.otroCanal,
+          incluida: !t.yaFacturado && !t.ornella && !t.otroCanal && !t.excluido,
           cuitEdit: t.cuit || ""
         }));
 
@@ -1279,6 +1282,69 @@ function extRenderCaja() {
   box.style.display = "";
 }
 
+// ── Nunca facturar (24/11/2026) ───────────────────────────────
+// Transferencias que no son ventas (empleados, familia, gastos personales). La lista vive en el servidor: la misma en el celular
+// y en la PC. Se marca una vez desde el renglón («No facturar nunca») y desde el menú se ve y se edita.
+const NUNCA_MOTIVOS = [["empleado", "Empleado"], ["familia", "Familia o amigos"], ["personal", "Personal (no es venta)"], ["otro", "Otro"]];
+function extRenderNunca() {
+  const box = document.getElementById("extNuncaInfo"); if (!box) return;
+  const n = extTransferencias.filter(deNunca).length;
+  if (!n) { box.style.display = "none"; return; }
+  box.innerHTML = `${ico("users", "ic-sm")}<span><b>${n} transferencia${n !== 1 ? "s están" : " está"} en tu lista de nunca facturar</b> (empleados, familia, personal): no se ofrecen.</span>`;
+  box.style.display = "";
+}
+function nuncaAbrir(html) { document.getElementById("nuncaBody").innerHTML = html; document.getElementById("nuncaBackdrop").classList.add("active"); document.getElementById("nuncaSheet").classList.add("active"); }
+window.nuncaCerrar = function () { document.getElementById("nuncaBackdrop").classList.remove("active"); document.getElementById("nuncaSheet").classList.remove("active"); };
+function nuncaAplicar(cuit, marca) {
+  const c = String(cuit || "").replace(/\D/g, "");
+  [...extTransferencias, ...extTodasTransferencias].forEach(t => { if (String(t.cuitEdit || t.cuit || "").replace(/\D/g, "") === c) { if (marca) { t.excluido = marca; t.incluida = false; } else delete t.excluido; } });
+  if (document.getElementById("extStep2").classList.contains("active")) { extRenderNunca(); extRenderList(); }
+}
+window.nuncaElegir = function (id) {
+  const t = extTransferencias.find(x => x.id === id); if (!t) return;
+  const cuit = String(t.cuitEdit || t.cuit || "").replace(/\D/g, "");
+  if (cuit.length !== 11) return showToast("Para agregarla a la lista hace falta el CUIT (11 dígitos).", "error");
+  haptic();
+  nuncaAbrir(`<h3 style="margin:0 0 4px">No facturar nunca</h3>
+    <p class="muted" style="margin:0 0 14px"><b>${escHtml(t.nombre)}</b> · CUIT ${escHtml(cuit)}<br>Sus transferencias van a aparecer destildadas y el servidor no las va a facturar. Se puede quitar cuando quieras desde el menú.</p>
+    <div style="display:grid;gap:8px">${NUNCA_MOTIVOS.map(([k, txt]) => `<button type="button" class="btn btn-secondary" onclick="nuncaGuardar('${cuit}', ${escHtml(JSON.stringify(t.nombre || ""))}, '${k}')">${txt}</button>`).join("")}
+    <button type="button" class="link-btn" onclick="nuncaCerrar()">Cancelar</button></div>`);
+};
+window.nuncaGuardar = async function (cuit, nombre, motivo) {
+  try {
+    const r = await fetch(`${BASE}/nunca-facturar`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cuit, nombre, motivo }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.ok) throw new Error(j.message || "No se pudo guardar");
+    const e = (j.lista || []).find(x => x.cuit === cuit);
+    nuncaAplicar(cuit, { motivo, texto: (e && e.texto) || motivo, nombre });
+    nuncaCerrar(); haptic("success");
+    showToast(`Listo: ${nombre || cuit} queda en «nunca facturar».`, "success");
+  } catch (e) { showToast("No se pudo agregar a la lista: " + e.message, "error"); }
+};
+window.nuncaQuitar = async function (cuit) {
+  try {
+    const r = await fetch(`${BASE}/nunca-facturar/quitar`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cuit }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.ok) throw new Error(j.message || "No se pudo quitar");
+    nuncaAplicar(cuit, null);
+    if (document.getElementById("nuncaSheet").classList.contains("active")) nuncaPintarLista(j.lista || []);
+    showToast("Quitada de «nunca facturar»: ya se puede tildar.", "success");
+  } catch (e) { showToast("No se pudo quitar de la lista: " + e.message, "error"); }
+};
+function nuncaPintarLista(lista) {
+  nuncaAbrir(`<h3 style="margin:0 0 4px">Nunca facturar</h3>
+    <p class="muted" style="margin:0 0 12px">Transferencias de estas personas no se facturan (empleados, familia, gastos personales). Para agregar a alguien, tocá «No facturar nunca» en su transferencia del extracto.</p>
+    ${lista.length ? `<div style="display:grid;gap:8px">${lista.map(x => `<div style="display:flex;gap:10px;align-items:center;justify-content:space-between;border:1px solid var(--line, #e3e8ef);border-radius:12px;padding:10px 12px">
+      <div style="min-width:0"><b>${escHtml(x.nombre || "Sin nombre")}</b><div class="muted" style="font-size:12px">CUIT ${escHtml(x.cuit)} · ${escHtml(x.texto || "")}</div></div>
+      <button type="button" class="btn btn-secondary" style="flex:none" onclick="nuncaQuitar('${escHtml(x.cuit)}')">Quitar</button></div>`).join("")}</div>` : `<p class="muted">Todavía no hay nadie en la lista.</p>`}
+    <button type="button" class="link-btn" onclick="nuncaCerrar()">Cerrar</button>`);
+}
+window.nuncaAbrirLista = async function () {
+  nuncaAbrir(`<p class="muted"><span class="spinner spinner-sm"></span> Cargando la lista…</p>`);
+  try { const r = await fetch(`${BASE}/nunca-facturar`); const j = await r.json(); if (!r.ok || !j.ok) throw new Error(j.message || "sin respuesta"); nuncaPintarLista(j.lista || []); }
+  catch (e) { nuncaAbrir(`<p>No se pudo cargar la lista: ${escHtml(e.message)}</p><button type="button" class="link-btn" onclick="nuncaCerrar()">Cerrar</button>`); }
+};
+
 // ── Retenciones e impuestos del banco (24/11/2026) ────────────
 // Solo informa lo que se detectó: el servidor decide qué es nuevo (no repite lo ya enviado) y lo manda al contador
 // en la hoja «Retenciones e Impuestos Banco» del reporte, con copia a Pablo.
@@ -1303,6 +1369,7 @@ function extRenderStep2() {
   document.getElementById("extStep2").classList.add("active");
   extRenderOrnella();
   extRenderCaja();
+  extRenderNunca();
   extRenderImpuestos();
   extRenderList();
 }
@@ -1323,7 +1390,7 @@ function extRenderList() {
   const btnTodo = document.getElementById("extBtnFacturarTodo");
   if (btnTodo) {
     const candidatasTodo = extTodasTransferencias.filter(t =>
-      String(t.cuit || "").replace(/\D/g, "").length === 11 && !t.yaFacturado && !t.ornella && !t.otroCanal && Number(t.monto) > 0
+      String(t.cuit || "").replace(/\D/g, "").length === 11 && !t.yaFacturado && !t.ornella && !t.otroCanal && !t.excluido && Number(t.monto) > 0
     );
     btnTodo.style.display = "flex";
     btnTodo.disabled = candidatasTodo.length === 0;
@@ -1351,6 +1418,7 @@ function extRenderList() {
 
     let estado;
     if (t.yaFacturado) estado = `<span class="tag tag-green tag-dot">Ya facturada</span>`;
+    else if (deNunca(t)) estado = `<span class="tag tag-dot" title="En tu lista de nunca facturar: ${escHtml(t.excluido.texto || "")}">No facturar</span>`;
     else if (deOrnella(t)) estado = `<span class="tag tag-violet tag-dot" title="Alquiler de Ornella, ya facturado por ella${t.ornella.comprobante ? " (" + escHtml(t.ornella.comprobante) + ")" : ""}">De Ornella</span>`;
     else if (t.ornella && t.ornella.tipo === "posible") estado = `<span class="tag tag-amber tag-dot" title="Coincide importe y fecha con un pago de Ornella sin documento cargado">${t.incluida ? "¿Ornella? · tildada" : "¿De Ornella?"}</span>`;
     else if (deCaja(t)) estado = `<span class="tag tag-green tag-dot" title="${escHtml(t.otroCanal.motivo || "")}">Ya facturada · ${t.otroCanal.origen === "caja" ? "Caja" : "manual"}</span>`;
@@ -1364,7 +1432,8 @@ function extRenderList() {
       <div class="tr-fecha">${escHtml(t.fecha || "—")}</div>
       <div class="tr-main">
         <div class="tr-nombre">${escHtml(t.nombre)}</div>
-        <div class="tr-meta">${escHtml(t.fecha || "Sin fecha")}${t.descripcion ? " · " + escHtml(t.descripcion) : ""}${t.referencia ? " · Ref. " + escHtml(t.referencia) : ""}${deOrnella(t) ? " · facturada por Ornella" + (t.ornella.comprobante ? " (" + escHtml(t.ornella.comprobante) + ")" : "") : t.ornella && t.ornella.tipo === "posible" ? " · coincide con un pago de Ornella sin documento: revisar" : deCaja(t) ? " · paga la " + escHtml(t.otroCanal.comprobante) + " (" + escHtml(t.otroCanal.motivo || "") + ")" : t.otroCanal ? " · ¿paga la " + escHtml(t.otroCanal.comprobante) + "? " + escHtml(t.otroCanal.motivo || "") + ": revisar" : ""}</div>
+        <div class="tr-meta">${escHtml(t.fecha || "Sin fecha")}${t.descripcion ? " · " + escHtml(t.descripcion) : ""}${t.referencia ? " · Ref. " + escHtml(t.referencia) : ""}${deOrnella(t) ? " · facturada por Ornella" + (t.ornella.comprobante ? " (" + escHtml(t.ornella.comprobante) + ")" : "") : t.ornella && t.ornella.tipo === "posible" ? " · coincide con un pago de Ornella sin documento: revisar" : deCaja(t) ? " · paga la " + escHtml(t.otroCanal.comprobante) + " (" + escHtml(t.otroCanal.motivo || "") + ")" : t.otroCanal ? " · ¿paga la " + escHtml(t.otroCanal.comprobante) + "? " + escHtml(t.otroCanal.motivo || "") + ": revisar" : deNunca(t) ? " · en tu lista de nunca facturar (" + escHtml(t.excluido.texto || "") + ")" : ""}</div>
+        ${t.yaFacturado || deOrnella(t) ? "" : deNunca(t) ? `<button type="button" class="link-btn tr-nunca" onclick="event.stopPropagation();nuncaQuitar('${escHtml(t.cuitEdit || t.cuit || "")}')">Quitar de «nunca facturar»</button>` : `<button type="button" class="link-btn tr-nunca" onclick="event.stopPropagation();nuncaElegir(${t.id})">No facturar nunca</button>`}
       </div>
       <div class="tr-cuit">
         <input class="transfer-cuit-input" type="tel" inputmode="numeric" maxlength="11" aria-label="CUIT"
@@ -1409,6 +1478,7 @@ window.extToggleTransfer = function(id) {
   if (!t) return;
   /* Lo que facturó Ornella no se factura acá (el servidor tampoco lo emitiría). */
   if (deOrnella(t)) return showToast(`Es un alquiler de Ornella, ya facturado por ella${t.ornella.comprobante ? " (" + t.ornella.comprobante + ")" : ""}: no se factura acá.`, "error");
+  if (deNunca(t)) return showToast(`Está en tu lista de nunca facturar (${t.excluido.texto}). Tocá «Quitar de nunca facturar» si querés facturarla.`, "error");
   if (deCaja(t)) return showToast(`Ya está facturada desde ${t.otroCanal.origen === "caja" ? "la Caja" : "otro canal"} (${t.otroCanal.comprobante}): no se factura de nuevo.`, "error");
   t.incluida = !t.incluida;
   if (t.ornella && t.ornella.tipo === "posible") { t.forzarOrnella = t.incluida; if (t.incluida) showToast("Coincide con un pago de Ornella sin documento: se va a facturar porque lo elegiste vos.", "success"); }
@@ -1494,7 +1564,7 @@ let extCandidatasTodo = [];
 
 window.extFacturarTodo = function() {
   extCandidatasTodo = extTodasTransferencias
-    .filter(t => String(t.cuit || "").replace(/\D/g, "").length === 11 && !t.yaFacturado && !t.ornella && !t.otroCanal && Number(t.monto) > 0)
+    .filter(t => String(t.cuit || "").replace(/\D/g, "").length === 11 && !t.yaFacturado && !t.ornella && !t.otroCanal && !t.excluido && Number(t.monto) > 0)
     .map((t, i) => ({ ...t, _id: i, cuit: String(t.cuit || "").replace(/\D/g, "") }));
 
   if (extCandidatasTodo.length === 0) return showToast("No hay transferencias con CUIT para facturar", "error");
@@ -1686,7 +1756,7 @@ function extRenderResultados(data) {
     ${data.simulado ? `<div class="aviso aviso-warn">${ico("info", "ic-sm")}<span>Simulación: no se emitió nada en ARCA.</span></div>` : ""}
     ${data.interrumpido ? `<div class="aviso aviso-warn">${ico("alert", "ic-sm")}<span>El proceso se cortó a mitad. Volvé a facturar el extracto: lo ya emitido se omite solo.</span></div>` : ""}
     ${data.avisoSecuencia ? `<div class="aviso aviso-err">${ico("alert", "ic-sm")}<span>${escHtml(data.avisoSecuencia)}</span></div>` : ""}
-    ${omitidas.length > 0 ? `<div class="aviso aviso-info">${ico("check-circle", "ic-sm")}<span>${omitidas.length} ya facturada${omitidas.length !== 1 ? "s" : ""}: se omitieron para no duplicar${omitidas.filter(r => r.ornella).length ? ` (${omitidas.filter(r => r.ornella).length} por Ornella)` : ""}${omitidas.filter(r => r.otroCanal).length ? ` (${omitidas.filter(r => r.otroCanal).length} ya facturadas desde la Caja o a mano)` : ""}.</span></div>` : ""}
+    ${omitidas.length > 0 ? `<div class="aviso aviso-info">${ico("check-circle", "ic-sm")}<span>${omitidas.length} ya facturada${omitidas.length !== 1 ? "s" : ""}: se omitieron para no duplicar${omitidas.filter(r => r.ornella).length ? ` (${omitidas.filter(r => r.ornella).length} por Ornella)` : ""}${omitidas.filter(r => r.otroCanal).length ? ` (${omitidas.filter(r => r.otroCanal).length} ya facturadas desde la Caja o a mano)` : ""}${omitidas.filter(r => r.nuncaFacturar).length ? ` (${omitidas.filter(r => r.nuncaFacturar).length} en tu lista de nunca facturar)` : ""}.</span></div>` : ""}
     <div class="sec-tit">Comprobantes emitidos</div>
   `;
 

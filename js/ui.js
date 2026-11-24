@@ -324,7 +324,13 @@
   function abrirMenu() {
     haptic();
     const sw = navigator.serviceWorker?.controller ? "activa" : "sin instalar";
-    $("menuMeta").innerHTML = `Entorno: <strong>${window.ML_CONFIG.ENV === "produccion" ? "producción" : "prueba (simulación)"}</strong><br>Caché sin conexión: ${sw}`;
+    const act = window.MLActualizador; if (act) act.revisar();
+    const pintar = () => {
+      const ver = (act && act.version()) || "—";
+      $("menuMeta").innerHTML = `Versión de la app: <strong>${ver}</strong>${act && act.hayNueva() ? " · <strong>hay una nueva</strong>: se actualiza sola al terminar" : " · al día"}<br>Entorno: <strong>${window.ML_CONFIG.ENV === "produccion" ? "producción" : "prueba (simulación)"}</strong> · caché sin conexión: ${sw}`;
+    };
+    pintar();
+    if (act && !act.version() && act.leerVersion) act.leerVersion().then(pintar);   // si el menú se abrió antes de terminar de leerla
     abrir("menu");
   }
 

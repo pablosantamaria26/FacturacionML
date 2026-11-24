@@ -2,11 +2,11 @@
 // caché y solo borra las suyas.
 const ES_PROD = self.location.pathname.startsWith("/FacturacionML/");
 const PREFIX = ES_PROD ? "mercadolimpio-" : "ml-prueba-";
-const CACHE_NAME = PREFIX + "v53";
+const CACHE_NAME = PREFIX + "v54";
 const BASE = "https://api-mercadolimpio.onrender.com";
 const STATIC = [
   "./", "./index.html", "./app.js", "./manifest.json",
-  "./css/app.css", "./js/config.js", "./js/ui.js", "./js/camara.js",
+  "./css/app.css", "./js/config.js", "./js/ui.js", "./js/camara.js", "./js/actualizador.js",
   "./icons-mercado-limpio/ml-icon-32.png", "./icons-mercado-limpio/ml-icon-96.png",
   "./icons-mercado-limpio/ml-icon-192.png", "./icons-mercado-limpio/apple-touch-icon.png",
 ];
@@ -18,6 +18,9 @@ self.addEventListener("install", e => {
     .then(c => c.addAll(STATIC.map(u => new Request(u, { cache: "reload" }))))
     .then(() => self.skipWaiting()));
 });
+
+/* La app pregunta qué versión está corriendo (js/actualizador.js → menú). */
+self.addEventListener("message", e => { if (e.data === "version" && e.ports && e.ports[0]) e.ports[0].postMessage(CACHE_NAME); });
 
 self.addEventListener("activate", e => {
   e.waitUntil(

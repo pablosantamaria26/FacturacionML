@@ -824,3 +824,6 @@ select { appearance: none; -webkit-appearance: none; padding-right: 36px; backgr
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* 24/11/2026: acción «No facturar nunca / Quitar» dentro del renglón del extracto: chica y que corte línea (no ensancha la tabla) */
+.tr-nunca { font-size: 12px; padding: 2px 0; white-space: normal; text-align: left; line-height: 1.25; }

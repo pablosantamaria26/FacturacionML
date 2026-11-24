@@ -266,6 +266,7 @@
         </div>
         <div class="aviso" id="extOrnellaInfo" role="status" style="display:none"></div>
         <div class="aviso" id="extCajaInfo" role="status" style="display:none"></div>
+        <div class="aviso aviso-info" id="extNuncaInfo" role="status" style="display:none"></div>
         <div class="aviso aviso-info" id="extImpuestosInfo" role="status" style="display:none"></div>
         <div class="ext-cols only-desktop"><span>Incluir</span><span>Fecha</span><span>Cliente / descripción</span><span>CUIT</span><span class="r">Importe</span><span>Estado</span></div>
         <div id="extTransferList"></div>
@@ -470,9 +471,17 @@
     <button onclick="UI.cerrarMenu();abrirResumen()"><svg class="ic"><use href="#i-chart"/></svg>Resumen mensual</button>
     <button onclick="UI.cerrarMenu();UI.abrirPendientes()"><svg class="ic"><use href="#i-bell"/></svg>Pendientes</button>
     <button onclick="UI.cerrarMenu();abrirAnulacionManual()"><svg class="ic"><use href="#i-ban"/></svg>Anular factura de otro mes</button>
+    <button onclick="UI.cerrarMenu();nuncaAbrirLista()"><svg class="ic"><use href="#i-users"/></svg>Nunca facturar (empleados, familia…)</button>
     <button onclick="UI.cerrarMenu();UI.instalar()"><svg class="ic"><use href="#i-phone"/></svg>Instalar en la pantalla de inicio</button>
     <div class="menu-meta" id="menuMeta"></div>
   </div>
+</div>
+
+<!-- ══ NUNCA FACTURAR (24/11/2026) ══ -->
+<div class="backdrop" id="nuncaBackdrop" onclick="nuncaCerrar()"></div>
+<div class="sheet" id="nuncaSheet" role="dialog" aria-label="Nunca facturar">
+  <div class="sheet-handle"></div>
+  <div class="sheet-body" id="nuncaBody"></div>
 </div>
 
 <!-- ══ FOTO DE REMITO ══ -->
@@ -541,10 +550,6 @@
 <script src="app.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/camara.js"></script>
-<script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).then(r => r.update()).catch(() => {});
-  }
-</script>
+<script src="js/actualizador.js"></script>
 </body>
 </html>
