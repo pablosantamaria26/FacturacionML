@@ -1116,6 +1116,7 @@ window.switchTab = function(tab) {
 // ============================================
 let extTransferencias = []; // transferencias detectadas con estado (sólo chinos)
 let extTodasTransferencias = []; // todas las transferencias del extracto (para conciliación)
+let extImpuestos = null;          // retenciones, impuestos y pagos ARBA/AFIP que leyó el servidor (van al contador en el reporte)
 
 // ── Archivo seleccionado ──────────────────────────────────────
 document.getElementById("extFileInput").addEventListener("change", function() {
@@ -1188,6 +1189,7 @@ async function extEsperarAnalisis(jobId, btn) {
 
       if (estado.estado === "terminado") {
         extTodasTransferencias = estado.todas || [];
+        extImpuestos = estado.impuestos || null;
         extTransferencias = (estado.transferencias || []).map((t, i) => ({
           ...t,
           id: i,
@@ -1232,10 +1234,29 @@ async function extEsperarAnalisis(jobId, btn) {
   }
 }
 
+// ── Retenciones e impuestos del banco (24/11/2026) ────────────
+// Solo informa lo que se detectó: el servidor decide qué es nuevo (no repite lo ya enviado) y lo manda al contador
+// en la hoja «Retenciones e Impuestos Banco» del reporte, con copia a Pablo.
+function extRenderImpuestos() {
+  const box = document.getElementById("extImpuestosInfo"); if (!box) return;
+  const imp = extImpuestos;
+  if (!imp) { box.style.display = "none"; return; }
+  const movs = Array.isArray(imp.movimientos) ? imp.movimientos : [];
+  const RET = ["ARBA_REC", "SIRCREB", "PERC_IVA", "LEY25413_DB", "LEY25413_CR"];
+  const suma = f => movs.filter(f).reduce((s, m) => s + Number(m.importe || 0), 0);
+  const ret = suma(m => RET.includes(m.regimen)), pagos = suma(m => !RET.includes(m.regimen));
+  const desde = String(imp.desde || "").split("-").reverse().join("/");
+  box.innerHTML = movs.length
+    ? `${ico("bank", "ic-sm")}<span><b>Retenciones e impuestos del banco:</b> ${movs.length} movimiento${movs.length !== 1 ? "s" : ""} desde el ${escHtml(desde)} · retenido $${formatMoneyAR(ret)}${pagos ? ` · pagos ARBA/AFIP $${formatMoneyAR(pagos)}` : ""}${(imp.aRevisar || []).length ? ` · <b>${imp.aRevisar.length} a revisar</b>` : ""}. Al facturar van al contador en el reporte, sin repetir lo ya enviado.</span>`
+    : `${ico("bank", "ic-sm")}<span>Este extracto no trae retenciones ni impuestos nuevos desde el ${escHtml(desde)}.</span>`;
+  box.style.display = "";
+}
+
 // ── Renderizar paso 2: lista de transferencias ────────────────
 function extRenderStep2() {
   document.getElementById("extStep1").classList.remove("active");
   document.getElementById("extStep2").classList.add("active");
+  extRenderImpuestos();
   extRenderList();
 }
 
@@ -1378,7 +1399,8 @@ window.extFacturar = async function() {
         referencia: t.referencia || ""
       })),
       condicionVenta: "Transferencia Bancaria",
-      emailReporte: "santamariapablodaniel@gmail.com"
+      emailReporte: "santamariapablodaniel@gmail.com",
+      impuestos: extImpuestos
     };
 
     const despierto = await wakeServer(() => {
@@ -1479,7 +1501,8 @@ window.extConfirmarTodo = async function() {
         cuit: t.cuit || "", monto: t.monto || 0, nombre: t.nombre || "", fecha: t.fecha || "", referencia: t.referencia || ""
       })),
       condicionVenta: "Transferencia Bancaria",
-      emailReporte: "santamariapablodaniel@gmail.com"
+      emailReporte: "santamariapablodaniel@gmail.com",
+      impuestos: extImpuestos
     };
 
     const despierto = await wakeServer(() => {
