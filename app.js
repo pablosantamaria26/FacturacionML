@@ -1119,6 +1119,8 @@ let extTodasTransferencias = []; // todas las transferencias del extracto (para 
 let extImpuestos = null;          // retenciones, impuestos y pagos ARBA/AFIP que leyó el servidor (van al contador en el reporte)
 let extOrnella = null;            // resultado del cruce con la facturación de Ornella (cuenta compartida), 24/11/2026
 const deOrnella = t => !!(t && t.ornella && t.ornella.tipo === "ornella");
+let extOtroCanal = null;          // facturas ya emitidas desde la Caja / a mano que estas transferencias pagan (24/11/2026)
+const deCaja = t => !!(t && t.otroCanal && t.otroCanal.tipo !== "posible");
 
 // ── Archivo seleccionado ──────────────────────────────────────
 document.getElementById("extFileInput").addEventListener("change", function() {
@@ -1193,10 +1195,11 @@ async function extEsperarAnalisis(jobId, btn) {
         extTodasTransferencias = estado.todas || [];
         extImpuestos = estado.impuestos || null;
         extOrnella = estado.ornella || null;
+        extOtroCanal = estado.otroCanal || null;
         extTransferencias = (estado.transferencias || []).map((t, i) => ({
           ...t,
           id: i,
-          incluida: !t.yaFacturado && !t.ornella,
+          incluida: !t.yaFacturado && !t.ornella && !t.otroCanal,
           cuitEdit: t.cuit || ""
         }));
 
@@ -1257,6 +1260,25 @@ function extRenderOrnella() {
   box.style.display = "";
 }
 
+// ── Facturas ya emitidas desde la Caja / a mano (24/11/2026) ──
+// El servidor cruza las transferencias con las facturas de ARCA que no vinieron del extracto (Caja por remito, manuales,
+// remito PDF): pago exacto o en partes → no se ofrece; importe distinto o nombre en el email de la factura → «revisar».
+function extRenderCaja() {
+  const box = document.getElementById("extCajaInfo"); if (!box) return;
+  const o = extOtroCanal;
+  if (!o) { box.style.display = "none"; return; }
+  if (!o.ok) {
+    box.className = "aviso aviso-err";
+    box.innerHTML = `${ico("alert", "ic-sm")}<span><b>No se pudieron revisar las facturas emitidas desde la Caja</b> (${escHtml(o.error || "sin respuesta")}). Por seguridad, el servidor no va a emitir hasta poder revisarlas.</span>`;
+  } else if (o.seguras || o.posibles) {
+    box.className = "aviso aviso-info";
+    box.innerHTML = `${ico("receipt", "ic-sm")}<span>${o.seguras ? `<b>${o.seguras} transferencia${o.seguras !== 1 ? "s pagan" : " paga"} facturas ya emitidas</b> desde la Caja o a mano: no se ofrecen. ` : ""}${o.posibles ? `<b>${o.posibles}</b> podría${o.posibles !== 1 ? "n" : ""} corresponder a una factura ya emitida (importe distinto o el pagador coincide con el email de la factura): quedan sin tildar para que lo revises.` : ""}</span>`;
+  } else {
+    box.style.display = "none"; return;
+  }
+  box.style.display = "";
+}
+
 // ── Retenciones e impuestos del banco (24/11/2026) ────────────
 // Solo informa lo que se detectó: el servidor decide qué es nuevo (no repite lo ya enviado) y lo manda al contador
 // en la hoja «Retenciones e Impuestos Banco» del reporte, con copia a Pablo.
@@ -1280,6 +1302,7 @@ function extRenderStep2() {
   document.getElementById("extStep1").classList.remove("active");
   document.getElementById("extStep2").classList.add("active");
   extRenderOrnella();
+  extRenderCaja();
   extRenderImpuestos();
   extRenderList();
 }
@@ -1300,7 +1323,7 @@ function extRenderList() {
   const btnTodo = document.getElementById("extBtnFacturarTodo");
   if (btnTodo) {
     const candidatasTodo = extTodasTransferencias.filter(t =>
-      String(t.cuit || "").replace(/\D/g, "").length === 11 && !t.yaFacturado && !t.ornella && Number(t.monto) > 0
+      String(t.cuit || "").replace(/\D/g, "").length === 11 && !t.yaFacturado && !t.ornella && !t.otroCanal && Number(t.monto) > 0
     );
     btnTodo.style.display = "flex";
     btnTodo.disabled = candidatasTodo.length === 0;
@@ -1330,6 +1353,8 @@ function extRenderList() {
     if (t.yaFacturado) estado = `<span class="tag tag-green tag-dot">Ya facturada</span>`;
     else if (deOrnella(t)) estado = `<span class="tag tag-violet tag-dot" title="Alquiler de Ornella, ya facturado por ella${t.ornella.comprobante ? " (" + escHtml(t.ornella.comprobante) + ")" : ""}">De Ornella</span>`;
     else if (t.ornella && t.ornella.tipo === "posible") estado = `<span class="tag tag-amber tag-dot" title="Coincide importe y fecha con un pago de Ornella sin documento cargado">${t.incluida ? "¿Ornella? · tildada" : "¿De Ornella?"}</span>`;
+    else if (deCaja(t)) estado = `<span class="tag tag-green tag-dot" title="${escHtml(t.otroCanal.motivo || "")}">Ya facturada · ${t.otroCanal.origen === "caja" ? "Caja" : "manual"}</span>`;
+    else if (t.otroCanal) estado = `<span class="tag tag-amber tag-dot" title="${escHtml(t.otroCanal.motivo || "")}">${t.incluida ? "¿Facturada? · tildada" : "¿Ya facturada?"}</span>`;
     else if (sinCuit) estado = `<span class="tag tag-red tag-dot">Falta CUIT</span>`;
     else if (!t.incluida) estado = `<span class="tag">Excluida</span>`;
     else estado = `<span class="tag tag-blue tag-dot">Sin facturar</span>`;
@@ -1339,7 +1364,7 @@ function extRenderList() {
       <div class="tr-fecha">${escHtml(t.fecha || "—")}</div>
       <div class="tr-main">
         <div class="tr-nombre">${escHtml(t.nombre)}</div>
-        <div class="tr-meta">${escHtml(t.fecha || "Sin fecha")}${t.descripcion ? " · " + escHtml(t.descripcion) : ""}${t.referencia ? " · Ref. " + escHtml(t.referencia) : ""}${deOrnella(t) ? " · facturada por Ornella" + (t.ornella.comprobante ? " (" + escHtml(t.ornella.comprobante) + ")" : "") : t.ornella && t.ornella.tipo === "posible" ? " · coincide con un pago de Ornella sin documento: revisar" : ""}</div>
+        <div class="tr-meta">${escHtml(t.fecha || "Sin fecha")}${t.descripcion ? " · " + escHtml(t.descripcion) : ""}${t.referencia ? " · Ref. " + escHtml(t.referencia) : ""}${deOrnella(t) ? " · facturada por Ornella" + (t.ornella.comprobante ? " (" + escHtml(t.ornella.comprobante) + ")" : "") : t.ornella && t.ornella.tipo === "posible" ? " · coincide con un pago de Ornella sin documento: revisar" : deCaja(t) ? " · paga la " + escHtml(t.otroCanal.comprobante) + " (" + escHtml(t.otroCanal.motivo || "") + ")" : t.otroCanal ? " · ¿paga la " + escHtml(t.otroCanal.comprobante) + "? " + escHtml(t.otroCanal.motivo || "") + ": revisar" : ""}</div>
       </div>
       <div class="tr-cuit">
         <input class="transfer-cuit-input" type="tel" inputmode="numeric" maxlength="11" aria-label="CUIT"
@@ -1384,8 +1409,10 @@ window.extToggleTransfer = function(id) {
   if (!t) return;
   /* Lo que facturó Ornella no se factura acá (el servidor tampoco lo emitiría). */
   if (deOrnella(t)) return showToast(`Es un alquiler de Ornella, ya facturado por ella${t.ornella.comprobante ? " (" + t.ornella.comprobante + ")" : ""}: no se factura acá.`, "error");
+  if (deCaja(t)) return showToast(`Ya está facturada desde ${t.otroCanal.origen === "caja" ? "la Caja" : "otro canal"} (${t.otroCanal.comprobante}): no se factura de nuevo.`, "error");
   t.incluida = !t.incluida;
   if (t.ornella && t.ornella.tipo === "posible") { t.forzarOrnella = t.incluida; if (t.incluida) showToast("Coincide con un pago de Ornella sin documento: se va a facturar porque lo elegiste vos.", "success"); }
+  if (t.otroCanal && t.otroCanal.tipo === "posible") { t.forzarCaja = t.incluida; if (t.incluida) showToast(`Podría ser un pago de la ${t.otroCanal.comprobante}: se va a facturar porque lo elegiste vos.`, "success"); }
   extRenderList();
 };
 
@@ -1421,6 +1448,7 @@ window.extFacturar = async function() {
         const obj = { cuit: t.cuitEdit, monto: t.monto, nombre: t.nombre, fecha: t.fecha || "", referencia: t.referencia || "" };
         if (savedEmail) obj.email = savedEmail;
         if (t.forzarOrnella) obj.forzarOrnella = true;
+        if (t.forzarCaja) obj.forzarCaja = true;
         return obj;
       }),
       todasTransferencias: extTodasTransferencias.map(t => ({
@@ -1466,7 +1494,7 @@ let extCandidatasTodo = [];
 
 window.extFacturarTodo = function() {
   extCandidatasTodo = extTodasTransferencias
-    .filter(t => String(t.cuit || "").replace(/\D/g, "").length === 11 && !t.yaFacturado && !t.ornella && Number(t.monto) > 0)
+    .filter(t => String(t.cuit || "").replace(/\D/g, "").length === 11 && !t.yaFacturado && !t.ornella && !t.otroCanal && Number(t.monto) > 0)
     .map((t, i) => ({ ...t, _id: i, cuit: String(t.cuit || "").replace(/\D/g, "") }));
 
   if (extCandidatasTodo.length === 0) return showToast("No hay transferencias con CUIT para facturar", "error");
@@ -1658,7 +1686,7 @@ function extRenderResultados(data) {
     ${data.simulado ? `<div class="aviso aviso-warn">${ico("info", "ic-sm")}<span>Simulación: no se emitió nada en ARCA.</span></div>` : ""}
     ${data.interrumpido ? `<div class="aviso aviso-warn">${ico("alert", "ic-sm")}<span>El proceso se cortó a mitad. Volvé a facturar el extracto: lo ya emitido se omite solo.</span></div>` : ""}
     ${data.avisoSecuencia ? `<div class="aviso aviso-err">${ico("alert", "ic-sm")}<span>${escHtml(data.avisoSecuencia)}</span></div>` : ""}
-    ${omitidas.length > 0 ? `<div class="aviso aviso-info">${ico("check-circle", "ic-sm")}<span>${omitidas.length} ya facturada${omitidas.length !== 1 ? "s" : ""}: se omitieron para no duplicar${omitidas.filter(r => r.ornella).length ? ` (${omitidas.filter(r => r.ornella).length} por Ornella)` : ""}.</span></div>` : ""}
+    ${omitidas.length > 0 ? `<div class="aviso aviso-info">${ico("check-circle", "ic-sm")}<span>${omitidas.length} ya facturada${omitidas.length !== 1 ? "s" : ""}: se omitieron para no duplicar${omitidas.filter(r => r.ornella).length ? ` (${omitidas.filter(r => r.ornella).length} por Ornella)` : ""}${omitidas.filter(r => r.otroCanal).length ? ` (${omitidas.filter(r => r.otroCanal).length} ya facturadas desde la Caja o a mano)` : ""}.</span></div>` : ""}
     <div class="sec-tit">Comprobantes emitidos</div>
   `;
 
